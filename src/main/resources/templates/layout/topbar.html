@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<div th:fragment="topbar" class="w-100 d-flex align-items-center gap-3">
+
+    <!-- Mobile hamburger -->
+    <button class="icon-btn ebook-topbar-mobile-menu" type="button" data-sidebar-mobile-toggle th:aria-label="#{topbar.openMenu}">
+        <svg class="ebook-icon ebook-icon--md"><use href="#icon-menu"/></svg>
+    </button>
+
+    <!-- Global search -->
+    <div class="topbar-search">
+        <svg class="ebook-icon"><use href="#icon-search"/></svg>
+        <input type="search" th:placeholder="#{topbar.search}" data-open-search tabindex="0" th:aria-label="#{search.aria}" readonly>
+        <span class="search-kbd">Ctrl K</span>
+    </div>
+
+    <!-- Quick create -->
+    <button class="btn-quick-create" type="button" data-open-quick-create>
+        <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+        <span class="quick-label" th:text="#{topbar.create}">Create</span>
+        <svg class="ebook-icon ebook-icon--sm" style="opacity:.7"><use href="#icon-chevron-down"/></svg>
+    </button>
+
+    <!-- Company / branch switcher -->
+    <div class="dropdown">
+        <button class="company-switcher" type="button" data-dropdown-toggle>
+            <span class="company-switcher-avatar" th:text="${company != null and company.name != null ? #strings.substring(company.name, 0, 1) : 'E'}">E</span>
+            <span class="company-meta">
+                <span class="company-name" th:text="${company != null and company.name != null ? company.name : 'Ebook Online'}">Ebook Online</span>
+                <span class="branch-name" th:text="${branch != null and branch.name != null ? branch.name : 'Kigali Branch'}">Kigali Branch</span>
+            </span>
+            <svg class="ebook-icon ebook-icon--sm" style="color:var(--text-muted)"><use href="#icon-chevron-down"/></svg>
+        </button>
+        <div class="dropdown-menu dropdown-menu--company">
+            <div class="dropdown-header" th:text="#{topbar.company}">Company</div>
+            <a class="dropdown-item" th:href="@{/settings/company}"><svg class="ebook-icon"><use href="#icon-gear"/></svg><span th:text="#{topbar.manageCompany}">Manage company</span></a>
+            <a class="dropdown-item" th:href="@{/settings/fiscal-year}"><svg class="ebook-icon"><use href="#icon-calendar"/></svg><span th:text="#{topbar.fiscalYear}">Fiscal year</span></a>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-header" th:text="#{topbar.switchBranch}">Switch branch</div>
+            <a class="dropdown-item" th:href="@{/?branch=kigali}"><span class="company-switcher-avatar" style="width:24px;height:24px;font-size:10px">K</span>Kigali Branch</a>
+            <a class="dropdown-item" th:href="@{/?branch=huye}"><span class="company-switcher-avatar" style="width:24px;height:24px;font-size:10px;background:var(--success-100);color:var(--success-700)">H</span>Huye Branch</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" th:href="@{/settings/branches}"><svg class="ebook-icon"><use href="#icon-network"/></svg><span th:text="#{topbar.allBranches}">All branches</span></a>
+        </div>
+    </div>
+
+    <!-- Right actions -->
+    <div class="topbar-actions">
+
+        <!-- Language -->
+        <div class="dropdown">
+            <button class="icon-btn" type="button" data-dropdown-toggle th:aria-label="#{topbar.language}">
+                <svg class="lang-flag" th:if="${#locale.language == 'fr'}" viewBox="0 0 36 24"><rect width="12" height="24" fill="#0055A4"/><rect x="12" width="12" height="24" fill="#FFFFFF"/><rect x="24" width="12" height="24" fill="#EF4135"/></svg>
+                <svg class="lang-flag" th:if="${#locale.language == 'rw'}" viewBox="0 0 36 24"><rect width="36" height="9" fill="#00A3DD"/><rect y="9" width="36" height="7" fill="#FAD201"/><rect y="16" width="36" height="8" fill="#006B3F"/><circle cx="29" cy="4.5" r="2.6" fill="#FAD201"/></svg>
+                <svg class="lang-flag" th:unless="${#locale.language == 'fr' or #locale.language == 'rw'}" viewBox="0 0 36 24"><rect width="36" height="24" fill="#012169"/><path d="M0,0 36,24 M36,0 0,24" stroke="#FFFFFF" stroke-width="5"/><path d="M0,0 36,24 M36,0 0,24" stroke="#C8102E" stroke-width="2.5"/><path d="M18,0 V24 M0,12 H36" stroke="#FFFFFF" stroke-width="7"/><path d="M18,0 V24 M0,12 H36" stroke="#C8102E" stroke-width="3.5"/></svg>
+            </button>
+            <div class="dropdown-menu dropdown-menu--lang">
+                <div class="dropdown-header" th:text="#{topbar.language}">Language</div>
+                <a class="dropdown-item" th:classappend="${#locale.language == 'en'} ? 'active'" th:href="@{${requestURI}(lang='en')}">
+                    <svg class="lang-flag" viewBox="0 0 36 24"><rect width="36" height="24" fill="#012169"/><path d="M0,0 36,24 M36,0 0,24" stroke="#FFFFFF" stroke-width="5"/><path d="M0,0 36,24 M36,0 0,24" stroke="#C8102E" stroke-width="2.5"/><path d="M18,0 V24 M0,12 H36" stroke="#FFFFFF" stroke-width="7"/><path d="M18,0 V24 M0,12 H36" stroke="#C8102E" stroke-width="3.5"/></svg>
+                    <span th:text="#{topbar.lang.en}">English</span>
+                </a>
+                <a class="dropdown-item" th:classappend="${#locale.language == 'fr'} ? 'active'" th:href="@{${requestURI}(lang='fr')}">
+                    <svg class="lang-flag" viewBox="0 0 36 24"><rect width="12" height="24" fill="#0055A4"/><rect x="12" width="12" height="24" fill="#FFFFFF"/><rect x="24" width="12" height="24" fill="#EF4135"/></svg>
+                    <span th:text="#{topbar.lang.fr}">French</span>
+                </a>
+                <a class="dropdown-item" th:classappend="${#locale.language == 'rw'} ? 'active'" th:href="@{${requestURI}(lang='rw')}">
+                    <svg class="lang-flag" viewBox="0 0 36 24"><rect width="36" height="9" fill="#00A3DD"/><rect y="9" width="36" height="7" fill="#FAD201"/><rect y="16" width="36" height="8" fill="#006B3F"/><circle cx="29" cy="4.5" r="2.6" fill="#FAD201"/></svg>
+                    <span th:text="#{topbar.lang.rw}">Kinyarwanda</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Help -->
+        <div class="dropdown">
+            <button class="icon-btn" type="button" data-dropdown-toggle th:aria-label="#{topbar.help}">
+                <svg class="ebook-icon"><use href="#icon-help-circle"/></svg>
+            </button>
+            <div class="dropdown-menu">
+                <div class="dropdown-header" th:text="#{topbar.helpSupport}">Help &amp; support</div>
+                <a class="dropdown-item" th:href="@{/help}"><svg class="ebook-icon"><use href="#icon-help-circle"/></svg><span th:text="#{topbar.helpCenter}">Help center</span></a>
+                <a class="dropdown-item" th:href="@{/help/contact}"><svg class="ebook-icon"><use href="#icon-mail"/></svg><span th:text="#{topbar.contactSupport}">Contact support</span></a>
+                <a class="dropdown-item" th:href="@{/help/shortcuts}"><svg class="ebook-icon"><use href="#icon-sidebar"/></svg><span th:text="#{topbar.keyboardShortcuts}">Keyboard shortcuts</span></a>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item" type="button" data-theme-toggle>
+                    <svg class="ebook-icon" data-theme-icon="moon"><use href="#icon-moon"/></svg>
+                    <svg class="ebook-icon" data-theme-icon="sun" style="display:none"><use href="#icon-sun"/></svg>
+                    <span data-theme-label th:text="#{topbar.darkMode}">Switch to dark mode</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <button class="icon-btn" type="button" data-open-drawer="notificationDrawer" th:aria-label="#{topbar.notifications}">
+            <svg class="ebook-icon"><use href="#icon-bell"/></svg>
+            <span class="notif-count" th:text="${unreadNotifications != null ? unreadNotifications : 4}">4</span>
+        </button>
+
+        <!-- User profile -->
+        <div class="dropdown">
+            <button class="profile-trigger" type="button" data-dropdown-toggle th:aria-label="#{topbar.profile}">
+                <span class="avatar" th:text="${profileInitials != null ? profileInitials : 'JO'}">JO</span>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--text-muted)"><use href="#icon-chevron-down"/></svg>
+            </button>
+            <div class="dropdown-menu dropdown-menu--profile">
+                <div class="px-2 py-2 d-flex align-items-center gap-2" style="border-bottom:1px solid var(--border);margin-bottom:6px">
+                    <span class="avatar avatar--md">KI</span>
+                    <div>
+                        <div class="text-md font-semibold">John Doe</div>
+                        <div class="text-xs text-muted">Administrator</div>
+                    </div>
+                </div>
+                <a class="dropdown-item" th:href="@{/profile}"><svg class="ebook-icon"><use href="#icon-user-circle"/></svg><span th:text="#{topbar.myProfile}">My profile</span></a>
+                <a class="dropdown-item" th:href="@{/profile/preferences}"><svg class="ebook-icon"><use href="#icon-sliders"/></svg><span th:text="#{topbar.preferences}">Preferences</span></a>
+                <a class="dropdown-item" th:href="@{/settings/notifications}"><svg class="ebook-icon"><use href="#icon-bell"/></svg><span th:text="#{topbar.notifSettings}">Notification settings</span></a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" th:href="@{/settings/security}"><svg class="ebook-icon"><use href="#icon-lock"/></svg><span th:text="#{topbar.security}">Security</span></a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item danger" th:href="@{/logout}"><svg class="ebook-icon"><use href="#icon-logout"/></svg><span th:text="#{topbar.logout}">Log out</span></a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

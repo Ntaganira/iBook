@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{auth.title}">Sign in — Ebook Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/ebook.css}">
+</head>
+
+<body class="theme-root">
+<div class="auth-page">
+
+    <!-- Brand aside -->
+    <aside class="auth-side">
+        <div style="position:relative;z-index:1">
+            <div class="d-flex align-items-center gap-2" style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.18))">
+                <div class="brand-logo"><svg class="ebook-icon ebook-icon--lg"><use href="#icon-logo"/></svg></div>
+                <span class="brand-name" style="color:#fff" th:text="#{app.name}">Ebook Online</span>
+            </div>
+            <div class="auth-fi">
+                <svg class="ebook-icon"><use href="#icon-feather"/></svg>
+                <span th:text="#{auth.tagline}">Rwanda-first cloud accounting, EBM-ready out of the box</span>
+            </div>
+            <div class="auth-fi-stats">
+                <div class="auth-fi-stat"><b>&gt;4,800</b><span th:text="#{auth.statBusinesses}">Rwanda businesses</span></div>
+                <div class="auth-fi-stat"><b>18%</b><span th:text="#{auth.statVat}">VAT handled</span></div>
+                <div class="auth-fi-stat"><b>2m+</b><span th:text="#{auth.statInvoices}">EBM e-invoices</span></div>
+            </div>
+        </div>
+        <div class="auth-footer">
+            <span th:text="#{auth.poweredBy('Ebook Online')}">Powered by Ebook Online</span>
+            · <a href="#" class="link" style="color:inherit" th:text="#{auth.help}">Help</a>
+        </div>
+    </aside>
+
+    <!-- Form main -->
+    <main class="auth-main">
+        <div class="auth-panel">
+
+            <div class="mb-6 d-flex justify-content-end d-md-none">
+                <button class="btn btn-ghost btn-sm" type="button" data-theme-toggle>
+                    <svg class="ebook-icon" data-theme-icon="dark"><use href="#icon-moon"/></svg>
+                    <svg class="ebook-icon d-none" data-theme-icon="light"><use href="#icon-sun"/></svg>
+                    <span th:text="#{auth.theme}">Theme</span>
+                </button>
+            </div>
+
+            <span class="auth-eyebrow" th:text="#{auth.welcomeBack}">Welcome back</span>
+            <h1 class="auth-title" th:text="#{auth.title}">Sign in to Ebook Online</h1>
+            <p class="auth-desc" th:text="#{auth.desc}">Enter your email and password to manage your books.</p>
+
+            <form class="mt-8" th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="email" th:text="#{auth.email}">Email address</label>
+                    <div class="input-group">
+                        <span class="input-prefix"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-mail"/></svg></span>
+                        <input class="form-control" id="email" type="email" name="username" autocomplete="username"
+                               th:placeholder="#{auth.emailPlaceholder}" required autofocus>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label" for="password" th:text="#{auth.password}">Password</label>
+                        <a class="text-sm link" th:href="@{/forgot-password}" th:text="#{auth.forgotPassword}">Forgot password?</a>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-prefix"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-lock"/></svg></span>
+                        <input class="form-control" id="password" type="password" name="password"
+                               autocomplete="current-password" th:placeholder="#{auth.passwordPlaceholder}" required>
+                    </div>
+                </div>
+
+                <div class="alert alert--error" th:if="${param.error}">
+                    <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+                    <div class="alert-body">
+                        <span th:text="#{login.error}">Invalid email address or password.</span>
+                        <a class="link" th:href="@{/forgot-password}" th:text="#{auth.resetPassword}">Reset your password</a>
+                    </div>
+                </div>
+
+                <div class="alert alert--success" th:if="${param.registered}">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <div class="alert-body">
+                        <span th:text="#{login.registered}">Your account was created. Please sign in.</span>
+                    </div>
+                </div>
+
+                <div class="alert alert--success" th:if="${param.logout}">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <div class="alert-body">
+                        <span th:text="#{login.loggedOut}">You've been signed out.</span>
+                    </div>
+                </div>
+
+                <div class="alert alert--success" th:if="${param.reset}">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <div class="alert-body">
+                        <span th:text="#{login.reset}">Your password was updated. Please sign in with your new password.</span>
+                    </div>
+                </div>
+
+                <label class="switch mb-6">
+                    <input type="checkbox" name="remember-me"><span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{auth.keepSignedIn}">Keep me signed in</span>
+                </label>
+
+                <button class="btn btn-primary btn-block btn-lg" type="submit">
+                    <span th:text="#{auth.signIn}">Sign in</span>
+                    <svg class="ebook-icon"><use href="#icon-arrow-right"/></svg>
+                </button>
+            </form>
+
+            <div class="d-flex align-items-center gap-3 my-6">
+                <hr style="flex:1">
+                <span class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em" th:text="#{auth.or}">or</span>
+                <hr style="flex:1">
+            </div>
+
+            <div class="grid grid-2 gap-3">
+                <button class="btn btn-secondary" type="button">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-phone"/></svg>
+                    <span th:text="#{auth.signInPhone}">Sign in with phone</span>
+                </button>
+                <button class="btn btn-secondary" type="button">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-key"/></svg>
+                    <span th:text="#{auth.signInCode}">Sign in with code</span>
+                </button>
+            </div>
+
+            <p class="text-sm text-center mt-8 mb-0 text-muted">
+                <span th:text="#{auth.newHere}">New to Ebook Online?</span>
+                <a class="link font-semibold" th:href="@{/register}" th:text="#{auth.freeTrial}">Start a free trial</a>
+            </p>
+        </div>
+    </main>
+</div>
+
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" th:replace="~{layout/icons :: sprite}"></svg>
+
+<script th:src="@{/js/ebook.js}" defer></script>
+</body>
+</html>

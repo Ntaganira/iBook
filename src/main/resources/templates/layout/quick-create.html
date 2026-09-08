@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<!-- Quick create command menu -->
+<div class="quick-create-menu" id="quickCreateMenu" th:fragment="menu" role="dialog" th:aria-label="#{quick.aria}">
+    <div class="quick-create-search">
+        <svg class="ebook-icon"><use href="#icon-search"/></svg>
+        <input type="text" th:placeholder="#{quick.filter}" autocomplete="off">
+    </div>
+
+    <div class="quick-create-group" th:text="#{quick.sell}">Sell</div>
+    <a class="quick-create-item" th:href="@{/invoices/new}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{quick.invoice}">Invoice</span></a>
+    <a class="quick-create-item" th:href="@{/sales/estimates/new}"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{quick.estimate}">Estimate</span></a>
+    <a class="quick-create-item" th:href="@{/sales/payments/new}"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg><span th:text="#{quick.receivePayment}">Receive payment</span></a>
+    <a class="quick-create-item" th:href="@{/customers/new}"><svg class="ebook-icon"><use href="#icon-users"/></svg><span th:text="#{quick.customer}">Customer</span></a>
+
+    <div class="quick-create-group" th:text="#{quick.buy}">Buy</div>
+    <a class="quick-create-item" th:href="@{/bills/new}"><svg class="ebook-icon"><use href="#icon-file-minus"/></svg><span th:text="#{quick.bill}">Bill</span></a>
+    <a class="quick-create-item" th:href="@{/purchases/expenses/new}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{quick.expense}">Expense</span></a>
+    <a class="quick-create-item" th:href="@{/vendors/new}"><svg class="ebook-icon"><use href="#icon-user"/></svg><span th:text="#{quick.supplier}">Supplier</span></a>
+
+    <div class="quick-create-group" th:text="#{quick.products}">Products</div>
+    <a class="quick-create-item" th:href="@{/inventory/products/new}"><svg class="ebook-icon"><use href="#icon-box"/></svg><span th:text="#{quick.product}">Product</span></a>
+    <a class="quick-create-item" th:href="@{/inventory/counts/new}"><svg class="ebook-icon"><use href="#icon-clipboard-list"/></svg><span th:text="#{quick.stockCount}">Stock count</span></a>
+
+    <div class="quick-create-group" th:text="#{quick.manage}">Manage</div>
+    <a class="quick-create-item" th:href="@{/journals/new}"><svg class="ebook-icon"><use href="#icon-pen-line"/></svg><span th:text="#{quick.journalEntry}">Journal entry</span></a>
+    <a class="quick-create-item" th:href="@{/payroll/employees/new}"><svg class="ebook-icon"><use href="#icon-id-card"/></svg><span th:text="#{quick.employee}">Employee</span></a>
+    <a class="quick-create-item" th:href="@{/projects/new}"><svg class="ebook-icon"><use href="#icon-briefcase"/></svg><span th:text="#{quick.project}">Project</span></a>
+</div>
+</body>
+</html>

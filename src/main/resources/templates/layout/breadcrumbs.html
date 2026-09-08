@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}" th:fragment="breadcrumbs">
+    <th:block th:each="item, stat : ${breadcrumbs}">
+        <th:block th:if="${stat.last}">
+            <span class="current" th:text="${item.label}">Current page</span>
+        </th:block>
+        <th:block th:unless="${stat.last}">
+            <a th:href="${item.url}" th:text="${item.label}">Section</a>
+            <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        </th:block>
+    </th:block>
+</nav>
+</body>
+</html>

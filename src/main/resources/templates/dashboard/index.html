@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{dash.pageTitle}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <!-- Page header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{dash.greeting}">Good morning, John</h1>
+            <p class="page-subtitle" th:text="#{dash.subtitle('07 Sep 2026')}">Here's how your business performed this month as of <strong>07 Sep 2026</strong>.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon"><use href="#icon-calendar"/></svg>
+                    <span th:text="#{common.thisFinancialYear}">This financial year</span>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{dash.reportingPeriod}">Reporting period</div>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisMonth}">This month</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.lastMonth}">Last month</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisQuarter}">This quarter</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisFinancialYear}">This financial year</button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" type="button" th:text="#{common.range}">Custom range…</button>
+                </div>
+            </div>
+            <a class="btn btn-secondary" th:href="@{/reports}">
+                <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                <span th:text="#{common.export}">Export</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="grid grid-4 kpi-grid mb-5">
+        <div class="kpi-card kpi-card--revenue">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.totalRevenue}">Total Revenue</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-trending-up"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 48,250,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>12.4%</span>
+                <span class="kpi-compare" th:text="#{dash.vsLastMonth}">vs last month</span>
+            </div>
+            <div class="kpi-spark"><canvas id="sparkRevenue"></canvas></div>
+        </div>
+
+        <div class="kpi-card kpi-card--expenses">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.totalExpenses}">Total Expenses</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-trending-down"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 31,840,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta up" style="color:var(--success-700);background:var(--success-50)"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-down"/></svg>3.1%</span>
+                <span class="kpi-compare" th:text="#{dash.vsLastMonth}">vs last month</span>
+            </div>
+            <div class="kpi-spark"><canvas id="sparkExpenses"></canvas></div>
+        </div>
+
+        <div class="kpi-card kpi-card--profit">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.netProfit}">Net Profit</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-pie-chart"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 16,410,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>28.9%</span>
+                <span class="kpi-compare" th:text="#{dash.profitMargin('34%')}">profit margin 34%</span>
+            </div>
+            <div class="kpi-spark"><canvas id="sparkProfit"></canvas></div>
+        </div>
+
+        <div class="kpi-card kpi-card--cash">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.cashBalance}">Cash Balance</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-bank"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 22,780,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta flat"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-minus"/></svg>0.0%</span>
+                <span class="kpi-compare" th:text="#{dash.acrossAccounts}">across 4 accounts</span>
+            </div>
+            <div class="kpi-spark"><canvas id="sparkCash"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Secondary KPIs -->
+    <div class="grid grid-3 mb-5">
+        <div class="kpi-card kpi-card--ar">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.accountsReceivable}">Accounts Receivable</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-users"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 25,400,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>6.2%</span>
+                <span class="kpi-compare"><a href="#" class="text-info" th:text="#{dash.overdue('RWF 4,200,000')}">RWF 4,200,000 overdue</a></span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-card--ap">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.accountsPayable}">Accounts Payable</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-truck"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 12,950,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta down"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-down"/></svg>4.8%</span>
+                <span class="kpi-compare"><a href="#" class="text-info" th:text="#{dash.dueSoon('RWF 1,300,000')}">RWF 1,300,000 due soon</a></span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-card--inventory">
+            <div class="kpi-top">
+                <span class="kpi-label" th:text="#{dash.inventoryValue}">Inventory Value</span>
+                <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-box"/></svg></span>
+            </div>
+            <div class="kpi-value">RWF 9,640,000</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>2.3%</span>
+                <span class="kpi-compare" th:text="#{dash.unitsInStock('1,240')}">1,240 units in stock</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts row 1 -->
+    <div class="grid grid-12 mb-5">
+        <div class="card col-span-8">
+            <div class="card-header">
+                <div>
+                    <h3 th:text="#{dash.revenueVsExpenses}">Revenue vs Expenses</h3>
+                    <div class="card-subtitle" th:text="#{dash.monthlyComparison}">Monthly comparison for the current financial year</div>
+                </div>
+                <div class="chart-legend">
+                    <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--chart-1)"></span><span th:text="#{dash.revenue}">Revenue</span></span>
+                    <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--chart-3)"></span><span th:text="#{dash.expenses}">Expenses</span></span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-box"><canvas id="chartRevenueExpenses"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card col-span-4">
+            <div class="card-header">
+                <div>
+                    <h3 th:text="#{dash.receivablesAging}">Receivables Aging</h3>
+                    <div class="card-subtitle" th:text="#{dash.outstandingBalances}">Outstanding customer balances</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-box"><canvas id="chartAging"></canvas></div>
+                <div class="d-flex justify-content-between mt-4 pt-3" style="border-top:1px solid var(--border)">
+                    <div>
+                        <div class="text-xs text-muted" th:text="#{dash.totalOutstanding}">Total outstanding</div>
+                        <div class="text-lg font-bold money">RWF 25.4M</div>
+                    </div>
+                    <a class="btn btn-soft btn-sm" th:href="@{/sales/aging}" th:text="#{dash.viewAging}">View aging</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts row 2 -->
+    <div class="grid grid-12 mb-5">
+        <div class="card col-span-4">
+            <div class="card-header">
+                <h3 th:text="#{dash.cashFlow}">Cash Flow</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-box"><canvas id="chartCashFlow"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card col-span-4">
+            <div class="card-header">
+                <h3 th:text="#{dash.profitTrend}">Profit Trend</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-box"><canvas id="chartProfit"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card col-span-4">
+            <div class="card-header">
+                <h3 th:text="#{dash.expenseBreakdown}">Expense Breakdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-box"><canvas id="chartExpenses"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom row: recent activity + cash flow planner -->
+    <div class="grid grid-12">
+        <div class="card col-span-7">
+            <div class="card-header">
+                <div>
+                    <h3 th:text="#{dash.recentActivity}">Recent Activity</h3>
+                    <div class="card-subtitle" th:text="#{dash.latestTransactions}">Latest transactions across your business</div>
+                </div>
+                <a class="btn btn-ghost btn-sm" th:href="@{/activity}" th:text="#{common.viewAll}">View all</a>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{common.date}">Date</th>
+                            <th th:text="#{common.reference}">Reference</th>
+                            <th th:text="#{common.description}">Description</th>
+                            <th th:text="#{common.account}">Account</th>
+                            <th class="num" th:text="#{common.amount}">Amount</th>
+                            <th class="num" th:text="#{common.status}">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="cell-secondary" style="font-size:var(--fs-md)">07 Sep</td>
+                            <td><a class="cell-link" th:href="@{/invoices/450}">INV-2026-00450</a></td>
+                            <td><span class="cell-primary">Gorilla Retreat Ltd</span></td>
+                            <td class="cell-secondary">2010 Accounts Receivable</td>
+                            <td class="num money money-positive">+RWF 860,000</td>
+                            <td class="num"><span class="badge badge-paid" th:text="#{common.status.paid}">Paid</span></td>
+                        </tr>
+                        <tr>
+                            <td class="cell-secondary" style="font-size:var(--fs-md)">06 Sep</td>
+                            <td><a class="cell-link" th:href="@{/bills/211}">BILL-2026-00211</a></td>
+                            <td><span class="cell-primary">Zanazi Suppliers</span></td>
+                            <td class="cell-secondary">2200 Accounts Payable</td>
+                            <td class="num money money-negative">-RWF 1,150,000</td>
+                            <td class="num"><span class="badge badge-pending" th:text="#{common.status.pending}">Pending</span></td>
+                        </tr>
+                        <tr>
+                            <td class="cell-secondary" style="font-size:var(--fs-md)">05 Sep</td>
+                            <td><a class="cell-link" th:href="@{/banking/transactions/9082}">TXN-2026-09082</a></td>
+                            <td><span class="cell-primary">MTN MoMo cash-in</span></td>
+                            <td class="cell-secondary">1105 MTN MoMo</td>
+                            <td class="num money money-positive">+RWF 1,200,000</td>
+                            <td class="num"><span class="badge badge-success" th:text="#{common.status.matched}">Matched</span></td>
+                        </tr>
+                        <tr>
+                            <td class="cell-secondary" style="font-size:var(--fs-md)">04 Sep</td>
+                            <td><a class="cell-link" th:href="@{/purchases/expenses/919}">EXP-2026-00919</a></td>
+                            <td><span class="cell-primary">Fuel &amp; transport</span></td>
+                            <td class="cell-secondary">7100 Transport</td>
+                            <td class="num money money-negative">-RWF 84,500</td>
+                            <td class="num"><span class="badge badge-approved" th:text="#{common.status.approved}">Approved</span></td>
+                        </tr>
+                        <tr>
+                            <td class="cell-secondary" style="font-size:var(--fs-md)">03 Sep</td>
+                            <td><a class="cell-link" th:href="@{/sales/payments/318}">PAY-2026-00318</a></td>
+                            <td><span class="cell-primary">ABC Construction Ltd</span></td>
+                            <td class="cell-secondary">2010 Accounts Receivable</td>
+                            <td class="num money money-positive">+RWF 2,400,000</td>
+                            <td class="num"><span class="badge badge-paid" th:text="#{common.status.recorded}">Recorded</span></td>
+                        </tr>
+                        <tr>
+                            <td class="cell-secondary" style="font-size:var(--fs-md)">02 Sep</td>
+                            <td><a class="cell-link" th:href="@{/invoices/448}">INV-2026-00448</a></td>
+                            <td><span class="cell-primary">Kivu Fresh Ltd</span></td>
+                            <td class="cell-secondary">2010 Accounts Receivable</td>
+                            <td class="num money money-positive">+RWF 540,000</td>
+                            <td class="num"><span class="badge badge-sent" th:text="#{common.status.sent}">Sent</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-footer">
+                <span th:text="#{dash.showingLatest('1,284')}">Showing latest 6 of 1,284 transactions</span>
+                <a class="btn btn-ghost btn-sm" th:href="@{/banking/transactions}" th:text="#{dash.allTransactions}">All transactions</a>
+            </div>
+        </div>
+
+        <div class="col-span-5 d-flex flex-column gap-5">
+            <!-- Cash flow planner -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 th:text="#{dash.cashFlowPlanner}">Cash Flow Planner</h3>
+                        <div class="card-subtitle" th:text="#{dash.projectedCash}">Projected cash position over 6 weeks</div>
+                    </div>
+                    <span class="badge badge-info" th:text="#{dash.forecast}">Forecast</span>
+                </div>
+                <div class="card-body">
+                    <div class="stat-grid" style="grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+                        <div class="stat-tile" style="border:none;padding:0">
+                            <div class="stat-tile-label" th:text="#{dash.inflow6w}">Inflow (6w)</div>
+                            <div class="stat-tile-value money money-positive">RWF 18.2M</div>
+                        </div>
+                        <div class="stat-tile" style="border:none;padding:0">
+                            <div class="stat-tile-label" th:text="#{dash.outflow6w}">Outflow (6w)</div>
+                            <div class="stat-tile-value money money-negative">-RWF 14.6M</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="text-sm text-secondary" th:text="#{dash.projectedSurplus}">Projected surplus</span>
+                        <span class="text-lg font-bold money money-positive">RWF 3.6M</span>
+                    </div>
+                    <a class="btn btn-soft btn-sm mt-3" th:href="@{/budgets/cash-flow-forecast}" th:text="#{dash.openPlanner}">Open planner</a>
+                </div>
+            </div>
+
+            <!-- AI insight -->
+            <div class="card" style="border-color:var(--primary-200)">
+                <div class="card-header" style="border-bottom:0">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="notification-icon notification-icon--info"><svg class="ebook-icon"><use href="#icon-sparkles"/></svg></span>
+                        <h3 th:text="#{dash.aiFinancialInsight}">AI Financial Insight</h3>
+                    </div>
+                    <span class="badge badge-info" th:text="#{dash.confidence('P95')}">P95 confidence</span>
+                </div>
+                <div class="card-body" style="padding-top:0">
+                    <p class="text-md text-secondary" style="line-height:var(--lh-relaxed)"
+                       th:text="#{dash.aiInsightText('ABC Construction Ltd', 'RWF 4.2M')}">
+                        Your receivables from <strong>ABC Construction Ltd</strong> (RWF 4.2M) are trending 60% past
+                        the typical collection window. Consider a scheduled reminder or phone follow-up this week.
+                    </p>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-primary btn-sm" type="button" data-open-drawer="aiDrawer">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-robot"/></svg>
+                            <span th:text="#{dash.askAi}">Ask AI</span>
+                        </button>
+                        <a class="btn btn-secondary btn-sm" th:href="@{/sales/collections}" th:text="#{dash.viewCollections}">View collections</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Taxes due -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 th:text="#{dash.upcomingTax}">Upcoming Tax</h3>
+                        <div class="card-subtitle" th:text="#{dash.vatReturn('August 2026')}">VAT return — period August 2026</div>
+                    </div>
+                    <span class="badge badge-warning" th:text="#{dash.due('15 Sep')}">Due 15 Sep</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-md" th:text="#{dash.vatCollected}">VAT collected</span>
+                        <span class="text-md font-semibold money">RWF 7,420,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2" style="border-top:1px solid var(--border)">
+                        <span class="text-md" th:text="#{dash.vatPaid}">VAT paid</span>
+                        <span class="text-md font-semibold money">RWF 4,180,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2" style="border-top:1px solid var(--border)">
+                        <span class="text-md font-bold" th:text="#{dash.vatPayable}">VAT payable</span>
+                        <span class="text-md font-bold money text-info">RWF 3,240,000</span>
+                    </div>
+                    <a class="btn btn-secondary btn-sm mt-3" th:href="@{/taxes/vat}" th:text="#{dash.prepareFiling}">Prepare filing</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI assistant drawer -->
+    <aside class="drawer drawer--right drawer--wide" id="aiDrawer" th:aria-label="#{dash.askEbookAi}">
+        <div class="drawer-header">
+            <div class="d-flex align-items-center gap-2">
+                <span class="notification-icon notification-icon--info"><svg class="ebook-icon"><use href="#icon-robot"/></svg></span>
+                <div>
+                    <h3 th:text="#{dash.askEbookAi}">Ask Ebook AI</h3>
+                    <div class="card-subtitle" th:text="#{dash.aiSubtitle}">Financial summaries, forecasts &amp; recommendations</div>
+                </div>
+            </div>
+            <button class="modal-close" type="button" data-close-drawer th:aria-label="#{common.ariaClose}">
+                <svg class="ebook-icon"><use href="#icon-x"/></svg>
+            </button>
+        </div>
+        <div class="drawer-body d-flex flex-column gap-4">
+            <div class="chat-prompt">
+                <div class="form-group mb-2">
+                    <textarea class="form-control" th:placeholder="#{dash.aiPlaceholder}" rows="3"></textarea>
+                </div>
+                <button class="btn btn-primary w-100" type="button"><svg class="ebook-icon"><use href="#icon-send"/></svg><span th:text="#{dash.ask}">Ask</span></button>
+            </div>
+            <div class="text-sm text-muted text-center" th:text="#{dash.suggestedQuestions}">Suggested questions</div>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn btn-soft justify-content-start" type="button" th:text="#{dash.qCashFlow}">How is our cash flow looking this quarter?</button>
+                <button class="btn btn-soft justify-content-start" type="button" th:text="#{dash.qLateCustomers}">Which customers are late on payments?</button>
+                <button class="btn btn-soft justify-content-start" type="button" th:text="#{dash.qExpenses}">Summarize last month's expenses by category.</button>
+            </div>
+        </div>
+    </aside>
+
+</main>
+</body>
+</html>

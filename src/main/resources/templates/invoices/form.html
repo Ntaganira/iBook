@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/invoices}" th:text="#{inv.title}">Invoices</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.form.breadcrumb}">New invoice</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.form.title}">New Invoice</h1>
+            <p class="page-subtitle" th:utext="#{inv.form.subtitle('INV-2026-00452')}">Next number <strong>INV-2026-00452</strong></p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-ghost" type="submit" form="invoiceForm" name="action" value="save-draft">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{inv.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-soft" type="submit" form="invoiceForm" name="action" value="approve">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{inv.savePreview}">Save &amp; preview</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="invoiceForm" name="action" value="send">
+                <svg class="ebook-icon"><use href="#icon-send"/></svg>
+                <span th:text="#{inv.saveSend}">Save &amp; send</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="invoiceForm" th:action="@{/invoices}" method="post" novalidate>
+        <div class="grid grid-12">
+
+            <div class="col-span-8 d-flex flex-column gap-5">
+
+                <!-- Customer & details -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{inv.details}">Invoice details</h3>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="invoiceCustomer"><span th:text="#{inv.customerLabel}">Customer</span> <span class="required">*</span></label>
+                                <select class="form-control" id="invoiceCustomer" name="customerId" data-choices required>
+                                    <option value="" th:text="#{inv.selectCustomer}">Select a customer…</option>
+                                    <option value="1">ABC Construction Ltd</option>
+                                    <option value="2">Gorilla Retreat Ltd</option>
+                                    <option value="3">Kivu Fresh Ltd</option>
+                                    <option value="4">Rwanda Artisan Co-op</option>
+                                    <option value="5">Chantal Designs</option>
+                                    <option value="6">Mountance Logistics</option>
+                                </select>
+                                <div class="form-hint"><a th:href="@{/customers/new}" class="text-info" th:text="#{inv.addCustomer}">+ Add a new customer</a></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="invoiceCurrency" th:text="#{inv.currency}">Currency</label>
+                                <select class="form-control" id="invoiceCurrency" name="currencyCode">
+                                    <option value="RWF" selected>RWF — Rwandan Franc</option>
+                                    <option value="USD">USD — US Dollar</option>
+                                    <option value="EUR">EUR — Euro</option>
+                                    <option value="UGX">UGX — Uganda Shilling</option>
+                                    <option value="KES">KES — Kenyan Shilling</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="invoiceDate" th:text="#{inv.invoiceDate}">Invoice date</label>
+                                <input class="form-control" id="invoiceDate" name="invoiceDate" type="date" value="2026-09-07">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="invoiceDueDate" th:text="#{inv.dueDate}">Due date</label>
+                                <input class="form-control" id="invoiceDueDate" name="dueDate" type="date" value="2026-09-22">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="invoiceTerms" th:text="#{inv.paymentTerms}">Payment terms</label>
+                                <select class="form-control" id="invoiceTerms" name="paymentTerms">
+                                    <option th:text="#{cust.dueOnReceipt}">Due on receipt</option>
+                                    <option th:text="#{cust.net7}">Net 7</option>
+                                    <option th:text="#{cust.net15}" selected>Net 15</option>
+                                    <option th:text="#{cust.net30}">Net 30</option>
+                                    <option th:text="#{cust.net45}">Net 45</option>
+                                    <option th:text="#{cust.net60}">Net 60</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="invoiceReference" th:text="#{inv.reference}">Reference / PO number</label>
+                                <input class="form-control" id="invoiceReference" name="poReference" type="text"
+                                       th:placeholder="#{inv.referencePlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Line items -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{inv.lineItems}">Line items</h3>
+                            <div class="card-subtitle" th:text="#{inv.productsHint}">Products, services and taxes</div>
+                        </div>
+                        <button class="btn btn-soft btn-sm" type="button">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
+                            <span th:text="#{inv.addItem}">Add item</span>
+                        </button>
+                    </div>
+                    <div class="card-body" style="padding:0">
+                        <div class="table-wrap">
+                            <table class="table" id="invoiceLinesTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:36%" th:text="#{inv.itemDescription}">Item / description</th>
+                                        <th th:text="#{inv.qty}">Qty</th>
+                                        <th style="width:15%" th:text="#{inv.unitPrice}">Unit price</th>
+                                        <th th:text="#{inv.tax}">Tax</th>
+                                        <th class="num" style="width:15%" th:text="#{inv.amount}">Amount</th>
+                                        <th class="actions-cell"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Line 1 -->
+                                    <tr class="invoice-line">
+                                        <td>
+                                            <select class="form-control" name="items[0].productId" style="height:34px;font-size:var(--fs-sm)">
+                                                <option value="" th:text="#{inv.selectProduct}">Select product or service…</option>
+                                                <option>Site survey &amp; consultation</option>
+                                                <option selected>Construction supervision</option>
+                                                <option>Civil works — per m²</option>
+                                                <option>Transport &amp; logistics</option>
+                                            </select>
+                                            <input class="form-control mt-1" name="items[0].description" type="text"
+                                                   th:placeholder="#{inv.descriptionPlaceholder}" style="height:32px;font-size:var(--fs-sm)">
+                                        </td>
+                                        <td>
+                                            <input class="form-control num" name="items[0].quantity" type="number"
+                                                   value="40" min="0.01" style="width:72px;height:34px;font-size:var(--fs-sm)">
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <span class="input-prefix" style="font-size:var(--fs-sm)">RWF</span>
+                                                <input class="form-control num" name="items[0].unitPrice" type="number"
+                                                       value="25000" min="0" step="0.01" style="height:34px;font-size:var(--fs-sm);padding-left:52px">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select class="form-control" name="items[0].taxCode" style="height:34px;font-size:var(--fs-sm);width:88px">
+                                                <option value="0">0%</option>
+                                                <option value="18" selected>18%</option>
+                                            </select>
+                                        </td>
+                                        <td class="num money font-semibold">RWF 1,000,000</td>
+                                        <td class="actions-cell">
+                                            <button class="row-actions-btn" type="button" th:title="#{inv.removeLine}"><svg class="ebook-icon"><use href="#icon-trash"/></svg></button>
+                                        </td>
+                                    </tr>
+                                    <!-- Line 2 -->
+                                    <tr class="invoice-line">
+                                        <td>
+                                            <select class="form-control" name="items[1].productId" style="height:34px;font-size:var(--fs-sm)">
+                                                <option value="" th:text="#{inv.selectProduct}">Select product or service…</option>
+                                                <option>Site survey &amp; consultation</option>
+                                                <option>Construction supervision</option>
+                                                <option selected>Civil works — per m²</option>
+                                                <option>Transport &amp; logistics</option>
+                                            </select>
+                                            <input class="form-control mt-1" name="items[1].description" type="text"
+                                                   placeholder="VAT inclusive" style="height:32px;font-size:var(--fs-sm)">
+                                        </td>
+                                        <td>
+                                            <input class="form-control num" name="items[1].quantity" type="number"
+                                                   value="1" min="0.01" style="width:72px;height:34px;font-size:var(--fs-sm)">
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <span class="input-prefix" style="font-size:var(--fs-sm)">RWF</span>
+                                                <input class="form-control num" name="items[1].unitPrice" type="number"
+                                                       value="150000" min="0" step="0.01" style="height:34px;font-size:var(--fs-sm);padding-left:52px">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select class="form-control" name="items[1].taxCode" style="height:34px;font-size:var(--fs-sm);width:88px">
+                                                <option value="0">0%</option>
+                                                <option value="18" selected>18%</option>
+                                            </select>
+                                        </td>
+                                        <td class="num money font-semibold">RWF 150,000</td>
+                                        <td class="actions-cell">
+                                            <button class="row-actions-btn" type="button" th:title="#{inv.removeLine}"><svg class="ebook-icon"><use href="#icon-trash"/></svg></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-5">
+                            <button class="btn btn-ghost btn-sm" type="button">
+                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
+                                <span th:text="#{inv.addAnotherLine}">Add another line</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Totals -->
+                <div class="card p-6">
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-md text-secondary" th:text="#{inv.subtotal}">Subtotal</span>
+                        <span class="text-md font-semibold money">RWF 1,150,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-md text-secondary" th:text="#{inv.discount}">Discount</span>
+                        <span class="text-md font-semibold money money-negative">-RWF 0</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-md text-secondary" th:text="#{inv.vat('18')}">VAT (18%)</span>
+                        <span class="text-md font-semibold money">RWF 207,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-3 mt-2" style="border-top:2px solid var(--border-strong)">
+                        <span class="text-lg font-bold" th:text="#{inv.total}">Total</span>
+                        <span class="text-lg font-bold money">RWF 1,357,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-sm text-muted" th:text="#{inv.amountDue}">Amount due</span>
+                        <span class="text-sm font-semibold money">RWF 1,357,000</span>
+                    </div>
+
+                    <div class="form-grid mt-4">
+                        <div class="form-group">
+                            <label class="form-label" for="invoiceDiscountType" th:text="#{inv.discount}">Discount</label>
+                            <div class="input-group">
+                                <input class="form-control" id="invoiceDiscountType" type="number" value="0" min="0">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="invoiceMessage" th:text="#{inv.customerMessage}">Customer message</label>
+                            <textarea class="form-control" id="invoiceMessage" name="message"
+                                      th:placeholder="#{inv.messagePlaceholder}" data-autosize></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attachments -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{inv.attachments}">Attachments</h3>
+                            <div class="card-subtitle" th:text="#{inv.attachmentsHint}">Supporting documents for this invoice</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="dropzone" style="border:2px dashed var(--border-strong);border-radius:var(--radius-lg);padding:var(--sp-8);text-align:center;color:var(--text-muted)">
+                            <svg class="ebook-icon ebook-icon--xl mb-2" style="color:var(--neutral-400)"><use href="#icon-cloud-upload"/></svg>
+                            <p class="text-md mb-1"><strong th:text="#{inv.dropzone}">Drag &amp; drop</strong> <span th:text="#{inv.browse}">files here or browse</span></p>
+                            <p class="text-xs" th:text="#{inv.dropzoneHint}">PDF, PNG, JPG up to 5MB</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right rail -->
+            <div class="col-span-4 gap-5">
+                <div class="sticky-wrap d-flex flex-column gap-5 position-sticky" style="top:calc(var(--topbar-height) + var(--sp-6))">
+
+                    <!-- Live preview -->
+                    <section class="card overflow-hidden">
+                        <div class="card-header" style="background:var(--surface-muted)">
+                            <h3 class="text-md" th:text="#{inv.preview}">Invoice preview</h3>
+                            <button class="modal-close" type="button" th:title="#{inv.previewPdf}">
+                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-maximize"/></svg>
+                            </button>
+                        </div>
+                        <div class="card-body" style="padding:var(--sp-5)">
+                            <div class="d-flex justify-content-between mb-4">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <svg class="ebook-icon ebook-icon--lg" style="color:var(--primary-700)"><use href="#icon-logo"/></svg>
+                                        <span class="font-bold">Ebook Online</span>
+                                    </div>
+                                    <div class="text-xs text-muted">www.mycompany.rw</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold" style="color:var(--primary-700)">INV-2026-00452</div>
+                                    <div class="text-xs text-muted">07 Sep 2026</div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-4" style="font-size:var(--fs-xs)">
+                                <div class="text-muted">
+                                    <div class="font-semibold text-secondary" th:text="#{inv.billTo}">Bill to</div>
+                                    <div class="mt-1">Customer name</div>
+                                    <div>KG 5 RD, Kigali</div>
+                                </div>
+                                <div class="text-muted text-right">
+                                    <div class="font-semibold text-secondary" th:text="#{inv.due}">Due</div>
+                                    <div class="mt-1">22 Sep 2026</div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between py-2" style="font-size:var(--fs-xs)">
+                                <span class="text-muted" th:text="#{inv.subtotal}">Subtotal</span><span class="money">RWF 1,150,000</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-2" style="font-size:var(--fs-xs)">
+                                <span class="text-muted" th:text="#{inv.tax}">VAT</span><span class="money">RWF 207,000</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-2 mt-1" style="border-top:1px solid var(--border);font-size:var(--fs-sm);font-weight:700">
+                                <span th:text="#{inv.total}">Total</span><span class="money">RWF 1,357,000</span>
+                            </div>
+                        </div>
+                        <div class="card-footer" style="background:var(--surface-muted)">
+                            <button class="btn btn-secondary btn-sm flex-1" type="button"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-eye"/></svg><span th:text="#{inv.previewPdf}">Preview PDF</span></button>
+                        </div>
+                    </section>
+
+                    <!-- Payment link -->
+                    <section class="section">
+                        <div class="section-header"><h3 class="text-md" th:text="#{inv.paymentLink}">Payment link</h3></div>
+                        <div class="section-body">
+                            <label class="switch w-100 justify-content-between" style="cursor:default">
+                                <span class="switch-label" th:text="#{inv.enablePaymentLink}">Enable payment link</span>
+                                <input type="checkbox" checked><span class="switch-track"></span>
+                            </label>
+                            <p class="text-xs text-muted mt-1" th:text="#{inv.paymentLinkHint}">Customers can pay instantly via MTN MoMo, Airtel Money or card.</p>
+                        </div>
+                    </section>
+
+                    <!-- EBM -->
+                    <section class="section">
+                        <div class="section-header"><h3 class="text-md" th:text="#{inv.rraEbm}">RRA EBM</h3></div>
+                        <div class="section-body">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge badge-info" th:text="#{inv.eInvoiceReady}">E-invoice ready</span>
+                                <label class="switch ml-auto">
+                                    <input type="checkbox" checked><span class="switch-track"></span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-muted mt-1" th:text="#{inv.ebmSubmitHint}">Submit to RRA EBM when invoice is sent.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

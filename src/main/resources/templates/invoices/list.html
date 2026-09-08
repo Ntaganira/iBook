@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.title}">Invoices</h1>
+            <p class="page-subtitle" th:text="#{inv.subtitle}">Create and track all sales invoices.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                    <span th:text="#{common.export}">Export</span>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{common.exportCsv}">Export CSV</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{common.exportExcel}">Export Excel</span></button>
+                </div>
+            </div>
+            <a class="btn btn-primary" th:href="@{/invoices/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{inv.new}">New Invoice</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs by status -->
+    <div class="tabs" data-tabs>
+        <button class="tab active" type="button" data-tab="all"><span th:text="#{inv.all}">All</span> <span class="tab-count">452</span></button>
+        <button class="tab" type="button" data-tab="draft"><span th:text="#{common.status.draft}">Draft</span> <span class="tab-count">8</span></button>
+        <button class="tab" type="button" data-tab="sent"><span th:text="#{common.status.sent}">Sent</span> <span class="tab-count">46</span></button>
+        <button class="tab" type="button" data-tab="partial"><span th:text="#{common.status.partiallyPaid}">Partially paid</span> <span class="tab-count">12</span></button>
+        <button class="tab" type="button" data-tab="paid"><span th:text="#{common.status.paid}">Paid</span> <span class="tab-count">371</span></button>
+        <button class="tab" type="button" data-tab="overdue"><span th:text="#{common.status.overdue}">Overdue</span> <span class="tab-count">15</span></button>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.totalOutstanding}">Total outstanding</div>
+            <div class="stat-tile-value money">RWF 25,400,000</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.invoicedMonth}">Invoiced this month</div>
+            <div class="stat-tile-value money">RWF 19,840,000</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.overdueAmount}">Overdue amount</div>
+            <div class="stat-tile-value money text-error">RWF 4,200,000</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.avgDaysToPay}">Avg. days to pay</div>
+            <div class="stat-tile-value">18.3</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="table-toolbar">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" th:placeholder="#{inv.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.status}">Status</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{inv.invoiceStatus}">Invoice status</div>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.draft}">Draft</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.sent}">Sent</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.partiallyPaid}">Partially paid</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.paid}">Paid</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.overdue}">Overdue</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.void}">Void</button>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-calendar"/></svg>
+                    <span th:text="#{inv.dateRange}">Date range</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{common.period}">Period</div>
+                    <button class="dropdown-item" type="button" th:text="#{common.today}">Today</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisWeek}">This week</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisMonth}">This month</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisQuarter}">This quarter</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.thisFinancialYear}">This financial year</button>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" th:title="#{common.ariaRefresh}"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg></button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:text="#{inv.showing('1–25', '452')}">Showing 1–25 of 452</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.invoice}">Invoice</th>
+                        <th th:text="#{inv.customer}">Customer</th>
+                        <th th:text="#{inv.issued}">Issued</th>
+                        <th th:text="#{inv.due}">Due</th>
+                        <th class="num" th:text="#{common.amount}">Amount</th>
+                        <th class="num" th:text="#{inv.openBalance}">Open balance</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a class="cell-link" th:href="@{/invoices/451}">INV-2026-00451</a><span class="cell-secondary">EBM ref 2026-09087-112</span></td>
+                        <td><span class="cell-primary">ABC Construction Ltd</span></td>
+                        <td class="cell-secondary">01 Sep 2026</td>
+                        <td class="cell-secondary">15 Sep 2026</td>
+                        <td class="num money">RWF 1,250,000</td>
+                        <td class="num money">RWF 1,250,000</td>
+                        <td><span class="badge badge-overdue"><span class="badge-dot"></span><span th:text="#{common.status.overdue}">Overdue</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/451}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/451/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/451/send}"><svg class="ebook-icon"><use href="#icon-send"/></svg><span th:text="#{inv.sendReminder}">Send reminder</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/451/pdf}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{inv.downloadPdf}">Download PDF</span></a>
+                                    <a class="dropdown-item" th:href="@{/sales/payments/new?invoice=451}"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg><span th:text="#{inv.recordPayment}">Record payment</span></a>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-x"/></svg><span th:text="#{inv.voidInvoice}">Void invoice</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><a class="cell-link" th:href="@{/invoices/450}">INV-2026-00450</a></td>
+                        <td><span class="cell-primary">Gorilla Retreat Ltd</span></td>
+                        <td class="cell-secondary">01 Sep 2026</td>
+                        <td class="cell-secondary">16 Sep 2026</td>
+                        <td class="num money">RWF 860,000</td>
+                        <td class="num money">RWF 0</td>
+                        <td><span class="badge badge-paid"><span class="badge-dot"></span><span th:text="#{common.status.paid}">Paid</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/450}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/450/pdf}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{inv.downloadPdf}">Download PDF</span></a>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-x"/></svg><span th:text="#{inv.voidInvoice}">Void invoice</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><a class="cell-link" th:href="@{/invoices/449}">INV-2026-00449</a></td>
+                        <td><span class="cell-primary">Kivu Fresh Ltd</span></td>
+                        <td class="cell-secondary">31 Aug 2026</td>
+                        <td class="cell-secondary">14 Sep 2026</td>
+                        <td class="num money">RWF 540,000</td>
+                        <td class="num money">RWF 0</td>
+                        <td><span class="badge badge-sent"><span class="badge-dot"></span><span th:text="#{common.status.sent}">Sent</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/449}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/449/pdf}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{inv.downloadPdf}">Download PDF</span></a>
+                                    <a class="dropdown-item" th:href="@{/sales/payments/new?invoice=449}"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg><span th:text="#{inv.recordPayment}">Record payment</span></a>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-x"/></svg><span th:text="#{inv.voidInvoice}">Void invoice</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><a class="cell-link" th:href="@{/invoices/448}">INV-2026-00448</a></td>
+                        <td><span class="cell-primary">Chantal Designs</span></td>
+                        <td class="cell-secondary">29 Aug 2026</td>
+                        <td class="cell-secondary">30 Aug 2026</td>
+                        <td class="num money">RWF 890,000</td>
+                        <td class="num money">RWF 890,000</td>
+                        <td><span class="badge badge-overdue"><span class="badge-dot"></span><span th:text="#{common.status.overdue}">Overdue</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/448}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/448/send}"><svg class="ebook-icon"><use href="#icon-send"/></svg><span th:text="#{inv.sendReminder}">Send reminder</span></a>
+                                    <a class="dropdown-item" th:href="@{/sales/payments/new?invoice=448}"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg><span th:text="#{inv.recordPayment}">Record payment</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><a class="cell-link" th:href="@{/invoices/447}">INV-2026-00447</a></td>
+                        <td><span class="cell-primary">Mountance Logistics</span></td>
+                        <td class="cell-secondary">28 Aug 2026</td>
+                        <td class="cell-secondary">12 Sep 2026</td>
+                        <td class="num money">RWF 1,480,000</td>
+                        <td class="num money">RWF 740,000</td>
+                        <td><span class="badge badge-partially-paid"><span class="badge-dot"></span><span th:text="#{common.status.partiallyPaid}">Partially paid</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/447}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/447/pdf}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{inv.downloadPdf}">Download PDF</span></a>
+                                    <a class="dropdown-item" th:href="@{/sales/payments/new?invoice=447}"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg><span th:text="#{inv.recordPayment}">Record payment</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><a class="cell-link" th:href="@{/invoices/446}">INV-2026-00446</a></td>
+                        <td><span class="cell-primary">Rwanda Artisan Co-op</span></td>
+                        <td class="cell-secondary">27 Aug 2026</td>
+                        <td class="cell-secondary">26 Sep 2026</td>
+                        <td class="num money">RWF 620,000</td>
+                        <td class="num money">RWF 0</td>
+                        <td><span class="badge badge-paid"><span class="badge-dot"></span><span th:text="#{common.status.paid}">Paid</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/446}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/446/pdf}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{inv.downloadPdf}">Download PDF</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <span th:text="#{inv.showing('1–25', '452')}">Showing 1–25 of 452 records</span>
+            <nav class="pagination" th:aria-label="#{common.ariaPagination}">
+                <button class="page-btn" type="button" disabled><svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg></button>
+                <button class="page-btn active" type="button">1</button>
+                <button class="page-btn" type="button">2</button>
+                <button class="page-btn" type="button">3</button>
+                <button class="page-btn" type="button">4</button>
+                <span class="page-ellipsis">…</span>
+                <button class="page-btn" type="button">19</button>
+                <button class="page-btn" type="button"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg></button>
+            </nav>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

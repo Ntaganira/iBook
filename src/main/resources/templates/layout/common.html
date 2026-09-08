@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<!-- Global element: flash toasts from server (thymeleaf flash attribute) + container -->
+<div th:fragment="toasts">
+    <div id="toastContainer"></div>
+</div>
+
+<!-- Field validation errors -->
+<div th:fragment="fieldError(field)" th:if="${#fields.hasErrors(field)}">
+    <div class="form-invalid-feedback" th:each="err : ${#fields.errors(field)}">
+        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-alert-circle"/></svg>
+        <span th:text="${err}">Invalid value</span>
+    </div>
+</div>
+
+<!-- Global flash message -->
+<div th:fragment="flash">
+    <th:block th:if="${flashMessage != null}">
+        <div class="alert alert--success mb-4" th:classappend="${flashMessage.type != null ? 'alert--' + flashMessage.type : ''}">
+            <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+            <div class="alert-body">
+                <div class="alert-title" th:text="${flashMessage.title}">Saved</div>
+                <div th:if="${flashMessage.detail != null}" th:text="${flashMessage.detail}">The record was saved successfully.</div>
+            </div>
+            <button class="alert-close" type="button" data-alert-dismiss th:aria-label="#{common.ariaClose}"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-x"/></svg></button>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

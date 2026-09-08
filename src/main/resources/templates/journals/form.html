@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{je.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/journals}" th:text="#{je.title}">Journal entries</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{je.form.breadcrumb}">New entry</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{je.form.title}">New journal entry</h1>
+            <p class="page-subtitle" th:text="#{je.subtitle}">General ledger entry. Totals must balance.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-secondary" type="button" data-open-drawer="templateDrawer">
+                <svg class="ebook-icon"><use href="#icon-layers"/></svg>
+                <span th:text="#{je.useTemplate}">Use template</span>
+            </button>
+            <button class="btn btn-primary" type="button" data-open-modal="saveModal">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{je.postEntry}">Post entry</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+
+        <div class="col-span-8 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{je.entryDetails}">Entry details</h3></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="jeDate" th:text="#{je.transactionDate}">Transaction date</label>
+                            <input class="form-control" id="jeDate" type="date" value="2026-09-07">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="jeBook" th:text="#{je.journalBook}">Journal book</label>
+                            <select class="form-control" id="jeBook">
+                                <option th:text="#{je.generalJournal}">General journal</option>
+                                <option th:text="#{je.salesJournal}">Sales journal</option>
+                                <option th:text="#{je.purchasesJournal}">Purchases journal</option>
+                                <option th:text="#{je.cashReceipts}">Cash receipts</option>
+                                <option th:text="#{je.cashDisbursements}">Cash disbursements</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="jeRef" th:text="#{je.reference}">Reference</label>
+                            <input class="form-control" id="jeRef" type="text" th:placeholder="#{je.referencePlaceholder}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="jeCurrency" th:text="#{je.currency}">Currency</label>
+                            <select class="form-control" id="jeCurrency">
+                                <option selected>RWF — Rwandan Franc</option>
+                                <option>USD — US Dollar</option>
+                                <option>EUR — Euro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{je.lines}">Journal lines</h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-soft btn-sm" type="button" id="autoBalanceBtn">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-wand"/></svg>
+                            <span th:text="#{je.autoBalance}">Auto balance</span>
+                        </button>
+                        <button class="btn btn-secondary btn-sm" type="button" id="addLineBtn">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
+                            <span th:text="#{je.addLine}">Add line</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="table" id="journalLinesTable">
+                        <thead>
+                            <tr>
+                                <th class="w-4">#</th>
+                                <th class="w-55" th:text="#{je.account}">Account</th>
+                                <th th:text="#{je.memo}">Memo</th>
+                                <th class="num w-20" th:text="#{je.debit}">Debit</th>
+                                <th class="num w-20" th:text="#{je.credit}">Credit</th>
+                                <th class="actions-cell w-8" th:text="#{je.remove}">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="cell-secondary">1</td>
+                                <td><select class="form-control account-select"><option value="" th:text="#{je.selectAccount}">Select account…</option><option>Rent expense — 5001</option><option>VAT payable — 2301</option><option>Accounts payable — 2001</option></select></td>
+                                <td><input class="form-control form-control--sm" type="text" th:placeholder="#{common.optional}"></td>
+                                <td><input class="form-control form-control--sm amount-control" type="number" value="1200000"></td>
+                                <td><input class="form-control form-control--sm amount-control" type="number" value="0"></td>
+                                <td class="actions-cell"><button class="row-actions-btn" type="button" th:title="#{je.remove}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button></td>
+                            </tr>
+                            <tr>
+                                <td class="cell-secondary">2</td>
+                                <td><select class="form-control account-select"><option value="" th:text="#{je.selectAccount}">Select account…</option><option>Rent expense — 5001</option><option>VAT payable — 2301</option><option selected>Accounts payable — 2001</option></select></td>
+                                <td><input class="form-control form-control--sm" type="text" th:placeholder="#{common.optional}"></td>
+                                <td><input class="form-control form-control--sm amount-control" type="number" value="0"></td>
+                                <td><input class="form-control form-control--sm amount-control" type="number" value="1200000"></td>
+                                <td class="actions-cell"><button class="row-actions-btn" type="button" th:title="#{je.remove}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2"></td>
+                                <td class="text-right font-semibold" th:text="#{je.totals}">Totals</td>
+                                <td class="num font-bold money" id="totDebit">RWF 1,200,000</td>
+                                <td class="num font-bold money" id="totCredit">RWF 1,200,000</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert--success" id="balanceOk">
+                        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                        <div class="alert-body" th:text="#{je.balanced}">Balanced — debits equal credits.</div>
+                    </div>
+                    <div class="alert alert--error d-none" id="balanceErr">
+                        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+                        <div class="alert-body" th:utext="#{je.outOfBalance('RWF 0')}">Out of balance by <strong>RWF 0</strong>. Review line amounts.</div>
+                    </div>
+                    <div class="form-group mt-4">
+                        <label class="form-label" for="jeMemo"><span th:text="#{je.entryMemo}">Entry memo</span> <span class="hint" th:text="#{coa.optional}">optional</span></label>
+                        <textarea class="form-control" id="jeMemo" rows="2" th:placeholder="#{je.memoPlaceholder}"></textarea>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked><span class="switch-track"></span>
+                        <span class="switch-label" th:text="#{je.recurring}">Include as recurring entry</span>
+                    </label>
+                    <div class="d-none" id="recurrenceBox" style="margin-top:var(--sp-4)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="jeFreq" th:text="#{je.repeat}">Repeat</label>
+                                <select class="form-control" id="jeFreq">
+                                    <option th:text="#{je.monthly}">Monthly</option>
+                                    <option th:text="#{je.weekly}">Weekly</option>
+                                    <option th:text="#{je.quarterly}">Quarterly</option>
+                                    <option th:text="#{je.yearly}">Yearly</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="jeEnd"><span th:text="#{je.endOn}">End on</span> <span class="hint" th:text="#{coa.optional}">optional</span></label>
+                                <input class="form-control" id="jeEnd" type="date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-4 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{je.balance}">Balance</h3></div>
+                <div class="card-body">
+                    <div class="stat-tile mb-4" style="border:1px solid var(--border);padding:var(--sp-4)">
+                        <div class="stat-tile-label" th:text="#{je.difference}">Difference</div>
+                        <div class="stat-tile-value money text-success">RWF 0</div>
+                        <div class="stat-tile-sub"><span class="badge badge-active"><span class="badge-dot"></span><span th:text="#{je.balancedSmall}">Balanced</span></span></div>
+                    </div>
+                    <div class="alert alert--info">
+                        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                        <div class="alert-body" th:text="#{je.balanceHint}">An entry cannot be posted unless total debits equal total credits.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{je.categoryDefaults}">Category defaults</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label" th:text="#{je.defaultExpense}">Default expense account</label>
+                        <select class="form-control"><option>5001 Rent expense</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" th:text="#{je.defaultPayment}">Default payment account</label>
+                        <select class="form-control"><option>1101 BK Bank — Current</option></select>
+                    </div>
+                    <p class="text-xs text-muted mb-0" th:text="#{je.defaultsHint}">Set default accounts used by this journal book in settings.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{je.audit}">Audit</h3></div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item" style="padding-bottom:var(--sp-3)">
+                            <span class="timeline-dot timeline-dot--success"></span>
+                            <div class="timeline-time" th:text="#{je.draft}">Draft</div>
+                            <div class="timeline-text" th:utext="#{je.createdBy('John Doe')}">Created by John Doe — not yet posted.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post modal -->
+    <div class="modal-backdrop" id="saveModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 th:text="#{je.postTitle}">Post journal entry</h3>
+                <button class="modal-close" type="button" data-close-modal th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between p-3 mb-4" style="background:var(--surface-muted);border-radius:var(--radius-md)">
+                    <div>
+                        <div class="text-md font-semibold">ADJ-2026-001 · 07 Sep 2026</div>
+                        <div class="text-sm text-muted" th:text="#{je.linesCount('2', '2')}">2 lines · 2 accounts</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-md font-bold money">RWF 1,200,000</div>
+                        <div class="text-sm text-muted" th:text="#{je.amount}">Amount</div>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox"><span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{je.postNow}">Post now (draft otherwise)</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-close-modal th:text="#{common.cancel}">Cancel</button>
+                <button class="btn btn-primary" type="button" data-close-modal>
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{je.postEntry}">Post entry</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates drawer -->
+    <div class="drawer-bg drawer-backdrop" data-drawer-for="templateDrawer"></div>
+    <aside class="drawer" id="templateDrawer" th:aria-label="#{je.tplTitle}">
+        <div class="drawer-header">
+            <h3 th:text="#{je.tplTitle}">Use a template</h3>
+            <button class="modal-close" type="button" data-close-drawer th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+        </div>
+        <div class="drawer-body">
+            <button class="template-card" type="button">
+                <svg class="ebook-icon ebook-icon--lg template-icon"><use href="#icon-building"/></svg>
+                <div>
+                    <div class="text-md font-semibold" th:text="#{je.tplRent}">Rent payment</div>
+                    <div class="text-sm text-muted" th:text="#{je.tplRentDesc}">Rent expense DR / Bank CR</div>
+                </div>
+            </button>
+            <button class="template-card" type="button">
+                <svg class="ebook-icon ebook-icon--lg template-icon"><use href="#icon-wallet"/></svg>
+                <div>
+                    <div class="text-md font-semibold" th:text="#{je.tplOwner}">Owner draw</div>
+                    <div class="text-sm text-muted" th:text="#{je.tplOwnerDesc}">Owner's draw DR / Bank CR</div>
+                </div>
+            </button>
+            <button class="template-card" type="button">
+                <svg class="ebook-icon ebook-icon--lg template-icon"><use href="#icon-wand"/></svg>
+                <div>
+                    <div class="text-md font-semibold" th:text="#{je.tplDep}">Depreciation</div>
+                    <div class="text-sm text-muted" th:text="#{je.tplDepDesc}">Depreciation exp DR / Accum. depreciation CR</div>
+                </div>
+            </button>
+            <button class="template-card" type="button">
+                <svg class="ebook-icon ebook-icon--lg template-icon"><use href="#icon-split"/></svg>
+                <div>
+                    <div class="text-md font-semibold" th:text="#{je.tplVat}">VAT adjustment</div>
+                    <div class="text-sm text-muted" th:text="#{je.tplVatDesc}">2-line VAT true-up entry</div>
+                </div>
+            </button>
+        </div>
+    </aside>
+
+</main>
+</body>
+</html>

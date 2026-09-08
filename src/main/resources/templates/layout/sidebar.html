@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<div th:fragment="sidebar" class="sidebar-shell d-flex flex-column h-100">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+        <svg class="sidebar-brand-logo ebook-icon ebook-icon--xl"><use href="#icon-logo"/></svg>
+        <div class="sidebar-brand-meta">
+            <div class="sidebar-brand-title">Ebook<span> Online</span></div>
+            <span class="sidebar-brand-tag" th:text="#{app.tagline}">Accounting</span>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         Scrollable navigation
+         ============================================================ -->
+    <nav class="sidebar-nav" th:aria-label="#{common.ariaMainNav}">
+
+        <!-- ===== Dashboard ===== -->
+        <div class="sidebar-section-title" th:text="#{nav.overview}">Overview</div>
+        <div class="sidebar-group">
+            <a class="sidebar-menu-item active" th:href="@{/}">
+                <svg class="ebook-icon"><use href="#icon-dashboard"/></svg>
+                <span class="sidebar-label" th:text="#{nav.dashboard}">Dashboard</span>
+                <span class="sidebar-tooltip" th:text="#{nav.dashboard}">Dashboard</span>
+            </a>
+        </div>
+
+        <!-- ===== Business ===== -->
+        <div class="sidebar-section-title" th:text="#{nav.business}">Business</div>
+
+        <!-- Banking & Cash -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/banking') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-bank"/></svg>
+                <span class="sidebar-label" th:text="#{nav.banking}">Banking &amp; Cash</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.banking}">Banking &amp; Cash</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/banking/accounts}"><span class="bullet"></span><span th:text="#{nav.banking.accounts}">Bank Accounts</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/banking/feeds}"><span class="bullet"></span><span th:text="#{nav.banking.feeds}">Bank &amp; Mobile Money Feeds</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/banking/transactions}"><span class="bullet"></span><span th:text="#{nav.banking.transactions}">Transactions</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/banking/uncategorized}"><span class="bullet"></span><span th:text="#{nav.banking.uncategorized}">Uncategorized</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/banking/reconcile}"><span class="bullet"></span><span th:text="#{nav.banking.reconcile}">Bank Reconciliation</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/banking/cash}"><span class="bullet"></span><span th:text="#{nav.banking.cash}">Cash Accounts</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/banking/petty-cash}"><span class="bullet"></span><span th:text="#{nav.banking.pettyCash}">Petty Cash</span></a>
+            </div>
+        </div>
+
+        <!-- Sales & Revenue -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/sales') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-shopping-cart"/></svg>
+                <span class="sidebar-label" th:text="#{nav.sales}">Sales &amp; Revenue</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.sales}">Sales &amp; Revenue</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/customers}"><span class="bullet"></span><span th:text="#{nav.sales.customers}">Customers</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/estimates}"><span class="bullet"></span><span th:text="#{nav.sales.estimates}">Estimates &amp; Quotations</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/orders}"><span class="bullet"></span><span th:text="#{nav.sales.orders}">Sales Orders</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/invoices}"><span class="bullet"></span><span th:text="#{nav.sales.invoices}">Invoices</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/recurring}"><span class="bullet"></span><span th:text="#{nav.sales.recurring}">Recurring Invoices</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/ebm}"><span class="bullet"></span><span th:text="#{nav.sales.ebm}">EBM Invoicing</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/payment-links}"><span class="bullet"></span><span th:text="#{nav.sales.paymentLinks}">Payment Links</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/payments}"><span class="bullet"></span><span th:text="#{nav.sales.payments}">Payments Received</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/credit-notes}"><span class="bullet"></span><span th:text="#{nav.sales.creditNotes}">Credit Notes</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/statements}"><span class="bullet"></span><span th:text="#{nav.sales.statements}">Customer Statements</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/aging}"><span class="bullet"></span><span th:text="#{nav.sales.aging}">Receivables Aging</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/sales/collections}"><span class="bullet"></span><span th:text="#{nav.sales.collections}">Collections</span></a>
+            </div>
+        </div>
+
+        <!-- Purchases & Expenses -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/purchases') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-shopping-bag"/></svg>
+                <span class="sidebar-label" th:text="#{nav.purchases}">Purchases &amp; Expenses</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.purchases}">Purchases &amp; Expenses</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/vendors}"><span class="bullet"></span><span th:text="#{nav.purchases.suppliers}">Suppliers</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/contractors}"><span class="bullet"></span><span th:text="#{nav.purchases.contractors}">Contractors</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/orders}"><span class="bullet"></span><span th:text="#{nav.purchases.orders}">Purchase Orders</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/bills}"><span class="bullet"></span><span th:text="#{nav.purchases.bills}">Bills</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/expenses}"><span class="bullet"></span><span th:text="#{nav.purchases.expenses}">Expenses</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/payments}"><span class="bullet"></span><span th:text="#{nav.purchases.payments}">Supplier Payments</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/statements}"><span class="bullet"></span><span th:text="#{nav.purchases.statements}">Supplier Statements</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/aging}"><span class="bullet"></span><span th:text="#{nav.purchases.aging}">Payables Aging</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/purchases/withholding}"><span class="bullet"></span><span th:text="#{nav.purchases.withholding}">Withholding Tax</span></a>
+            </div>
+        </div>
+
+        <!-- Products & Inventory -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/inventory') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-box"/></svg>
+                <span class="sidebar-label" th:text="#{nav.inventory}">Products &amp; Inventory</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.inventory}">Products &amp; Inventory</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/inventory/products}"><span class="bullet"></span><span th:text="#{nav.inventory.products}">Products &amp; Services</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/categories}"><span class="bullet"></span><span th:text="#{nav.inventory.categories}">Categories</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/brands}"><span class="bullet"></span><span th:text="#{nav.inventory.brands}">Brands</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/bundles}"><span class="bullet"></span><span th:text="#{nav.inventory.bundles}">Bundles</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/warehouses}"><span class="bullet"></span><span th:text="#{nav.inventory.warehouses}">Warehouses</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/movements}"><span class="bullet"></span><span th:text="#{nav.inventory.movements}">Stock Movements</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/transfers}"><span class="bullet"></span><span th:text="#{nav.inventory.transfers}">Stock Transfers</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/adjustments}"><span class="bullet"></span><span th:text="#{nav.inventory.adjustments}">Stock Adjustments</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/counts}"><span class="bullet"></span><span th:text="#{nav.inventory.counts}">Stock Counts</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/inventory/valuation}"><span class="bullet"></span><span th:text="#{nav.inventory.valuation}">Inventory Valuation</span></a>
+            </div>
+        </div>
+
+        <!-- ===== Finance ===== -->
+        <div class="sidebar-section-title" th:text="#{nav.finance}">Finance</div>
+
+        <!-- Accounting -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/accounting') or #strings.startsWith(requestURI, '/accounts') or #strings.startsWith(requestURI, '/journals') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-book-open"/></svg>
+                <span class="sidebar-label" th:text="#{nav.accounting}">Accounting</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.accounting}">Accounting</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/accounts}"><span class="bullet"></span><span th:text="#{nav.accounting.coa}">Chart of Accounts</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/accounting/ledger}"><span class="bullet"></span><span th:text="#{nav.accounting.ledger}">General Ledger</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/journals}"><span class="bullet"></span><span th:text="#{nav.accounting.journals}">Journal Entries</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/accounting/recurring-journals}"><span class="bullet"></span><span th:text="#{nav.accounting.recurring}">Recurring Journals</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/accounting/opening-balances}"><span class="bullet"></span><span th:text="#{nav.accounting.opening}">Opening Balances</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/accounting/trial-balance}"><span class="bullet"></span><span th:text="#{nav.accounting.trial}">Trial Balance</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/accounting/periods}"><span class="bullet"></span><span th:text="#{nav.accounting.periods}">Accounting Periods</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/accounting/fiscal-close}"><span class="bullet"></span><span th:text="#{nav.accounting.fiscal}">Fiscal Year Closing</span></a>
+            </div>
+        </div>
+
+        <!-- Fixed Assets -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/assets') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-truck"/></svg>
+                <span class="sidebar-label" th:text="#{nav.assets}">Fixed Assets</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.assets}">Fixed Assets</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/assets/register}"><span class="bullet"></span><span th:text="#{nav.assets.register}">Asset Register</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/assets/categories}"><span class="bullet"></span><span th:text="#{nav.assets.categories}">Asset Categories</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/assets/locations}"><span class="bullet"></span><span th:text="#{nav.assets.locations}">Asset Locations</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/assets/depreciation}"><span class="bullet"></span><span th:text="#{nav.assets.depreciation}">Depreciation</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/assets/transfers}"><span class="bullet"></span><span th:text="#{nav.assets.transfers}">Asset Transfers</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/assets/disposals}"><span class="bullet"></span><span th:text="#{nav.assets.disposals}">Asset Disposals</span></a>
+            </div>
+        </div>
+
+        <!-- Projects & Time -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/projects') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-briefcase"/></svg>
+                <span class="sidebar-label" th:text="#{nav.projects}">Projects &amp; Time</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.projects}">Projects &amp; Time</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/projects}"><span class="bullet"></span><span th:text="#{nav.projects.projects}">Projects</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/projects/job-costing}"><span class="bullet"></span><span th:text="#{nav.projects.costing}">Job Costing</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/projects/budgets}"><span class="bullet"></span><span th:text="#{nav.projects.budgets}">Project Budgets</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/projects/progress-billing}"><span class="bullet"></span><span th:text="#{nav.projects.billing}">Progress Billing</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/projects/timesheets}"><span class="bullet"></span><span th:text="#{nav.projects.timesheets}">Timesheets</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/projects/billable}"><span class="bullet"></span><span th:text="#{nav.projects.billable}">Billable Time</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/projects/profitability}"><span class="bullet"></span><span th:text="#{nav.projects.profitability}">Project Profitability</span></a>
+            </div>
+        </div>
+
+        <!-- Payroll & HR -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/payroll') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-users"/></svg>
+                <span class="sidebar-label" th:text="#{nav.payroll}">Payroll &amp; HR</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.payroll}">Payroll &amp; HR</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/payroll/employees}"><span class="bullet"></span><span th:text="#{nav.payroll.employees}">Employees</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/payroll/setup}"><span class="bullet"></span><span th:text="#{nav.payroll.setup}">Payroll Setup</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/payroll/runs}"><span class="bullet"></span><span th:text="#{nav.payroll.runs}">Payroll Runs</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/payroll/payslips}"><span class="bullet"></span><span th:text="#{nav.payroll.payslips}">Payslips</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/payroll/allowances}"><span class="bullet"></span><span th:text="#{nav.payroll.allowances}">Allowances</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/payroll/deductions}"><span class="bullet"></span><span th:text="#{nav.payroll.deductions}">Deductions</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/payroll/remittances}"><span class="bullet"></span><span th:text="#{nav.payroll.remittances}">Statutory Remittances</span></a>
+            </div>
+        </div>
+
+        <!-- Taxes & Compliance -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/taxes') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-percent"/></svg>
+                <span class="sidebar-label" th:text="#{nav.taxes}">Taxes &amp; Compliance</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.taxes}">Taxes &amp; Compliance</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/taxes/config}"><span class="bullet"></span><span th:text="#{nav.taxes.config}">Tax Configuration</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/vat}"><span class="bullet"></span><span th:text="#{nav.taxes.vat}">VAT</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/withholding}"><span class="bullet"></span><span th:text="#{nav.taxes.withholding}">Withholding Tax</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/excise}"><span class="bullet"></span><span th:text="#{nav.taxes.excise}">Excise</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/transactions}"><span class="bullet"></span><span th:text="#{nav.taxes.transactions}">Tax Transactions</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/liability}"><span class="bullet"></span><span th:text="#{nav.taxes.liability}">Tax Liability</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/reports}"><span class="bullet"></span><span th:text="#{nav.taxes.reports}">Tax Reports</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/taxes/filings}"><span class="bullet"></span><span th:text="#{nav.taxes.filings}">Tax Filings</span></a>
+            </div>
+        </div>
+
+        <!-- Planning & Budgeting -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/budgets') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-pie-chart"/></svg>
+                <span class="sidebar-label" th:text="#{nav.budgets}">Planning &amp; Budgeting</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.budgets}">Planning &amp; Budgeting</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/budgets}"><span class="bullet"></span><span th:text="#{nav.budgets.budgets}">Budgets</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/budgets/vs-actual}"><span class="bullet"></span><span th:text="#{nav.budgets.vsActual}">Budget vs Actual</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/budgets/cash-flow-forecast}"><span class="bullet"></span><span th:text="#{nav.budgets.cashFlow}">Cash Flow Forecast</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/budgets/revenue-forecast}"><span class="bullet"></span><span th:text="#{nav.budgets.revenue}">Revenue Forecast</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/budgets/expense-forecast}"><span class="bullet"></span><span th:text="#{nav.budgets.expense}">Expense Forecast</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/budgets/ai-forecasts}"><span class="bullet"></span><span th:text="#{nav.budgets.ai}">AI Financial Forecasts</span></a>
+            </div>
+        </div>
+
+        <!-- Reports & Analytics -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/reports') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-line-chart"/></svg>
+                <span class="sidebar-label" th:text="#{nav.reports}">Reports &amp; Analytics</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.reports}">Reports &amp; Analytics</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/reports}"><span class="bullet"></span><span th:text="#{nav.reports.overview}">Report Overview</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/reports/pnl}"><span class="bullet"></span><span th:text="#{nav.reports.pnl}">Profit &amp; Loss</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/reports/balance-sheet}"><span class="bullet"></span><span th:text="#{nav.reports.balanceSheet}">Balance Sheet</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/reports/cash-flow}"><span class="bullet"></span><span th:text="#{nav.reports.cashFlow}">Cash Flow Statement</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/reports/trial-balance}"><span class="bullet"></span><span th:text="#{nav.reports.trial}">Trial Balance</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/reports/general-ledger}"><span class="bullet"></span><span th:text="#{nav.reports.ledger}">General Ledger</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/reports/builder}"><span class="bullet"></span><span th:text="#{nav.reports.builder}">Custom Report Builder</span></a>
+            </div>
+        </div>
+
+        <!-- ===== Tools ===== -->
+        <div class="sidebar-section-title" th:text="#{nav.tools}">Tools</div>
+
+        <!-- Document Center -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/documents') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-cloud-upload"/></svg>
+                <span class="sidebar-label" th:text="#{nav.documents}">Document Center</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.documents}">Document Center</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/documents/upload}"><span class="bullet"></span><span th:text="#{nav.documents.upload}">Receipt Upload</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/documents/ocr}"><span class="bullet"></span><span th:text="#{nav.documents.ocr}">OCR Processing</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/documents}"><span class="bullet"></span><span th:text="#{nav.documents.documents}">Documents</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/documents/attachments}"><span class="bullet"></span><span th:text="#{nav.documents.attachments}">Attachments</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/documents/templates}"><span class="bullet"></span><span th:text="#{nav.documents.templates}">Document Templates</span></a>
+            </div>
+        </div>
+
+        <!-- Apps, Integrations & APIs -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/integrations') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-plug"/></svg>
+                <span class="sidebar-label" th:text="#{nav.integrations}">Apps &amp; APIs</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.integrations}">Apps &amp; APIs</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/integrations/banks}"><span class="bullet"></span><span th:text="#{nav.integrations.banks}">Bank Integrations</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/integrations/mtn-momo}"><span class="bullet"></span><span th:text="#{nav.integrations.mtn}">MTN Mobile Money</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/integrations/airtel-money}"><span class="bullet"></span><span th:text="#{nav.integrations.airtel}">Airtel Money</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/integrations/ebm}"><span class="bullet"></span><span th:text="#{nav.integrations.ebm}">RRA EBM</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/integrations/payments}"><span class="bullet"></span><span th:text="#{nav.integrations.payments}">Payment Gateways</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/integrations/api}"><span class="bullet"></span><span th:text="#{nav.integrations.api}">API</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/integrations/webhooks}"><span class="bullet"></span><span th:text="#{nav.integrations.webhooks}">Webhooks</span></a>
+            </div>
+        </div>
+
+        <!-- ===== System ===== -->
+        <div class="sidebar-section-title" th:text="#{nav.system}">System</div>
+
+        <!-- System Settings -->
+        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/settings') ? 'open' : ''}">
+            <button class="sidebar-menu-item" type="button" aria-expanded="false">
+                <svg class="ebook-icon"><use href="#icon-gear"/></svg>
+                <span class="sidebar-label" th:text="#{nav.settings}">System Settings</span>
+                <span class="sidebar-chevron ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></span>
+                <span class="sidebar-tooltip" th:text="#{nav.settings}">System Settings</span>
+            </button>
+            <div class="sidebar-submenu">
+                <a class="sidebar-submenu-item" th:href="@{/settings/company}"><span class="bullet"></span><span th:text="#{nav.settings.company}">Company Profile</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/branches}"><span class="bullet"></span><span th:text="#{nav.settings.branches}">Branches</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/users}"><span class="bullet"></span><span th:text="#{nav.settings.users}">Users</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/roles}"><span class="bullet"></span><span th:text="#{nav.settings.roles}">Roles</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/permissions}"><span class="bullet"></span><span th:text="#{nav.settings.permissions}">Permissions</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/workflows}"><span class="bullet"></span><span th:text="#{nav.settings.workflows}">Approval Workflows</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/currencies}"><span class="bullet"></span><span th:text="#{nav.settings.currencies}">Currencies</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/exchange-rates}"><span class="bullet"></span><span th:text="#{nav.settings.rates}">Exchange Rates</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/fiscal-year}"><span class="bullet"></span><span th:text="#{nav.settings.fiscalYear}">Fiscal Year</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/invoice-templates}"><span class="bullet"></span><span th:text="#{nav.settings.invoiceTemplates}">Invoice Templates</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/email-templates}"><span class="bullet"></span><span th:text="#{nav.settings.emailTemplates}">Email Templates</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/numbering}"><span class="bullet"></span><span th:text="#{nav.settings.numbering}">Numbering Sequences</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/notifications}"><span class="bullet"></span><span th:text="#{nav.settings.notifications}">Notifications</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/security}"><span class="bullet"></span><span th:text="#{nav.settings.security}">Security</span></a>
+                <a class="sidebar-submenu-item" th:href="@{/settings/audit}"><span class="bullet"></span><span th:text="#{nav.settings.audit}">Audit Trail</span></a>
+            </div>
+        </div>
+
+    </nav>
+
+    <!-- Collapse toggle (floating circular button) -->
+    <button class="sidebar-collapse-toggle" type="button" data-sidebar-toggle th:aria-label="#{common.ariaSidebar}">
+        <svg class="ebook-icon icon-collapse"><use href="#icon-chevron-left"/></svg>
+        <svg class="ebook-icon icon-expand"><use href="#icon-chevron-right"/></svg>
+    </button>
+</div>
+</body>
+</html>

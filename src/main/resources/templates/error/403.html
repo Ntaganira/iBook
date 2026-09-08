@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{error.accessDenied}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="error-page">
+        <div class="error-code">403</div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <svg class="ebook-icon" style="width:26px;height:26px"><use href="#icon-lock"/></svg>
+            <span class="auth-eyebrow" style="color:var(--primary-600)" th:text="#{error.restricted}">Restricted area</span>
+        </div>
+        <h1 class="error-title" th:text="#{error.accessDenied}">Access denied</h1>
+        <p class="error-desc" th:text="#{error.403.desc}">
+            Your role doesn't have permission to view this page.
+            Ask an admin to grant you access, or return to your dashboard.
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a class="btn btn-primary" th:href="@{/}">
+                <svg class="ebook-icon"><use href="#icon-grid"/></svg>
+                <span th:text="#{error.goDashboard}">Go to dashboard</span>
+            </a>
+            <a class="btn btn-secondary" th:href="@{/settings/roles}">
+                <svg class="ebook-icon"><use href="#icon-shield"/></svg>
+                <span th:text="#{error.viewRoles}">View roles</span>
+            </a>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

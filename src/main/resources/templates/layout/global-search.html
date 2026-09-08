@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<!-- Global command palette (Ctrl+K) -->
+<div class="command-palette" id="commandPalette" aria-modal="true" role="dialog" th:aria-label="#{search.aria}" th:fragment="palette">
+    <div class="command-palette-panel">
+        <div class="command-input-wrap">
+            <svg class="ebook-icon ebook-icon--lg"><use href="#icon-search"/></svg>
+            <input class="command-input" type="text" th:placeholder="#{search.placeholder}" autocomplete="off" data-autofocus>
+            <span class="command-kbd">ESC</span>
+        </div>
+
+        <div class="command-results">
+            <div class="command-sections">
+                <div class="command-section-title" th:text="#{search.customers}">Customers</div>
+                <a class="command-result-item" th:href="@{/customers/1}">
+                    <span class="command-result-icon"><svg class="ebook-icon"><use href="#icon-users"/></svg></span>
+                    <span class="command-result-main">
+                        <span class="command-result-title">ABC Construction Ltd</span>
+                        <span class="command-result-sub">Kilimani, Kigali · RWF 4,850,000</span>
+                    </span>
+                    <span class="command-result-tag" th:text="#{search.customer}">Customer</span>
+                </a>
+            </div>
+            <div class="command-sections">
+                <div class="command-section-title" th:text="#{search.invoices}">Invoices</div>
+                <a class="command-result-item" th:href="@{/invoices/451}">
+                    <span class="command-result-icon"><svg class="ebook-icon"><use href="#icon-receipt"/></svg></span>
+                    <span class="command-result-main">
+                        <span class="command-result-title">INV-2026-00451</span>
+                        <span class="command-result-sub">ABC Construction Ltd · RWF 1,250,000</span>
+                    </span>
+                    <span class="command-result-tag" th:text="#{common.status.overdue}">Overdue</span>
+                </a>
+                <a class="command-result-item" th:href="@{/invoices/450}">
+                    <span class="command-result-icon"><svg class="ebook-icon"><use href="#icon-receipt"/></svg></span>
+                    <span class="command-result-main">
+                        <span class="command-result-title">INV-2026-00450</span>
+                        <span class="command-result-sub">Gorilla Retreat Ltd · RWF 860,000</span>
+                    </span>
+                    <span class="command-result-tag" th:text="#{common.status.paid}">Paid</span>
+                </a>
+            </div>
+            <div class="command-sections">
+                <div class="command-section-title" th:text="#{search.products}">Products</div>
+                <a class="command-result-item" th:href="@{/inventory/products/42}">
+                    <span class="command-result-icon"><svg class="ebook-icon"><use href="#icon-box"/></svg></span>
+                    <span class="command-result-main">
+                        <span class="command-result-title">ABC Cement 50KG</span>
+                        <span class="command-result-sub">Building materials · 1,240 in stock</span>
+                    </span>
+                    <span class="command-result-tag" th:text="#{search.product}">Product</span>
+                </a>
+            </div>
+            <div class="command-sections">
+                <div class="command-section-title" th:text="#{search.documents}">Documents</div>
+                <a class="command-result-item" th:href="@{/documents/88}">
+                    <span class="command-result-icon"><svg class="ebook-icon"><use href="#icon-file-search"/></svg></span>
+                    <span class="command-result-main">
+                        <span class="command-result-title">ABC Contract.pdf</span>
+                        <span class="command-result-sub">Uploaded 07 Sep 2026 · 1.2 MB</span>
+                    </span>
+                    <span class="command-result-tag" th:text="#{search.document}">Document</span>
+                </a>
+            </div>
+            <div class="command-empty" style="display:none">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <div class="command-empty-title font-semibold" th:text="#{search.noResults}">No results found</div>
+                <div class="text-sm" th:text="#{search.tryAgain}">Try a different search term.</div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

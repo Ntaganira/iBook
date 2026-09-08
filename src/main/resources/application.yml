@@ -1,0 +1,58 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 15m
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5436/ibook
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+minio:
+  url: http://localhost:9008
+  access-key: minioadmin
+  secret-key: minioadmin123
+  bucket: ibook-files
+
+app:
+  url: ${APP_URL:http://localhost:8080}
+
+logging:
+  level:
+    com.ntaganira.heritier: DEBUG

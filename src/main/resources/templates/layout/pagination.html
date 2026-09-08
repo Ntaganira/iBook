@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<!-- Pagination fragment -->
+<nav class="pagination" th:aria-label="#{common.ariaPagination}" th:fragment="pagination(currentPage, totalPages, baseUrl)">
+    <button class="page-btn" type="button"
+            th:disabled="${currentPage <= 1}"
+            th:onclick="'window.location.href = \'' + (@{${baseUrl}}(page=${currentPage - 1})) + '\''">
+        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg>
+    </button>
+
+    <th:block th:if="${totalPages <= 7}">
+        <button class="page-btn" type="button"
+                th:each="i : ${#numbers.sequence(1, totalPages)}"
+                th:classappend="${i == currentPage ? 'active' : ''}"
+                th:text="${i}"
+                th:onclick="'window.location.href = \'' + (@{${baseUrl}}(page=${i})) + '\''">1</button>
+    </th:block>
+    <th:block th:unless="${totalPages <= 7}">
+        <button class="page-btn" type="button"
+                th:classappend="${1 == currentPage ? 'active' : ''}"
+                th:text="1"
+                th:onclick="'window.location.href = \'' + (@{${baseUrl}}(page=1)) + '\''">1</button>
+        <span class="page-ellipsis" th:if="${currentPage > 3}">…</span>
+        <th:block th:each="i : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+                  th:if="${i > 1 and i < totalPages}">
+            <button class="page-btn" type="button"
+                    th:classappend="${i == currentPage ? 'active' : ''}"
+                    th:text="${i}"
+                    th:onclick="'window.location.href = \'' + (@{${baseUrl}}(page=${i})) + '\''">2</button>
+        </th:block>
+        <span class="page-ellipsis" th:if="${currentPage < totalPages - 2}">…</span>
+        <button class="page-btn" type="button"
+                th:classappend="${totalPages == currentPage ? 'active' : ''}"
+                th:text="${totalPages}"
+                th:onclick="'window.location.href = \'' + (@{${baseUrl}}(page=${totalPages})) + '\''">10</button>
+    </th:block>
+
+    <button class="page-btn" type="button"
+            th:disabled="${currentPage >= totalPages}"
+            th:onclick="'window.location.href = \'' + (@{${baseUrl}}(page=${currentPage + 1})) + '\''">
+        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg>
+    </button>
+</nav>
+</body>
+</html>

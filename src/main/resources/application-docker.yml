@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/ibook
+    username: postgres
+    password: postgres
+
+minio:
+  url: http://minio:9000
+  access-key: minioadmin
+  secret-key: minioadmin123
+  bucket: ibook-files

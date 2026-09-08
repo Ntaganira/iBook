@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{cust.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/customers}" th:text="#{cust.title}">Customers</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{cust.form.breadcrumb}">New customer</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{cust.form.title}">New Customer</h1>
+            <p class="page-subtitle" th:text="#{cust.form.subtitle}">Add a customer to start creating estimates and invoices.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/customers}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="customerForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{cust.saveNext}">Save &amp; next</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="customerForm">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{cust.saveCustomer}">Save customer</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="customerForm" th:action="@{/customers}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+
+                <!-- Basic information -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{cust.basicInfo}">Basic information</h3>
+                            <div class="card-subtitle" th:text="#{cust.basicInfoHint}">Used on invoices and statements</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="customerName"><span th:text="#{cust.customerName}">Customer name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="customerName" name="name" type="text"
+                                       th:placeholder="#{cust.customerNamePlaceholder}" required autofocus>
+                                <div class="form-hint" th:text="#{cust.customerNameHint}">The business or person you invoice.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerCompany" th:text="#{cust.company}">Company</label>
+                                <input class="form-control" id="customerCompany" name="companyName" type="text"
+                                       th:placeholder="#{cust.companyPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerEmail"><span th:text="#{common.email}">Email</span> <span class="hint" th:text="#{cust.emailHint}">invoices are sent here</span></label>
+                                <input class="form-control" id="customerEmail" name="email" type="email"
+                                       placeholder="billing@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerPhone" th:text="#{common.phone}">Phone</label>
+                                <input class="form-control" id="customerPhone" name="phone" type="tel"
+                                       placeholder="+250 7XX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerMobileMoney" th:text="#{cust.mobileMoney}">Mobile Money</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">+250</span>
+                                    <input class="form-control" id="customerMobileMoney" name="mobileMoney" type="tel"
+                                           placeholder="78X XXX XXX">
+                                </div>
+                                <div class="form-hint" th:text="#{cust.mobileMoneyHint}">Used for MTN MoMo / Airtel Money payments.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerTaxId" th:text="#{cust.taxId}">Tax ID (TIN)</label>
+                                <input class="form-control" id="customerTaxId" name="taxId" type="text"
+                                       th:placeholder="#{cust.tinPlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Billing address -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{cust.billingAddress}">Billing address</h3>
+                            <div class="card-subtitle" th:text="#{cust.billingAddressHint}">Appears on printed invoices</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="customerStreet" th:text="#{cust.street}">Street / Plot</label>
+                                <input class="form-control" id="customerStreet" name="street" type="text"
+                                       placeholder="KG 5 RD, Plot 42">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerCity" th:text="#{common.city}">City</label>
+                                <input class="form-control" id="customerCity" name="city" type="text" placeholder="Kigali">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerState" th:text="#{cust.state}">Province / State</label>
+                                <input class="form-control" id="customerState" name="state" type="text" placeholder="Kigali City">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerPostal" th:text="#{cust.postal}">Postal code</label>
+                                <input class="form-control" id="customerPostal" name="postalCode" type="text" placeholder="0000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="customerCountry" th:text="#{cust.country}">Country</label>
+                                <select class="form-control" id="customerCountry" name="country">
+                                    <option value="RW" selected>Rwanda</option>
+                                    <option value="KE">Kenya</option>
+                                    <option value="UG">Uganda</option>
+                                    <option value="TZ">Tanzania</option>
+                                    <option value="BI">Burundi</option>
+                                    <option value="CD">DR Congo</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="customerWebsite" th:text="#{cust.website}">Website</label>
+                                <input class="form-control" id="customerWebsite" name="website" type="url" placeholder="https://example.com">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notes -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{cust.notesPrefs}">Notes &amp; preferences</h3>
+                            <div class="card-subtitle" th:text="#{cust.notesPrefsHint}">Internal information for your team</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="customerNotes" th:text="#{cust.notes}">Notes</label>
+                            <textarea class="form-control" id="customerNotes" name="notes" data-autosize
+                                      th:placeholder="#{cust.notesPlaceholder}"></textarea>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="active" checked>
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{cust.isActive}">Customer is active</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right rail -->
+            <div class="col-span-4 d-flex flex-column gap-5">
+
+                <!-- Opening balance -->
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{cust.openingBalance}">Opening balance</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="customerOpeningBalance" th:text="#{cust.amountOwed}">Amount owed by this customer</label>
+                            <div class="input-group">
+                                <span class="input-prefix">RWF</span>
+                                <input class="form-control amount-control" id="customerOpeningBalance" name="openingBalance"
+                                       type="number" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                            <div class="form-hint" th:text="#{cust.openingHint}">Use only when moving existing receivables into Ebook Online.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Payment terms -->
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{cust.paymentTerms}">Payment terms</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="customerPaymentTerms" th:text="#{cust.defaultTerms}">Default terms</label>
+                            <select class="form-control" id="customerPaymentTerms" name="paymentTerms">
+                                <option th:text="#{cust.dueOnReceipt}">Due on receipt</option>
+                                <option th:text="#{cust.net7}">Net 7</option>
+                                <option th:text="#{cust.net15}" selected>Net 15</option>
+                                <option th:text="#{cust.net30}">Net 30</option>
+                                <option th:text="#{cust.net45}">Net 45</option>
+                                <option th:text="#{cust.net60}">Net 60</option>
+                                <option th:text="#{cust.custom}">Custom…</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Insights preview -->
+                <section class="card p-5" style="border-left:3px solid var(--primary-500)">
+                    <div class="d-flex gap-2 mb-2">
+                        <svg class="ebook-icon" style="color:var(--primary-500)"><use href="#icon-zap"/></svg>
+                        <h4 class="text-md font-semibold" th:text="#{cust.aiTip}">AI tip</h4>
+                    </div>
+                    <p class="text-sm text-secondary" style="line-height:var(--lh-relaxed)"
+                       th:text="#{cust.aiTipText}">Adding a mobile money number lets customers pay invoices instantly with a payment link — no cash or bank transfer needed.</p>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

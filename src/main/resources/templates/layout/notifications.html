@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<!-- Notifications drawer -->
+<div class="drawer-bg drawer-backdrop" data-drawer-for="notificationDrawer" th:fragment="bg"></div>
+<aside class="drawer" id="notificationDrawer" th:aria-label="#{notif.title}" th:fragment="drawer">
+    <div class="drawer-header">
+        <h3 th:text="#{notif.title}">Notifications</h3>
+        <button class="modal-close" type="button" data-close-drawer th:aria-label="#{common.ariaClose}">
+            <svg class="ebook-icon"><use href="#icon-x"/></svg>
+        </button>
+    </div>
+    <div class="drawer-body scroll-area d-flex flex-column">
+
+        <!-- Invoice overdue -->
+        <div class="notification-item notification-item--unread">
+            <span class="notification-unread-dot" aria-hidden="true"></span>
+            <span class="notification-icon notification-icon--error"><svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg></span>
+            <div class="notification-text">
+                <div class="notification-title" th:text="#{notif.invoiceOverdue}">Invoice overdue</div>
+                <div class="notification-desc">INV-2026-00451 from ABC Construction Ltd is 12 days overdue.</div>
+                <div class="notification-time">2h ago</div>
+            </div>
+        </div>
+
+        <!-- Payment received -->
+        <div class="notification-item notification-item--unread">
+            <span class="notification-unread-dot" aria-hidden="true"></span>
+            <span class="notification-icon notification-icon--success"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg></span>
+            <div class="notification-text">
+                <div class="notification-title" th:text="#{notif.paymentReceived}">Payment received</div>
+                <div class="notification-desc">RWF 860,000 received from Gorilla Retreat Ltd via MTN MoMo.</div>
+                <div class="notification-time">Today, 09:14</div>
+            </div>
+        </div>
+
+        <!-- Bill due -->
+        <div class="notification-item notification-item--unread">
+            <span class="notification-unread-dot" aria-hidden="true"></span>
+            <span class="notification-icon notification-icon--warning"><svg class="ebook-icon"><use href="#icon-clock"/></svg></span>
+            <div class="notification-text">
+                <div class="notification-title" th:text="#{notif.billDue}">Bill due soon</div>
+                <div class="notification-desc">BILL-2026-00211 from Zanazi Suppliers is due in 4 days.</div>
+                <div class="notification-time">Yesterday, 16:40</div>
+            </div>
+        </div>
+
+        <!-- EBM error -->
+        <div class="notification-item">
+            <span class="notification-icon notification-icon--error"><svg class="ebook-icon"><use href="#icon-alert-circle"/></svg></span>
+            <div class="notification-text">
+                <div class="notification-title" th:text="#{notif.ebmError}">EBM submission error</div>
+                <div class="notification-desc">Invoice INV-2026-00449 failed to submit to RRA EBM. Review and retry.</div>
+                <div class="notification-time">Yesterday, 11:02</div>
+            </div>
+        </div>
+
+        <!-- Low inventory -->
+        <div class="notification-item">
+            <span class="notification-icon notification-icon--info"><svg class="ebook-icon"><use href="#icon-box"/></svg></span>
+            <div class="notification-text">
+                <div class="notification-title" th:text="#{notif.lowInventory}">Low inventory</div>
+                <div class="notification-desc">ABC Cement 50KG is below minimum stock level.</div>
+                <div class="notification-time">Mon, 07 Sep</div>
+            </div>
+        </div>
+
+        <!-- Approval request -->
+        <div class="notification-item">
+            <span class="notification-icon notification-icon--info"><svg class="ebook-icon"><use href="#icon-user"/></svg></span>
+            <div class="notification-text">
+                <div class="notification-title" th:text="#{notif.approvalRequest}">Approval request</div>
+                <div class="notification-desc">Uwera Chantal submitted an expense of RWF 185,000 awaiting approval.</div>
+                <div class="notification-time">Mon, 07 Sep</div>
+            </div>
+        </div>
+    </div>
+    <div class="drawer-footer">
+        <a class="btn btn-secondary flex-1" th:href="@{/notifications}" th:text="#{notif.viewAll}">View all</a>
+        <button class="btn btn-ghost" type="button" th:text="#{notif.markAllRead}">Mark all read</button>
+    </div>
+</aside>
+</body>
+</html>

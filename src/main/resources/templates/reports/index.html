@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rpt.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{rpt.title}">Reports</h1>
+            <p class="page-subtitle" th:text="#{rpt.subtitle}">Financial statements and management reports.</p>
+        </div>
+        <div class="page-actions">
+            <div class="report-filter">
+                <label class="form-label mb-0" th:text="#{rpt.from}">From</label>
+                <input class="form-control form-control--sm" type="date" value="2026-01-01">
+            </div>
+            <div class="report-filter">
+                <label class="form-label mb-0" th:text="#{rpt.to}">To</label>
+                <input class="form-control form-control--sm" type="date" value="2026-09-07">
+            </div>
+            <div class="card-chip d-flex align-items-center gap-2">
+                <button class="chip active" type="button" data-date-preset="this-quarter" th:text="#{rpt.thisQuarter}">This quarter</button>
+                <button class="chip" type="button" data-date-preset="this-year" th:text="#{rpt.thisYear}">This year</button>
+                <button class="chip" type="button" data-date-preset="custom" th:text="#{rpt.custom}">Custom</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-search mb-5">
+        <div class="toolbar-search" style="max-width:420px">
+            <svg class="ebook-icon"><use href="#icon-search"/></svg>
+            <input type="text" th:placeholder="#{rpt.searchPlaceholder}">
+        </div>
+        <span class="text-sm text-muted" th:text="#{rpt.favoritesRecent}">Favorites and recent first</span>
+    </div>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{rpt.financialStatements}">Financial statements</h2>
+        <div class="grid grid-3">
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-trending-up"/></svg>
+                <div class="report-name" th:text="#{rpt.pnl}">Profit and Loss</div>
+                <div class="report-desc" th:text="#{rpt.pnlDesc}">Income minus expenses</div>
+                <div class="report-meta">This year · RWF
+                    <span class="text-positive">+8,200,000</span></div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-scale"/></svg>
+                <div class="report-name" th:text="#{rpt.balanceSheet}">Balance Sheet</div>
+                <div class="report-desc" th:text="#{rpt.balanceSheetDesc}">Assets, liabilities &amp; equity</div>
+                <div class="report-meta">As of 07 Sep 2026</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-file-text"/></svg>
+                <div class="report-name" th:text="#{rpt.trialBalance}">Trial Balance</div>
+                <div class="report-desc" th:text="#{rpt.trialBalanceDesc}">All accounts and balances</div>
+                <div class="report-meta">58 accounts</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-4)"><use href="#icon-refresh"/></svg>
+                <div class="report-name" th:text="#{rpt.cashFlow}">Cash Flow Statement</div>
+                <div class="report-desc" th:text="#{rpt.cashFlowDesc}">Operating, investing, financing</div>
+                <div class="report-meta">This year · RWF 890,000</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-5)"><use href="#icon-layers"/></svg>
+                <div class="report-name" th:text="#{rpt.generalLedger}">General Ledger</div>
+                <div class="report-desc" th:text="#{rpt.generalLedgerDesc}">All posted transactions</div>
+                <div class="report-meta">1,284 transactions</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-6)"><use href="#icon-book-open"/></svg>
+                <div class="report-name" th:text="#{rpt.journalReport}">Journal Report</div>
+                <div class="report-desc" th:text="#{rpt.journalReportDesc}">Entries by journal book</div>
+                <div class="report-meta">5 books</div>
+            </button>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{rpt.salesReceivables}">Sales &amp; receivables</h2>
+        <div class="grid grid-3">
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-file-text"/></svg>
+                <div class="report-name" th:text="#{rpt.salesByCustomer}">Sales by Customer</div>
+                <div class="report-desc" th:text="#{rpt.salesByCustomerDesc}">Revenue per customer</div>
+                <div class="report-meta">This year · 4 customers</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-clock"/></svg>
+                <div class="report-name" th:text="#{rpt.receivablesAging}">Receivables Aging</div>
+                <div class="report-desc" th:text="#{rpt.receivablesAgingDesc}">Outstanding by age bucket</div>
+                <div class="report-meta">Current · 1-30 · 31-60 · 60+</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-users"/></svg>
+                <div class="report-name" th:text="#{rpt.customerStatements}">Customer Statements</div>
+                <div class="report-desc" th:text="#{rpt.customerStatementsDesc}">Full / per-customer statements</div>
+                <div class="report-meta">Sent EBM-invoices</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-4)"><use href="#icon-tag"/></svg>
+                <div class="report-name" th:text="#{rpt.salesByItem}">Sales by Item</div>
+                <div class="report-desc" th:text="#{rpt.salesByItemDesc}">Top products &amp; services</div>
+                <div class="report-meta">18 items</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-5)"><use href="#icon-wallet"/></svg>
+                <div class="report-name" th:text="#{rpt.depositDetail}">Deposit Detail</div>
+                <div class="report-desc" th:text="#{rpt.depositDetailDesc}">Bank deposits breakdown</div>
+                <div class="report-meta">This year</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-6)"><use href="#icon-credit-card"/></svg>
+                <div class="report-name" th:text="#{rpt.paymentMethods}">Payment Methods</div>
+                <div class="report-desc" th:text="#{rpt.paymentMethodsDesc}">MoMo, bank, cash split</div>
+                <div class="report-meta">87% Airtel</div>
+            </button>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{rpt.purchasesPayables}">Purchases &amp; payables</h2>
+        <div class="grid grid-3">
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-file-text"/></svg>
+                <div class="report-name" th:text="#{rpt.expensesByVendor}">Expenses by Vendor</div>
+                <div class="report-desc" th:text="#{rpt.expensesByVendorDesc}">Spend per vendor</div>
+                <div class="report-meta">This year · 6 vendors</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-clock"/></svg>
+                <div class="report-name" th:text="#{rpt.payablesAging}">Payables Aging</div>
+                <div class="report-desc" th:text="#{rpt.payablesAgingDesc}">What you owe by age</div>
+                <div class="report-meta">RWF 9,230,000 total</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-shopping-cart"/></svg>
+                <div class="report-name" th:text="#{rpt.purchasesByItem}">Purchases by Item</div>
+                <div class="report-desc" th:text="#{rpt.purchasesByItemDesc}">Stock &amp; goods bought</div>
+                <div class="report-meta">This year</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-4)"><use href="#icon-box"/></svg>
+                <div class="report-name" th:text="#{rpt.inventoryValuation}">Inventory Valuation</div>
+                <div class="report-desc" th:text="#{rpt.inventoryValuationDesc}">Stock value by item</div>
+                <div class="report-meta">RWF 4,120,000</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-5)"><use href="#icon-trending-up"/></svg>
+                <div class="report-name" th:text="#{rpt.profitByItem}">Profit by Item</div>
+                <div class="report-desc" th:text="#{rpt.profitByItemDesc}">Margin per product</div>
+                <div class="report-meta">Avg 32%</div>
+            </button>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{rpt.tax}">Tax</h2>
+        <div class="grid grid-3">
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-file-check"/></svg>
+                <div class="report-name" th:text="#{rpt.vatReturn}">VAT Return — RRA</div>
+                <div class="report-desc" th:text="#{rpt.vatReturnDesc}">Output – Input VAT summary</div>
+                <div class="report-meta">Jul 2026 · Payable RWF 2,410,000</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-layers"/></svg>
+                <div class="report-name" th:text="#{rpt.ebmRegister}">EBM Invoice Register</div>
+                <div class="report-desc" th:text="#{rpt.ebmRegisterDesc}">Invoices sent to EBM</div>
+                <div class="report-meta">14 of 14 submitted</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-users"/></svg>
+                <div class="report-name" th:text="#{rpt.payeRssb}">PAYE &amp; RSSB</div>
+                <div class="report-desc" th:text="#{rpt.payeRssbDesc}">Employee payroll taxes</div>
+                <div class="report-meta">Aug 2026 · RWF 684,000</div>
+            </button>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{rpt.other}">Other</h2>
+        <div class="grid grid-3">
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-calendar"/></svg>
+                <div class="report-name" th:text="#{rpt.budgetVsActual}">Budget vs Actual</div>
+                <div class="report-desc" th:text="#{rpt.budgetVsActualDesc}">Compare budget to spend</div>
+                <div class="report-meta">2026 · 3 budgets</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-pie"/></svg>
+                <div class="report-name" th:text="#{rpt.expenseBreakdown}">Expense Breakdown</div>
+                <div class="report-desc" th:text="#{rpt.expenseBreakdownDesc}">Spending by category</div>
+                <div class="report-meta">This year</div>
+            </button>
+            <button class="report-card" type="button">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-award"/></svg>
+                <div class="report-name" th:text="#{rpt.customBuilder}">Custom Report Builder</div>
+                <div class="report-desc" th:text="#{rpt.customBuilderDesc}">Drag-and-drop report designer</div>
+                <div class="report-meta">Pro feature</div>
+            </button>
+        </div>
+    </section>
+
+</main>
+</body>
+</html>

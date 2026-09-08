@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{cust.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{cust.title}">Customers</h1>
+            <p class="page-subtitle" th:text="#{cust.subtitle}">Manage your customer relationships, balances and activity.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                    <span th:text="#{common.export}">Export</span>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{common.exportCsv}">Export CSV</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{common.exportExcel}">Export Excel</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-printer"/></svg><span th:text="#{common.printList}">Print list</span></button>
+                </div>
+            </div>
+            <a class="btn btn-primary" th:href="@{/customers/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{cust.new}">New Customer</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.total}">Total customers</div>
+            <div class="stat-tile-value">248</div>
+            <div class="stat-tile-sub" th:text="#{cust.valueOf('12')}">+12 this month</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.outstanding}">Outstanding balance</div>
+            <div class="stat-tile-value money">RWF 25,400,000</div>
+            <div class="stat-tile-sub text-info" th:text="#{dash.overdue('RWF 4,200,000')}">RWF 4,200,000 overdue</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.invoicedMonth}">Invoiced this month</div>
+            <div class="stat-tile-value money">RWF 19,840,000</div>
+            <div class="stat-tile-sub" th:text="#{cust.vsLastMonth('+8.1%')}">+8.1% vs last month</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.paymentsReceived}">Payments received</div>
+            <div class="stat-tile-value money">RWF 15,275,000</div>
+            <div class="stat-tile-sub" th:text="#{cust.transactionCount('234')}">234 transactions</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <!-- Toolbar -->
+        <div class="table-toolbar">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" th:placeholder="#{cust.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.filter}">Filter</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{cust.customerType}">Customer type</div>
+                    <button class="dropdown-item" type="button" th:text="#{cust.allCustomers}">All customers</button>
+                    <button class="dropdown-item" type="button" th:text="#{cust.withBalance}">With open balance</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.overdue}">Overdue</button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.inactive}">Inactive</button>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-columns"/></svg>
+                    <span th:text="#{common.columns}">Columns</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{cust.visibleColumns}">Visible columns</div>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" checked><span class="checkbox-box"></span><span th:text="#{common.name}">Name</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" checked><span class="checkbox-box"></span><span th:text="#{common.phone}">Phone</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" checked><span class="checkbox-box"></span><span th:text="#{common.city}">City</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" checked><span class="checkbox-box"></span><span th:text="#{common.balance}">Balance</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" checked><span class="checkbox-box"></span><span th:text="#{common.status}">Status</span></label>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </button>
+            <div class="toolbar-spacer"></div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-more-horizontal"/></svg>
+                    <span th:text="#{cust.bulkActions}">Bulk actions</span>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-mail"/></svg><span th:text="#{cust.emailSelected}">Email selected</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{cust.exportSelected}">Export selected</span></button>
+                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{cust.deactivateSelected}">Deactivate selected</span></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="row-check"><label class="checkbox"><input type="checkbox" data-select-all><span class="checkbox-box"></span></label></th>
+                        <th><button class="th-sort" type="button"><span th:text="#{cust.customerHeader}">Customer</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" th:text="#{common.phone}">Phone</button></th>
+                        <th th:text="#{common.email}">Email</th>
+                        <th th:text="#{common.city}">City</th>
+                        <th class="num"><button class="th-sort" type="button" th:text="#{common.balance}">Balance</button></th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="row-check"><label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span></label></td>
+                        <td><a class="cell-link" th:href="@{/customers/1}">ABC Construction Ltd</a><span class="cell-secondary" th:text="#{cust.since('Jan 2024')}">Since Jan 2024</span></td>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">+250 788 401 220</td>
+                        <td class="cell-secondary">info@abcconstruction.rw</td>
+                        <td class="cell-secondary">Kigali</td>
+                        <td class="num money money-negative">RWF 4,850,000</td>
+                        <td><span class="badge badge-overdue"><span class="badge-dot"></span><span th:text="#{common.status.overdue}">Overdue</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/customers/1}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/customers/1/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/new?customer=1}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{cust.createInvoice}">Create invoice</span></a>
+                                    <a class="dropdown-item" th:href="@{/sales/statements?customer=1}"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{cust.statement}">Statement</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="row-check"><label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span></label></td>
+                        <td><a class="cell-link" th:href="@{/customers/2}">Gorilla Retreat Ltd</a><span class="cell-secondary" th:text="#{cust.since('Mar 2025')}">Since Mar 2025</span></td>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">+250 782 340 118</td>
+                        <td class="cell-secondary">billing@gorillaretreat.rw</td>
+                        <td class="cell-secondary">Musanze</td>
+                        <td class="num money">RWF 0</td>
+                        <td><span class="badge badge-active"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/customers/2}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/customers/2/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/new?customer=2}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{cust.createInvoice}">Create invoice</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="row-check"><label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span></label></td>
+                        <td><a class="cell-link" th:href="@{/customers/3}">Kivu Fresh Ltd</a><span class="cell-secondary" th:text="#{cust.since('Jan 2024')}">Since Jan 2024</span></td>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">+250 788 190 774</td>
+                        <td class="cell-secondary">sales@kivufresh.rw</td>
+                        <td class="cell-secondary">Karongi</td>
+                        <td class="num money money-positive">RWF 540,000</td>
+                        <td><span class="badge badge-partially-paid"><span class="badge-dot"></span><span th:text="#{common.status.partiallyPaid}">Partially paid</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/customers/3}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/customers/3/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/invoices/new?customer=3}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{cust.createInvoice}">Create invoice</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="row-check"><label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span></label></td>
+                        <td><a class="cell-link" th:href="@{/customers/4}">Rwanda Artisan Co-op</a><span class="cell-secondary" th:text="#{cust.since('Aug 2025')}">Since Aug 2025</span></td>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">+250 733 555 098</td>
+                        <td class="cell-secondary">admin@rwandaartisan.biz</td>
+                        <td class="cell-secondary">Nyagatare</td>
+                        <td class="num money money-negative">RWF 1,275,000</td>
+                        <td><span class="badge badge-open"><span class="badge-dot"></span><span th:text="#{common.status.open}">Open</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/customers/4}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/customers/4/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="row-check"><label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span></label></td>
+                        <td><a class="cell-link" th:href="@{/customers/5}">Chantal Designs</a><span class="cell-secondary" th:text="#{cust.since('Nov 2025')}">Since Nov 2025</span></td>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">+250 789 620 443</td>
+                        <td class="cell-secondary">hello@chantaldesigns.rw</td>
+                        <td class="cell-secondary">Kigali</td>
+                        <td class="num money money-positive">RWF 890,000</td>
+                        <td><span class="badge badge-sent"><span class="badge-dot"></span><span th:text="#{common.status.sent}">Sent</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/customers/5}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/customers/5/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="row-check"><label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span></label></td>
+                        <td><a class="cell-link" th:href="@{/customers/6}">Mountance Logistics</a><span class="cell-secondary" th:text="#{cust.since('Feb 2024')}">Since Feb 2024</span></td>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">+250 722 081 336</td>
+                        <td class="cell-secondary">contact@mountance.co</td>
+                        <td class="cell-secondary">Huye</td>
+                        <td class="num money money-negative">RWF 3,450,000</td>
+                        <td><span class="badge badge-overdue"><span class="badge-dot"></span><span th:text="#{common.status.overdue}">Overdue</span></span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/customers/6}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/customers/6/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="table-footer">
+            <span th:text="#{cust.showing('1–25', '248')}">Showing 1–25 of 248 records</span>
+            <nav class="pagination" th:aria-label="#{common.ariaPagination}">
+                <button class="page-btn" type="button" disabled>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg>
+                </button>
+                <button class="page-btn active" type="button">1</button>
+                <button class="page-btn" type="button">2</button>
+                <button class="page-btn" type="button">3</button>
+                <button class="page-btn" type="button">4</button>
+                <button class="page-btn" type="button">5</button>
+                <span class="page-ellipsis">…</span>
+                <button class="page-btn" type="button">10</button>
+                <button class="page-btn" type="button">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div class="modal-backdrop" id="deleteCustomerModal">
+        <div class="modal modal--sm">
+            <div class="modal-header">
+                <h3 th:text="#{cust.deleteTitle}">Delete customer</h3>
+                <button class="modal-close" type="button" data-close-modal th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex gap-3">
+                    <span class="notification-icon notification-icon--warning"><svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg></span>
+                    <div>
+                        <p class="text-md" th:text="#{cust.deleteConfirm('ABC Construction Ltd')}">Are you sure you want to delete <strong>ABC Construction Ltd</strong>?</p>
+                        <p class="text-sm text-secondary mt-1" th:text="#{cust.deleteWarn('RWF 4,850,000')}">This customer has an outstanding balance of <strong>RWF 4,850,000</strong>. Deletion cannot be undone. Consider deactivating instead.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-close-modal th:text="#{common.cancel}">Cancel</button>
+                <button class="btn btn-danger" type="button">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                    <span th:text="#{cust.deleteBtn}">Delete customer</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

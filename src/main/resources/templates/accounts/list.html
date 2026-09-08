@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{coa.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{coa.title}">Chart of accounts</h1>
+            <p class="page-subtitle" th:text="#{coa.subtitle('07 Sep 2026')}">Active accounts as of 07 Sep 2026, grouped by account type.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-secondary" type="button" data-open-modal="newAccountModal">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{coa.new}">New account</span>
+            </button>
+            <button class="btn btn-primary" type="button" data-open-drawer="importDrawer">
+                <svg class="ebook-icon"><use href="#icon-upload"/></svg>
+                <span th:text="#{coa.import}">Import chart</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Account type tiles -->
+    <div class="grid grid-6 mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.type.asset}">Assets</div>
+            <div class="stat-tile-value text-md money">RWF 38,410,000</div>
+            <div class="stat-tile-sub" th:text="#{coa.accountsLabel('18')}">18 accounts</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.type.liability}">Liabilities</div>
+            <div class="stat-tile-value text-md money">RWF 12,860,000</div>
+            <div class="stat-tile-sub" th:text="#{coa.accountsLabel('11')}">11 accounts</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.type.equity}">Equity</div>
+            <div class="stat-tile-value text-md money">RWF 9,700,000</div>
+            <div class="stat-tile-sub" th:text="#{coa.accountsLabel('6')}">6 accounts</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.type.revenue}">Revenue</div>
+            <div class="stat-tile-value text-md money">RWF 24,900,000</div>
+            <div class="stat-tile-sub" th:text="#{coa.accountsLabel('9')}">9 accounts</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.type.expense}">Expenses</div>
+            <div class="stat-tile-value text-md money">RWF 16,700,000</div>
+            <div class="stat-tile-sub" th:text="#{coa.accountsLabel('14')}">14 accounts</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{coa.beginningBalance}">Beginning balance</div>
+            <div class="stat-tile-value text-md money">RWF 2,650,000</div>
+            <div class="stat-tile-sub" th:text="#{coa.openingLabel}">2026 opening</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-toolbar">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" placeholder="Search account name or code…" th:placeholder="#{coa.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.type}">Type</span>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button" th:text="#{coa.allTypes}">All types</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.type.asset}">Assets</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.type.liability}">Liabilities</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.type.equity}">Equity</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.type.revenue}">Revenue</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.type.expense}">Expenses</button>
+                </div>
+            </div>
+            <div class="report-filter">
+                <label class="form-label mb-0" th:text="#{coa.asOf}">As of</label>
+                <input class="form-control form-control--sm" type="date" value="2026-09-07">
+            </div>
+            <div class="toolbar-spacer"></div>
+            <button class="btn btn-ghost btn-sm" type="button">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-download"/></svg>
+                <span th:text="#{common.export}">Export</span>
+            </button>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{coa.code}">Code</th>
+                        <th th:text="#{coa.account}">Account</th>
+                        <th th:text="#{common.type}">Type</th>
+                        <th class="w-25" th:text="#{coa.parent}">Parent</th>
+                        <th class="num" th:text="#{coa.openingBalance}">Opening balance</th>
+                        <th class="num" th:text="#{common.balance}">Balance</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Assets -->
+                    <tr class="coa-type-row">
+                        <td colspan="7" class="coa-type-label" th:text="#{common.type.asset}">Assets</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">1101</td>
+                        <td><span class="cell-primary">BK Bank — Current</span></td>
+                        <td><span class="badge badge-asset" th:text="#{common.type.asset}">Asset</span></td>
+                        <td class="cell-secondary">1000 Bank accounts</td>
+                        <td class="num">RWF 5,000,000</td>
+                        <td class="num font-semibold">RWF 9,450,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/reports/trial-balance}"><svg class="ebook-icon"><use href="#icon-search"/></svg><span th:text="#{coa.accountActivity}">Account activity</span></a>
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-pause"/></svg><span th:text="#{coa.makeInactive}">Make inactive</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">1105</td>
+                        <td><span class="cell-primary">MTN Mobile Money</span></td>
+                        <td><span class="badge badge-asset" th:text="#{common.type.asset}">Asset</span></td>
+                        <td class="cell-secondary">1000 Bank accounts</td>
+                        <td class="num">RWF 800,000</td>
+                        <td class="num font-semibold">RWF 7,840,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/reports/trial-balance}"><svg class="ebook-icon"><use href="#icon-search"/></svg><span th:text="#{coa.accountActivity}">Account activity</span></a>
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">1201</td>
+                        <td><span class="cell-primary">Accounts receivable</span></td>
+                        <td><span class="badge badge-asset" th:text="#{common.type.asset}">Asset</span></td>
+                        <td class="cell-secondary">—</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 18,940,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/reports/aging}"><svg class="ebook-icon"><use href="#icon-clock"/></svg><span th:text="#{coa.agingSummary}">Aging summary</span></a>
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Liabilities -->
+                    <tr class="coa-type-row">
+                        <td colspan="7" class="coa-type-label" th:text="#{common.type.liability}">Liabilities</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">2001</td>
+                        <td><span class="cell-primary">Accounts payable</span></td>
+                        <td><span class="badge badge-liability" th:text="#{common.type.liability}">Liability</span></td>
+                        <td class="cell-secondary">—</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 9,230,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">2301</td>
+                        <td><span class="cell-primary">VAT payable</span></td>
+                        <td><span class="badge badge-liability" th:text="#{common.type.liability}">Liability</span></td>
+                        <td class="cell-secondary">2000 Other current liabilities</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 2,410,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Equity -->
+                    <tr class="coa-type-row">
+                        <td colspan="7" class="coa-type-label" th:text="#{common.type.equity}">Equity</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">3001</td>
+                        <td><span class="cell-primary">Owner's equity</span></td>
+                        <td><span class="badge badge-equity" th:text="#{common.type.equity}">Equity</span></td>
+                        <td class="cell-secondary">—</td>
+                        <td class="num">RWF 3,000,000</td>
+                        <td class="num font-semibold">RWF 3,000,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">3100</td>
+                        <td><span class="cell-primary">Retained earnings</span></td>
+                        <td><span class="badge badge-equity" th:text="#{common.type.equity}">Equity</span></td>
+                        <td class="cell-secondary">—</td>
+                        <td class="num">RWF -350,000</td>
+                        <td class="num font-semibold">RWF 6,700,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Revenue -->
+                    <tr class="coa-type-row">
+                        <td colspan="7" class="coa-type-label" th:text="#{common.type.revenue}">Revenue</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">4001</td>
+                        <td><span class="cell-primary">Consulting services</span></td>
+                        <td><span class="badge badge-revenue" th:text="#{common.type.revenue}">Revenue</span></td>
+                        <td class="cell-secondary">4000 Income</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 18,740,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">4002</td>
+                        <td><span class="cell-primary">Product sales</span></td>
+                        <td><span class="badge badge-revenue" th:text="#{common.type.revenue}">Revenue</span></td>
+                        <td class="cell-secondary">4000 Income</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 6,160,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Expenses -->
+                    <tr class="coa-type-row">
+                        <td colspan="7" class="coa-type-label" th:text="#{common.type.expense}">Expenses</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">5001</td>
+                        <td><span class="cell-primary">Rent expense</span></td>
+                        <td><span class="badge badge-expense" th:text="#{common.type.expense}">Expense</span></td>
+                        <td class="cell-secondary">5000 Operating expenses</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 3,600,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-xs">5200</td>
+                        <td><span class="cell-primary">Travel &amp; transport</span></td>
+                        <td><span class="badge badge-expense" th:text="#{common.type.expense}">Expense</span></td>
+                        <td class="cell-secondary">5000 Operating expenses</td>
+                        <td class="num">RWF 0</td>
+                        <td class="num font-semibold">RWF 1,940,000</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button" data-open-modal="editAccountModal"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <span th:text="#{coa.accountsTotal('58', '9')}">58 accounts total · 9 shown in preview</span>
+            <nav class="pagination" th:aria-label="#{common.ariaPagination}">
+                <button class="page-btn" type="button" disabled><svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg></button>
+                <button class="page-btn active" type="button">1</button>
+                <button class="page-btn" type="button">2</button>
+                <button class="page-btn" type="button">3</button>
+                <button class="page-btn" type="button">4</button>
+                <button class="page-btn" type="button">5</button>
+                <button class="page-btn" type="button"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg></button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- New account modal -->
+    <div class="modal-backdrop" id="newAccountModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 th:text="#{coa.new}">New account</h3>
+                <button class="modal-close" type="button" data-close-modal th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="accCode" th:text="#{coa.accountCode}">Account code</label>
+                        <input class="form-control" id="accCode" type="text" th:placeholder="#{coa.codePlaceholder}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="accType" th:text="#{coa.accountType}">Account type</label>
+                        <select class="form-control" id="accType">
+                            <option value="" th:text="#{coa.selectType}">Select type…</option>
+                            <option th:text="#{common.type.asset}">Asset</option>
+                            <option th:text="#{common.type.liability}">Liability</option>
+                            <option th:text="#{common.type.equity}">Equity</option>
+                            <option th:text="#{common.type.revenue}">Revenue</option>
+                            <option th:text="#{common.type.expense}">Expense</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="accName" th:text="#{coa.accountName}">Account name</label>
+                        <input class="form-control" id="accName" type="text" th:placeholder="#{coa.namePlaceholder}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="accParent"><span th:text="#{coa.parentAccount}">Parent account</span> <span class="hint" th:text="#{coa.optional}">optional</span></label>
+                        <select class="form-control" id="accParent">
+                            <option value="" th:text="#{coa.noParent}">— No parent —</option>
+                            <option>5000 Operating expenses</option>
+                            <option>1000 Bank accounts</option>
+                            <option>4000 Income</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="accBalance" th:text="#{coa.openingBalance}">Opening balance</label>
+                        <div class="input-group">
+                            <span class="input-prefix">RWF</span>
+                            <input class="form-control amount-control" id="accBalance" type="number" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="accDate" th:text="#{coa.asOfDate}">As of date</label>
+                        <input class="form-control" id="accDate" type="date" value="2026-01-01">
+                    </div>
+                </div>
+                <div class="alert alert--info mt-4">
+                    <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                    <div class="alert-body" th:text="#{coa.openingInfo}">Opening balances post to an opening-balance equity account.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-close-modal th:text="#{common.cancel}">Cancel</button>
+                <button class="btn btn-primary" type="button" data-close-modal>
+                    <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                    <span th:text="#{coa.createAccount}">Create account</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import drawer -->
+    <div class="drawer-bg drawer-backdrop" data-drawer-for="importDrawer"></div>
+    <aside class="drawer" id="importDrawer" th:aria-label="#{coa.importTitle}">
+        <div class="drawer-header">
+            <h3 th:text="#{coa.importTitle}">Import chart of accounts</h3>
+            <button class="modal-close" type="button" data-close-drawer th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+        </div>
+        <div class="drawer-body">
+            <div class="dropzone">
+                <svg class="ebook-icon ebook-icon--lg"><use href="#icon-upload"/></svg>
+                <p class="text-md mb-1"><span th:text="#{coa.dropCsv}">Drop your CSV here, or</span> <span class="link" th:text="#{common.browse}">browse files</span></p>
+                <p class="text-xs text-muted" th:text="#{coa.csvColumns}">Columns: code, name, type, parent_code, opening_balance</p>
+            </div>
+            <a class="link text-sm" th:href="@{/assets/templates/coa-template.csv}"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-download"/></svg><span th:text="#{coa.downloadTemplate}">Download CSV template</span></a>
+            <hr style="margin:var(--sp-5) 0">
+            <div class="form-group">
+                <label class="form-label" for="importReplace" th:text="#{coa.onDuplicate}">On duplicate code</label>
+                <select class="form-control" id="importReplace">
+                    <option th:text="#{coa.skip}">Skip</option>
+                    <option th:text="#{coa.updateExisting}">Update existing</option>
+                    <option th:text="#{coa.error}">Error</option>
+                </select>
+            </div>
+            <div class="alert alert--warning">
+                <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+                <div class="alert-body" th:text="#{coa.importWarning}">Importing replaces filtered accounts only. No accounts are deleted.</div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" type="button" data-close-drawer th:text="#{common.cancel}">Cancel</button>
+            <button class="btn btn-primary" type="button" data-close-drawer>
+                <svg class="ebook-icon"><use href="#icon-upload"/></svg>
+                <span th:text="#{coa.startImport}">Start import</span>
+            </button>
+        </div>
+    </aside>
+
+</main>
+</body>
+</html>

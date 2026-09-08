@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(pageTitle, content)">
+
+<!-- ============================================================
+     Ebook Online — Base application shell
+     Usage: <html th:replace="~{layout/base :: layout(#{page.title}, ~{::content})}">
+     Pages define <main th:fragment="content">...</main> and <head>.
+     ============================================================ -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ebook Online — Cloud accounting and business management platform">
+    <title th:text="${pageTitle != null and !#strings.isEmpty(pageTitle)} ? ${pageTitle} + ' | ' + #{app.name} : #{app.name} + ' — ' + #{app.tagline}">Ebook Online</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/ebook.css}">
+    <link rel="stylesheet" th:href="@{/vendor/choicesjs/choices.min.css}">
+    <script th:src="@{/vendor/chartjs/chart.umd.min.js}" defer></script>
+    <script th:src="@{/vendor/choicesjs/choices.min.js}" defer></script>
+</head>
+
+<body id="top" class="ebook-shell">
+
+    <!-- SVG icon sprite -->
+    <th:block th:replace="~{layout/icons :: sprite}"></th:block>
+
+    <!-- Sidebar -->
+    <aside class="ebook-sidebar" id="ebookSidebar" aria-label="#{common.ariaMainNav}">
+        <th:block th:replace="~{layout/sidebar :: sidebar}"></th:block>
+    </aside>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div class="overlay-backdrop sidebar-overlay" data-overlay-close aria-hidden="true"></div>
+
+    <!-- Topbar -->
+    <header class="ebook-topbar">
+        <th:block th:replace="~{layout/topbar :: topbar}"></th:block>
+    </header>
+
+    <!-- Main content -->
+    <main class="ebook-main">
+        <div class="ebook-content">
+            <th:block th:if="${breadcrumbs != null and !#lists.isEmpty(breadcrumbs)}">
+                <div th:replace="~{layout/breadcrumbs :: breadcrumbs}"></div>
+            </th:block>
+            <th:block th:replace="~{layout/common :: flash}"></th:block>
+            <div th:replace="${content}"></div>
+        </div>
+    </main>
+
+    <!-- Mobile bottom navigation -->
+    <nav class="mobile-bottom-nav" aria-label="#{common.ariaMobileNav}">
+        <a th:href="@{/}" class="active"><svg class="ebook-icon"><use href="#icon-dashboard"/></svg><span th:text="#{nav.dashboard}">Home</span></a>
+        <a th:href="@{/invoices}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{nav.sales}">Sales</span></a>
+        <a th:href="@{/banking/transactions}" data-open-quick-create=""><svg class="ebook-icon"><use href="#icon-bank"/></svg><span th:text="#{nav.banking}">Bank</span></a>
+        <a th:href="@{/reports}"><svg class="ebook-icon"><use href="#icon-bar-chart"/></svg><span th:text="#{nav.reports}">Reports</span></a>
+        <a th:href="@{/settings}"><svg class="ebook-icon"><use href="#icon-gear"/></svg><span th:text="#{nav.settings}">Settings</span></a>
+    </nav>
+
+    <!-- Global overlays -->
+    <div th:replace="~{layout/global-search :: palette}"></div>
+    <div th:replace="~{layout/quick-create :: menu}"></div>
+    <div th:replace="~{layout/notifications :: drawer}"></div>
+    <div th:replace="~{layout/common :: toasts}"></div>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/ebook.js}"></script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tran.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{tran.title}">Transactions</h1>
+            <p class="page-subtitle" th:text="#{tran.subtitle}">All bank and mobile money movements across your accounts.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/banking/accounts}">
+                <svg class="ebook-icon"><use href="#icon-bank"/></svg>
+                <span th:text="#{tran.manageAccounts}">Manage accounts</span>
+            </a>
+            <button class="btn btn-primary" type="button" data-open-drawer="newTransactionDrawer">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{tran.newTransaction}">New transaction</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Account switcher -->
+    <div class="grid grid-4 mb-5">
+        <button class="card p-4 text-left cursor-pointer" type="button" style="border-color:var(--primary-300);background:var(--primary-50)">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-tile-label" th:text="#{tran.allAccounts}">All accounts</span>
+                <span class="badge badge-info" th:text="#{tran.accountCount('3')}">3 accounts</span>
+            </div>
+            <div class="stat-tile-value text-md mt-1 money">RWF 22,780,000</div>
+        </button>
+        <button class="card p-4 text-left cursor-pointer" type="button">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-tile-label">BK Bank — Current</span>
+                <span class="badge badge-neutral">•••• 2210</span>
+            </div>
+            <div class="stat-tile-value text-md mt-1 money">RWF 9,450,000</div>
+            <div class="stat-tile-sub" th:text="#{tran.feedsSync('4')}">Feeds sync: 4 min ago</div>
+        </button>
+        <button class="card p-4 text-left cursor-pointer" type="button">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-tile-label">MTN MoMo</span>
+                <span class="badge badge-status badge-neutral">0788 ••• 220</span>
+            </div>
+            <div class="stat-tile-value text-md mt-1 money">RWF 7,840,000</div>
+            <div class="stat-tile-sub" th:text="#{tran.feedsSync('2')}">Feeds sync: 2 min ago</div>
+        </button>
+        <button class="card p-4 text-left cursor-pointer" type="button">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-tile-label">Petty Cash</span>
+                <span class="badge badge-neutral">Cash</span>
+            </div>
+            <div class="stat-tile-value text-md mt-1 money">RWF 890,000</div>
+            <div class="stat-tile-sub" th:text="#{tran.cashOnHand}">Cash on hand</div>
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="table-toolbar">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" th:placeholder="#{tran.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{tran.statusLabel}">Status</span>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button" th:text="#{inv.all}">All</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.reconciled}">Reconciled</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.matched}">Matched</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.uncategorized}">Uncategorized</button>
+                    <button class="dropdown-item" type="button" th:text="#{common.status.excluded}">Excluded</button>
+                </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="button" data-open-drawer="reconcileDrawer">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-refresh"/></svg>
+                <span th:text="#{tran.reconcile}">Reconcile</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" th:title="#{common.ariaRefresh}"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg></button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:text="#{tran.showing('1–20', '1,284')}">Showing 1–20 of 1,284</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{tran.date}">Date</th>
+                        <th th:text="#{tran.description}">Description</th>
+                        <th th:text="#{tran.ref}">Reference</th>
+                        <th th:text="#{common.account}">Account</th>
+                        <th th:text="#{tran.categoryLabel}">Category</th>
+                        <th class="num" th:text="#{tran.amountLabel}">Amount</th>
+                        <th th:text="#{tran.statusLabel}">Status</th>
+                        <th th:text="#{tran.matchHeader}">Match</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">07 Sep 2026</td>
+                        <td><span class="cell-primary">Payment in — MTN MoMo</span></td>
+                        <td class="font-mono text-xs">MTN-0871-2201</td>
+                        <td class="cell-secondary">MTN MoMo</td>
+                        <td class="cell-secondary">Undeposited funds</td>
+                        <td class="num money money-positive">+RWF 1,200,000</td>
+                        <td><span class="badge badge-active"><span class="badge-dot"></span><span th:text="#{common.status.matched}">Matched</span></span></td>
+                        <td><button class="btn btn-soft btn-xs" type="button" data-open-modal="matchModal" th:text="#{tran.matchBtn}">MATCH</button></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/invoices/450}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{tran.viewLinked}">View linked</span></a>
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">06 Sep 2026</td>
+                        <td><span class="cell-primary">Salary payments</span></td>
+                        <td class="font-mono text-xs">BKC-2026-0919</td>
+                        <td class="cell-secondary">BK Bank — Current</td>
+                        <td class="cell-secondary">Payroll expenses</td>
+                        <td class="num money money-negative">-RWF 6,420,000</td>
+                        <td><span class="badge badge-active"><span class="badge-dot"></span><span th:text="#{common.status.matched}">Matched</span></span></td>
+                        <td><button class="btn btn-soft btn-xs" type="button" data-open-modal="matchModal" th:text="#{tran.matchBtn}">MATCH</button></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/banking/transactions/9079}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">05 Sep 2026</td>
+                        <td><span class="cell-primary">RRA EBM VAT remittance</span></td>
+                        <td class="font-mono text-xs">RRA-2026-885</td>
+                        <td class="cell-secondary">BK Bank — Current</td>
+                        <td class="cell-secondary">VAT payable</td>
+                        <td class="num money money-negative">-RWF 2,410,000</td>
+                        <td><span class="badge badge-active"><span class="badge-dot"></span><span th:text="#{common.status.categorized}">Categorized</span></span></td>
+                        <td><span class="text-xs text-muted">—</span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></button>
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">04 Sep 2026</td>
+                        <td><span class="cell-primary">Vendor payment — Zanazi Suppliers</span></td>
+                        <td class="font-mono text-xs">BKC-2026-0910</td>
+                        <td class="cell-secondary">BK Bank — Current</td>
+                        <td class="cell-secondary">—</td>
+                        <td class="num money money-negative">-RWF 1,150,000</td>
+                        <td><span class="badge badge-warning"><span class="badge-dot"></span><span th:text="#{common.status.uncategorized}">Uncategorized</span></span></td>
+                        <td><button class="btn btn-soft btn-xs" type="button" data-open-drawer="categorizeDrawer" th:text="#{tran.categorizeBtn}">CATEGORIZE</button></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                    <button class="dropdown-item" type="button" data-open-drawer="categorizeDrawer"><svg class="ebook-icon"><use href="#icon-tag"/></svg><span th:text="#{tran.categorize}">Categorize</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">03 Sep 2026</td>
+                        <td><span class="cell-primary">Cash withdrawal — petty cash</span></td>
+                        <td class="font-mono text-xs">BKC-2026-0908</td>
+                        <td class="cell-secondary">BK Bank — Current</td>
+                        <td class="cell-secondary">Petty cash</td>
+                        <td class="num money money-negative">-RWF 600,000</td>
+                        <td><span class="badge badge-active"><span class="badge-dot"></span><span th:text="#{common.status.categorized}">Categorized</span></span></td>
+                        <td><span class="text-xs text-muted">—</span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="cell-secondary" style="font-size:var(--fs-md)">02 Sep 2026</td>
+                        <td><span class="cell-primary">Payment in — Airtel Money</span></td>
+                        <td class="font-mono text-xs">AIRTEL-9081</td>
+                        <td class="cell-secondary">Airtel Money</td>
+                        <td class="cell-secondary">Undeposited funds</td>
+                        <td class="num money money-positive">+RWF 540,000</td>
+                        <td><span class="badge badge-success"><span class="badge-dot"></span><span th:text="#{common.status.reconciled}">Reconciled</span></span></td>
+                        <td><button class="btn btn-soft btn-xs" type="button" data-open-modal="matchModal" th:text="#{tran.matchBtn}">MATCH</button></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></button>
+                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <span th:text="#{tran.showing('1–20', '1,284')}">Showing 1–20 of 1,284 transactions</span>
+            <nav class="pagination" th:aria-label="#{common.ariaPagination}">
+                <button class="page-btn" type="button" disabled><svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg></button>
+                <button class="page-btn active" type="button">1</button>
+                <button class="page-btn" type="button">2</button>
+                <button class="page-btn" type="button">3</button>
+                <span class="page-ellipsis">…</span>
+                <button class="page-btn" type="button">65</button>
+                <button class="page-btn" type="button"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg></button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Match modal -->
+    <div class="modal-backdrop" id="matchModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 th:text="#{tran.matchTitle}">Match transaction</h3>
+                <button class="modal-close" type="button" data-close-modal th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-4 p-3" style="background:var(--surface-muted);border-radius:var(--radius-md)">
+                    <div>
+                        <div class="text-md font-semibold">Payment in — MTN MoMo</div>
+                        <div class="text-sm text-muted">+RWF 1,200,000 · 07 Sep 2026</div>
+                    </div>
+                    <span class="badge badge-info" th:text="#{tran.aiSuggest}">AI suggest: 96%</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="matchInvoice" th:text="#{tran.matchToInvoice}">Match to invoice</label>
+                    <select class="form-control" id="matchInvoice">
+                        <option value="" th:text="#{tran.suggestMatches}">— Suggest matches —</option>
+                        <option selected>INV-2026-00450 · Gorilla Retreat Ltd · RWF 860,000</option>
+                        <option>INV-2026-00449 · Kivu Fresh Ltd · RWF 540,000</option>
+                        <option>INV-2026-00448 · Chantal Designs · RWF 890,000</option>
+                    </select>
+                    <div class="form-hint" th:text="#{tran.aiHint}">AI matched likely candidates. Select the correct one.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-close-modal th:text="#{common.cancel}">Cancel</button>
+                <button class="btn btn-primary" type="button">
+                    <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                    <span th:text="#{tran.confirmMatch}">Confirm match</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categorize drawer -->
+    <div class="drawer-bg drawer-backdrop" data-drawer-for="categorizeDrawer"></div>
+    <aside class="drawer" id="categorizeDrawer" th:aria-label="#{tran.categorizeTitle}">
+        <div class="drawer-header">
+            <h3 th:text="#{tran.categorizeTitle}">Categorize transaction</h3>
+            <button class="modal-close" type="button" data-close-drawer th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+        </div>
+        <div class="drawer-body">
+            <div class="form-group">
+                <label class="form-label" for="catSelect" th:text="#{tran.categoryLabel}">Category</label>
+                <select class="form-control" id="catSelect">
+                    <option value="" th:text="#{tran.selectCategory}">Select a category…</option>
+                    <option>Cost of goods sold</option>
+                    <option>Transport</option>
+                    <option>Rent</option>
+                    <option>Utilities</option>
+                    <option>Salaries</option>
+                    <option>Office supplies</option>
+                </select>
+                <div class="form-hint" th:utext="#{tran.aiPredict('Cost of goods sold', '82')}">AI predicts: <strong>Cost of goods sold</strong> (82% confidence)</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="catVendor" th:text="#{tran.vendorPayee}">Vendor / payee</label>
+                <select class="form-control" id="catVendor">
+                    <option value="" th:text="#{tran.none}">— None —</option>
+                    <option selected>Zanazi Suppliers</option>
+                    <option>BK Rentals</option>
+                    <option>RURA</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="catNote" th:text="#{tran.note}">Note</label>
+                <input class="form-control" id="catNote" type="text" th:placeholder="#{tran.notePlaceholder}">
+            </div>
+            <label class="switch">
+                <input type="checkbox"><span class="switch-track"></span>
+                <span class="switch-label" th:text="#{tran.markReconciled}">Mark as reconciled</span>
+            </label>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" type="button" data-close-drawer th:text="#{common.cancel}">Cancel</button>
+            <button class="btn btn-primary" type="button" data-close-drawer>
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{tran.saveCategory}">Save category</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- New transaction drawer -->
+    <div class="drawer-bg drawer-backdrop" data-drawer-for="newTransactionDrawer"></div>
+    <aside class="drawer drawer--wide" id="newTransactionDrawer" th:aria-label="#{tran.newTitle}">
+        <div class="drawer-header">
+            <h3 th:text="#{tran.newTitle}">New transaction</h3>
+            <button class="modal-close" type="button" data-close-drawer th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
+        </div>
+        <div class="drawer-body">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" th:text="#{tran.type}">Type</label>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-soft btn-sm" type="button" th:text="#{tran.moneyIn}">Money in</button>
+                        <button class="btn btn-secondary btn-sm" type="button" th:text="#{tran.moneyOut}">Money out</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ntAccount" th:text="#{common.account}">Account</label>
+                    <select class="form-control" id="ntAccount">
+                        <option selected>1105 MTN MoMo</option>
+                        <option>1101 BK Bank — Current</option>
+                        <option>1104 Airtel Money</option>
+                        <option>1201 Petty Cash</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ntDate" th:text="#{tran.date}">Date</label>
+                    <input class="form-control" id="ntDate" type="date" value="2026-09-07">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ntAmount" th:text="#{tran.amountLabel}">Amount</label>
+                    <div class="input-group">
+                        <span class="input-prefix">RWF</span>
+                        <input class="form-control amount-control" id="ntAmount" type="number">
+                    </div>
+                </div>
+                <div class="form-group col-span-2">
+                    <label class="form-label" for="ntDesc" th:text="#{tran.description}">Description</label>
+                    <input class="form-control" id="ntDesc" type="text" th:placeholder="#{tran.descPlaceholder}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ntCategory" th:text="#{tran.categoryLabel}">Category</label>
+                    <select class="form-control" id="ntCategory">
+                        <option th:text="#{tran.none}">— Uncategorized —</option>
+                        <option>Sales / receivables</option>
+                        <option>Expense</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ntRef" th:text="#{tran.ref}">Reference</label>
+                    <input class="form-control" id="ntRef" type="text" th:placeholder="#{tran.refPlaceholder}">
+                </div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" type="button" data-close-drawer th:text="#{common.cancel}">Cancel</button>
+            <button class="btn btn-primary" type="button" data-close-drawer th:text="#{tran.addTransaction}">Add transaction</button>
+        </div>
+    </aside>
+
+</main>
+</body>
+</html>
