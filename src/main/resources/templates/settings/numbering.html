@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.numbering.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.numbering.title}">Numbering Sequences</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.numbering.title}">Numbering Sequences</h1>
+            <p class="page-subtitle" th:text="#{set.numbering.subtitle}">Rules for automatically numbering invoices, purchase orders and other documents.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/settings/numbering/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{set.numbering.new}">New sequence</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{set.numbering.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'docType', #{set.numbering.docType}, ${sort}, ${dir})}">Document type</th>
+                        <th th:text="#{set.numbering.format}">Format</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'nextNumber', #{set.numbering.next}, ${sort}, ${dir})}">Next number</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'resetYearly', #{set.numbering.resetYearly}, ${sort}, ${dir})}">Yearly reset</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'active', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="s : ${sequences.content}">
+                        <td class="fw-600" th:text="${s.name}">Invoice</td>
+                        <td><span class="badge badge-neutral font-mono" th:text="${s.docType}">INVOICE</span></td>
+                        <td class="cell-secondary font-mono" th:text="${s.previewNext()}">INV-0001-2026</td>
+                        <td class="cell-secondary" th:text="${s.nextNumber}">1</td>
+                        <td>
+                            <span class="badge badge-success" th:if="${s.resetYearly}" th:text="#{set.yes}">Yes</span>
+                            <span class="badge badge-muted" th:unless="${s.resetYearly}" th:text="#{set.no}">No</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-success" th:if="${s.active}" th:text="#{common.status.active}">Active</span>
+                            <span class="badge badge-muted" th:unless="${s.active}" th:text="#{common.status.inactive}">Inactive</span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/settings/numbering/{id}/edit(id=${s.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(sequences.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-list"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.numbering.none}">No numbering sequences yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${sequences.totalPages > 1}">
+            <span th:text="#{set.records(${sequences.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${sequences.number + 1}, ${sequences.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

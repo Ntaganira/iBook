@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.branches.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.branches.title}">Branches</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.branches.title}">Branches</h1>
+            <p class="page-subtitle" th:text="#{set.branches.subtitle}">Locations and offices where your business operates.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/settings/branches/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{set.branches.new}">New branch</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{set.branches.name}, ${sort}, ${dir})}">Branch</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'code', #{set.branches.code}, ${sort}, ${dir})}">Code</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'city', #{common.city}, ${sort}, ${dir})}">City</th>
+                        <th th:text="#{set.branches.contact}">Contact</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'defaultBranch', #{set.branches.defaultLabel}, ${sort}, ${dir})}">Default</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'active', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b : ${branches.content}">
+                        <td class="font-semibold" th:text="${b.name}">Kigali HQ</td>
+                        <td><span class="badge badge-neutral font-mono" th:text="${b.code}">KGL</span></td>
+                        <td class="cell-secondary" th:text="${b.city}">Kigali</td>
+                        <td class="cell-secondary">
+                            <div th:if="${b.contactPerson != null}" th:text="${b.contactPerson}">Aline Uwase</div>
+                            <div th:if="${b.phone != null}" class="text-xs text-muted" th:text="${b.phone}">+250 788 301 010</div>
+                        </td>
+                        <td>
+                            <span class="badge badge-primary" th:if="${b.defaultBranch}" th:text="#{set.branches.defaultLabel}">Default</span>
+                            <span th:unless="${b.defaultBranch}" th:text="${'—'}">—</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-success" th:if="${b.active}" th:text="#{common.status.active}">Active</span>
+                            <span class="badge badge-muted" th:unless="${b.active}" th:text="#{common.status.inactive}">Inactive</span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/settings/branches/{id}/edit(id=${b.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:action="@{/settings/branches/{id}/toggle(id=${b.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-pause"/></svg>
+                                            <span th:if="${b.active}" th:text="#{set.branches.makeInactive}">Make inactive</span>
+                                            <span th:unless="${b.active}" th:text="#{set.branches.makeActive}">Make active</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(branches.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-network"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.branches.none}">No branches yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${branches.totalPages > 1}">
+            <span th:text="#{set.records(${branches.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${branches.number + 1}, ${branches.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.currencies.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.currencies.title}">Currencies</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.currencies.title}">Currencies</h1>
+            <p class="page-subtitle" th:text="#{set.currencies.subtitle}">Currencies available for transactions and reporting.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/settings/exchange-rates}">
+                <svg class="ebook-icon"><use href="#icon-clock"/></svg>
+                <span th:text="#{set.currencies.rates}">Exchange rates</span>
+            </a>
+            <a class="btn btn-secondary" th:href="@{/settings/currencies/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{set.currencies.new}">New currency</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'code', #{set.currencies.currency}, ${sort}, ${dir})}">Currency</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{set.currencies.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'decimals', #{set.currencies.decimals}, ${sort}, ${dir})}">Decimals</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'exchangeRateToBase', #{set.currencies.rateToBase}, ${sort}, ${dir})}">Rate to base</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'enabled', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c : ${currencies.content}">
+                        <td>
+                            <div class="d-flex gap-2 align-center">
+                                <span class="fw-600 font-mono" th:text="${c.code}">RWF</span>
+                                <span class="badge badge-primary" th:if="${c.base}" th:text="#{set.currencies.base}">Base</span>
+                            </div>
+                        </td>
+                        <td class="cell-secondary" th:text="${c.symbol != null and !#strings.isEmpty(c.symbol) ? c.symbol + ' ' + c.name : c.name}">frw Rwandan Franc</td>
+                        <td class="cell-secondary" th:text="${c.decimals}">2</td>
+                        <td class="cell-secondary" th:text="${c.base ? '1.0000' : c.exchangeRateToBase != null ? #numbers.formatDecimal(c.exchangeRateToBase, 1, 4, 'POINT') : '—'}">1.0000</td>
+                        <td>
+                            <span class="badge badge-success" th:if="${c.enabled}" th:text="#{common.status.active}">Active</span>
+                            <span class="badge badge-muted" th:unless="${c.enabled}" th:text="#{common.status.disabled}">Disabled</span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/settings/currencies/{id}/edit(id=${c.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:action="@{/settings/currencies/{id}/toggle(id=${c.id})}" method="post">
+                                        <button class="dropdown-item" type="submit" th:disabled="${c.base}"><svg class="ebook-icon"><use href="#icon-pause"/></svg>
+                                            <span th:if="${c.enabled}" th:text="#{set.currencies.disable}">Disable</span>
+                                            <span th:unless="${c.enabled}" th:text="#{set.currencies.enable}">Enable</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(currencies.content)}">
+                        <td class="table-empty" colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-dollar"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.currencies.none}">No currencies yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${currencies.totalPages > 1}">
+            <span th:text="#{set.records(${currencies.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${currencies.number + 1}, ${currencies.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.entity
+ * - File      : User.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : JPA entity for application users
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.entity;
 
 import jakarta.persistence.*;

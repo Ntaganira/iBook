@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.service
+ * - File      : MailService.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Email delivery service
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.service;
 
 import org.slf4j.Logger;

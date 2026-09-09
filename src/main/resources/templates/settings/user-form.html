@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.user.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings/users}" th:text="#{set.users.title}">Users</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{set.user.edit.title}">Edit user</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{set.user.new.title}">New user</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{set.user.edit.title}">Edit user</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{set.user.new.title}">New user</h1>
+            <p class="page-subtitle" th:text="#{set.user.subtitle}">Create or update team members and their access level.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/settings/users}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="userForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.user.save}">Save user</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="userForm" th:action="${mode == 'edit'} ? @{/settings/users/{id}(id=${editingId})} : @{/settings/users}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.user.personalInfo}">Personal information</h3>
+                            <div class="card-subtitle" th:text="#{set.user.personalHint}">Used to identify the user in the system</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="userFirstName"><span th:text="#{common.firstName}">First name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="userFirstName" name="firstName" type="text" th:value="${form.firstName}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('firstName')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="userLastName"><span th:text="#{common.lastName}">Last name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="userLastName" name="lastName" type="text" th:value="${form.lastName}" required>
+                                <div th:replace="~{layout/common :: fieldError('lastName')}"></div>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="userUsername"><span th:text="#{common.username}">Username</span> <span class="required">*</span></label>
+                                <input class="form-control" id="userUsername" name="username" type="text" th:value="${form.username}" required>
+                                <div class="form-hint" th:text="#{set.user.usernameHint}">Unique sign-in name, lowercase letters and digits.</div>
+                                <div th:replace="~{layout/common :: fieldError('username')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="userEmail"><span th:text="#{common.email}">Email</span> <span class="required">*</span></label>
+                                <input class="form-control" id="userEmail" name="email" type="email" th:value="${form.email}" required>
+                                <div th:replace="~{layout/common :: fieldError('email')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="userPhone" th:text="#{common.phone}">Phone</label>
+                                <input class="form-control" id="userPhone" name="phone" type="tel" th:value="${form.phone}" placeholder="+250 7XX XXX XXX">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.user.access}">Access</h3>
+                            <div class="card-subtitle" th:text="#{set.user.accessHint}">Role and branch affect what the user can see and do</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="userRole"><span th:text="#{set.users.role}">Role</span> <span class="required">*</span></label>
+                                <select class="form-control" id="userRole" name="roleId" required>
+                                    <option value="" th:text="#{set.user.selectRole}">Select role</option>
+                                    <option th:each="r : ${roles}" th:value="${r.id}"
+                                            th:selected="${form.roleId != null and form.roleId == r.id}"
+                                            th:text="${r.name}">ADMIN</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('roleId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="userBranch" th:text="#{set.user.branch}">Branch</label>
+                                <select class="form-control" id="userBranch" name="branchId">
+                                    <option value="" th:text="#{set.user.allBranches}">All branches</option>
+                                    <option th:each="b : ${branches}" th:value="${b.id}"
+                                            th:selected="${form.branchId != null and form.branchId == b.id}"
+                                            th:text="${b.name}">Kigali HQ</option>
+                                </select>
+                            </div>
+                        </div>
+                        <hr style="margin:var(--sp-4) 0">
+                        <label class="switch">
+                            <input type="hidden" name="enabled" value="false">
+                            <input type="checkbox" name="enabled" th:checked="${form.enabled}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.user.isEnabled}">Account is enabled</span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.user.password}">Password</h3>
+                            <div class="card-subtitle" th:if="${mode == 'edit'}" th:text="#{set.user.passwordEditHint}">Leave blank to keep the current password</div>
+                            <div class="card-subtitle" th:unless="${mode == 'edit'}" th:text="#{set.user.passwordCreateHint}">Minimum 8 characters with uppercase and a number</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="userPassword">
+                                    <th:block th:if="${mode == 'edit'}">
+                                        <span th:text="#{set.user.newPassword}">New password</span>
+                                    </th:block>
+                                    <th:block th:unless="${mode == 'edit'}">
+                                        <span th:text="#{set.user.passwordLabel}">Password</span> <span class="required">*</span>
+                                    </th:block>
+                                </label>
+                                <input class="form-control" type="password" id="userPassword"
+                                       th:name="${mode == 'edit'} ? 'newPassword' : 'password'"
+                                       th:value="${mode == 'edit'} ? ${form.newPassword} : ${form.password}"
+                                       th:required="${mode != 'edit'}">
+                                <th:block th:unless="${mode == 'edit'}">
+                                    <div th:replace="~{layout/common :: fieldError('password')}"></div>
+                                </th:block>
+                                <th:block th:if="${mode == 'edit'}">
+                                    <div th:replace="~{layout/common :: fieldError('newPassword')}"></div>
+                                </th:block>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="userConfirm"><span th:text="#{set.user.confirmPassword}">Confirm password</span> <th:block th:unless="${mode == 'edit'}"><span class="required">*</span></th:block></label>
+                                <input class="form-control" type="password" id="userConfirm" name="confirmPassword"
+                                       th:value="${form.confirmPassword}"
+                                       th:required="${mode != 'edit'}">
+                                <div th:replace="~{layout/common :: fieldError('confirmPassword')}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

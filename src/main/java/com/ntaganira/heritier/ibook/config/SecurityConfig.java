@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.config
+ * - File      : SecurityConfig.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Spring Security filter chain and authentication
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.config;
 
 import com.ntaganira.heritier.ibook.security.DbUserDetailsService;
@@ -5,6 +15,7 @@ import com.ntaganira.heritier.ibook.security.Principal;
 import com.ntaganira.heritier.ibook.service.AuthService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +26,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final DbUserDetailsService dbUserDetailsService;

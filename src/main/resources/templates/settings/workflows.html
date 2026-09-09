@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.workflows.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.workflows.title}">Approval Workflows</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.workflows.title}">Approval Workflows</h1>
+            <p class="page-subtitle" th:text="#{set.workflows.subtitle}">Multi-step approval rules for invoices, purchase orders and more.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/settings/workflows/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{set.workflows.new}">New workflow</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{set.workflows.name}, ${sort}, ${dir})}">Workflow</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'module', #{set.workflow.module}, ${sort}, ${dir})}">Module</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'triggerEvent', #{set.workflow.trigger}, ${sort}, ${dir})}">Trigger event</th>
+                        <th th:text="#{set.workflows.schedule}">Schedule</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'active', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="wf : ${workflows.content}">
+                        <td>
+                            <div class="fw-600" th:text="${wf.name}">Invoice approval</div>
+                            <div class="text-xs text-secondary" th:if="${wf.description != null}" th:text="${wf.description}">Requires manager and director sign-off</div>
+                        </td>
+                        <td><span class="badge badge-neutral" th:text="${wf.module}">Sales</span></td>
+                        <td class="cell-secondary" th:text="${wf.triggerEvent}">Invoice created</td>
+                        <td class="cell-secondary" th:text="#{set.workflows.steps(${wf.steps}, ${wf.steps * wf.daysEach})}">2 steps · up to 4 days</td>
+                        <td>
+                            <span class="badge badge-success" th:if="${wf.active}" th:text="#{common.status.active}">Active</span>
+                            <span class="badge badge-muted" th:unless="${wf.active}" th:text="#{common.status.inactive}">Inactive</span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/settings/workflows/{id}/edit(id=${wf.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(workflows.content)}">
+                        <td class="table-empty" colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.workflows.none}">No workflows yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${workflows.totalPages > 1}">
+            <span th:text="#{set.records(${workflows.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${workflows.number + 1}, ${workflows.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

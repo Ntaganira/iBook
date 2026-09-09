@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.home.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <span class="current" th:text="#{set.home.title}">System Settings</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.home.title}">System Settings</h1>
+            <p class="page-subtitle" th:text="#{set.home.subtitle}">Manage your company profile, security and workspace preferences.</p>
+        </div>
+    </div>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{set.home.group.organization}">Organization</h2>
+        <div class="grid grid-3">
+            <a class="card p-5" th:href="@{/settings/company}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-building"/></svg></span>
+                    <div class="fw-600" th:text="#{set.company.title}">Company Profile</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.company.subtitle}">Logo, tax details and defaults you use every day.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/fiscal-year}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-calendar"/></svg></span>
+                    <div class="fw-600" th:text="#{set.fiscalYear.title}">Fiscal Year</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.fiscalYear.subtitle}">The accounting period your books are closed on.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/branches}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-network"/></svg></span>
+                    <div class="fw-600" th:text="#{set.branches.title}">Branches</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.branches.subtitle}">Locations where your business operates.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/users}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-users"/></svg></span>
+                    <div class="fw-600" th:text="#{set.users.title}">Users</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.users.subtitle}">People with access to your workspace.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/roles}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-id-card"/></svg></span>
+                    <div class="fw-600" th:text="#{set.roles.title}">Roles</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.roles.subtitle}">Controls what each user can see and do.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/permissions}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-shield"/></svg></span>
+                    <div class="fw-600" th:text="#{set.permissions.title}">Permissions</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.permissions.subtitle}">Fine-grained access rules for every module.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{set.home.group.accounting}">Accounting</h2>
+        <div class="grid grid-3">
+            <a class="card p-5" th:href="@{/settings/currencies}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-coins"/></svg></span>
+                    <div class="fw-600" th:text="#{set.currencies.title}">Currencies</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.currencies.subtitle}">Currencies your business transacts in.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/exchange-rates}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-arrows-left-right"/></svg></span>
+                    <div class="fw-600" th:text="#{set.rates.title}">Exchange Rates</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.rates.subtitle}">How your currencies compare over time.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/numbering}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-hash"/></svg></span>
+                    <div class="fw-600" th:text="#{set.numbering.title}">Numbering Sequences</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.numbering.subtitle}">How your document numbers are built.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{set.home.group.documents}">Documents &amp; Automation</h2>
+        <div class="grid grid-3">
+            <a class="card p-5" th:href="@{/settings/invoice-templates}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-template"/></svg></span>
+                    <div class="fw-600" th:text="#{set.invoiceTemplates.title}">Invoice Templates</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.invoiceTemplates.subtitle}">How your invoices look when sent.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/email-templates}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-mail"/></svg></span>
+                    <div class="fw-600" th:text="#{set.emailTemplates.title}">Email Templates</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.emailTemplates.subtitle}">Messages sent to customers and staff.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/workflows}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-zap"/></svg></span>
+                    <div class="fw-600" th:text="#{set.workflows.title}">Approval Workflows</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.workflows.subtitle}">Rules for approving documents.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/notifications}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-bell"/></svg></span>
+                    <div class="fw-600" th:text="#{set.notifications.title}">Notifications</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.notifications.subtitle}">Alerts, reminders and how they are sent.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{set.home.group.security}">Security &amp; Access</h2>
+        <div class="grid grid-3">
+            <a class="card p-5" th:href="@{/settings/security}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-lock"/></svg></span>
+                    <div class="fw-600" th:text="#{set.security.title}">Security</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.security.subtitle}">Passwords, sessions and login policies.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+            <a class="card p-5" th:href="@{/settings/audit}">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <span class="ebook-icon" style="width:34px;height:34px;padding:7px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:inline-flex"><svg class="ebook-icon"><use href="#icon-history"/></svg></span>
+                    <div class="fw-600" th:text="#{set.audit.title}">Audit Trail</div>
+                </div>
+                <p class="text-sm text-secondary mb-3" th:text="#{set.audit.subtitle}">A record of every important action.</p>
+                <svg class="ebook-icon ebook-icon--sm" style="color:var(--primary-600);display:inline-flex"><use href="#icon-arrow-right"/></svg>
+            </a>
+        </div>
+    </section>
+
+</main>
+</body>
+</html>

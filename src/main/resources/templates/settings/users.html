@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.users.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.users.title}">Users</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.users.title}">Users</h1>
+            <p class="page-subtitle" th:text="#{set.users.subtitle}">People who can sign in to your account and their permissions.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/settings/users/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{set.users.new}">New user</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" th:action="@{/settings/users}" method="get">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{set.users.searchPlaceholder}">
+            </div>
+            <div class="toolbar-spacer"></div>
+            <select class="form-control form-control--sm" name="role" style="max-width:200px">
+                <option value="" th:selected="${roleFilter == null}" th:text="#{set.users.allRoles}">All roles</option>
+                <option th:each="r : ${roles}" th:value="${r.id}"
+                        th:selected="${roleFilter != null and roleFilter == r.id}"
+                        th:text="${r.name}">ADMIN</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                <span th:text="#{common.filter}">Filter</span>
+            </button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'firstName', #{set.users.person}, ${sort}, ${dir})}">User</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'username', #{common.username}, ${sort}, ${dir})}">Username</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'email', #{common.email}, ${sort}, ${dir})}">Email</th>
+                        <th th:text="#{set.users.role}">Role</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'enabled', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'createdAt', #{set.users.created}, ${sort}, ${dir})}">Created</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="u : ${users.content}">
+                        <td>
+                            <div class="d-flex gap-3 align-center">
+                                <span class="avatar avatar--sm" th:text="${u.firstName != null and u.firstName != '' ? #strings.toUpperCase(#strings.substring(u.firstName, 0, 1)) : '?'}">A</span>
+                                <span class="fw-600" th:text="${u.firstName + ' ' + u.lastName}">Aline Uwase</span>
+                            </div>
+                        </td>
+                        <td class="cell-secondary font-mono" th:text="${u.username}">aline</td>
+                        <td class="cell-secondary" th:text="${u.email}">aline@company.rw</td>
+                        <td>
+                            <span class="badge badge-neutral" th:each="r : ${u.roles}" th:text="${r.name}">ADMIN</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-success" th:if="${u.enabled}" th:text="#{common.status.active}">Active</span>
+                            <span class="badge badge-muted" th:unless="${u.enabled}" th:text="#{common.status.disabled}">Disabled</span>
+                        </td>
+                        <td class="cell-secondary" th:if="${u.createdAt != null}" th:text="${#temporals.format(u.createdAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td class="cell-secondary" th:unless="${u.createdAt != null}">—</td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/settings/users/{id}/edit(id=${u.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:action="@{/settings/users/{id}/toggle(id=${u.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-pause"/></svg>
+                                            <span th:if="${u.enabled}" th:text="#{set.users.disable}">Disable</span>
+                                            <span th:unless="${u.enabled}" th:text="#{set.users.enable}">Enable</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(users.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-user"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.users.none}">No users found.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${users.totalPages > 1}">
+            <span th:text="#{set.records(${users.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${users.number + 1}, ${users.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

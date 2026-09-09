@@ -7,6 +7,16 @@
     <div id="toastContainer"></div>
 </div>
 
+<!-- Sortable table header: url may carry an existing query string; sort/dir/page are appended. -->
+<th th:fragment="thSort(url, field, label, sort, dir)">
+    <button class="th-sort" type="button"
+            th:classappend="${sort == field ? 'active' : ''}"
+            th:onclick="'window.location.href = \'' + (${url} + (#strings.contains(url, '?') ? '&' : '?') + 'sort=' + ${field} + '&dir=' + ${sort == field and dir == 'asc' ? 'desc' : 'asc'} + '&page=0') + '\''">
+        <span th:text="${label}">Column</span>
+        <svg class="ebook-icon ebook-icon--sm" th:style="${sort == field and dir == 'desc'} ? 'transform: rotate(180deg)' : ''"><use href="#icon-chevron-down"/></svg>
+    </button>
+</th>
+
 <!-- Field validation errors -->
 <div th:fragment="fieldError(field)" th:if="${#fields.hasErrors(field)}">
     <div class="form-invalid-feedback" th:each="err : ${#fields.errors(field)}">

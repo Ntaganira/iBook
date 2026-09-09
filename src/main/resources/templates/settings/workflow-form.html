@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.workflow.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings/workflows}" th:text="#{set.workflows.title}">Approval Workflows</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{set.workflow.edit.title}">Edit workflow</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{set.workflow.new.title}">New workflow</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{set.workflow.edit.title}">Edit workflow</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{set.workflow.new.title}">New workflow</h1>
+            <p class="page-subtitle" th:text="#{set.workflow.subtitle}">Describe when and how many approvers a document needs.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/settings/workflows}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="workflowForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.workflow.save}">Save workflow</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="workflowForm" th:action="${mode == 'edit'} ? @{/settings/workflows/{id}(id=${editingId})} : @{/settings/workflows}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.workflow.definition}">Workflow definition</h3>
+                            <div class="card-subtitle" th:text="#{set.workflow.definitionHint}">Where this approval applies</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="wfName"><span th:text="#{set.workflows.name}">Workflow name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="wfName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{set.workflow.namePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="wfModule"><span th:text="#{set.workflow.module}">Module</span> <span class="required">*</span></label>
+                                <select class="form-control" id="wfModule" name="module" required>
+                                    <option value="Sales" th:selected="${form.module == 'Sales'}" th:text="Sales">Sales</option>
+                                    <option value="Purchases" th:selected="${form.module == 'Purchases'}" th:text="Purchases">Purchases</option>
+                                    <option value="Expenses" th:selected="${form.module == 'Expenses'}" th:text="Expenses">Expenses</option>
+                                    <option value="Banking" th:selected="${form.module == 'Banking'}" th:text="Banking">Banking</option>
+                                    <option value="Accounting" th:selected="${form.module == 'Accounting'}" th:text="Accounting">Accounting</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="wfTrigger"><span th:text="#{set.workflow.trigger}">Trigger event</span> <span class="required">*</span></label>
+                                <input class="form-control" id="wfTrigger" name="triggerEvent" type="text" th:value="${form.triggerEvent}"
+                                       th:placeholder="#{set.workflow.triggerPlaceholder}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="wfSteps"><span th:text="#{set.workflow.stepsLabel}">Number of steps</span> <span class="required">*</span></label>
+                                <input class="form-control" id="wfSteps" name="steps" type="number" min="1" max="10" th:value="${form.steps}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="wfDays" th:text="#{set.workflow.daysLabel}">Max days per step</label>
+                                <input class="form-control" id="wfDays" name="daysEach" type="number" min="1" max="90" th:value="${form.daysEach}">
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="wfDescription" th:text="#{set.workflow.description}">Description</label>
+                                <textarea class="form-control" id="wfDescription" name="description" rows="3" th:text="${form.description}"></textarea>
+                            </div>
+                        </div>
+                        <hr style="margin:var(--sp-4) 0">
+                        <label class="switch">
+                            <input type="hidden" name="active" value="false">
+                            <input type="checkbox" name="active" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.workflow.isActive}">Workflow is active</span>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="alert alert--info">
+                    <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                    <div class="alert-body" th:text="#{set.workflow.info}">When a document matches the trigger, it becomes pending and requires one approval per step before it can be posted.</div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

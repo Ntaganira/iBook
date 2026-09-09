@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.numbering.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings/numbering}" th:text="#{set.numbering.title}">Numbering sequences</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{set.numbering.edit.title}">Edit sequence</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{set.numbering.new.title}">New sequence</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{set.numbering.edit.title}">Edit sequence</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{set.numbering.new.title}">New sequence</h1>
+            <p class="page-subtitle" th:text="#{set.numbering.subtitle}">Rules for automatically numbering documents.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/settings/numbering}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="numberingForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:if="${mode == 'edit'}" th:text="#{set.numbering.save}">Save changes</span>
+                <span th:unless="${mode == 'edit'}" th:text="#{set.numbering.create}">Create sequence</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="numberingForm" th:action="${mode == 'edit'} ? @{/settings/numbering/{id}(id=${editingId})} : @{/settings/numbering}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.numbering.basic}">Sequence rules</h3>
+                            <div class="card-subtitle" th:text="#{set.numbering.basicHint}">How the next number for each document type is built.</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="seqName"><span th:text="#{set.numbering.name}">Sequence name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="seqName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{set.numbering.namePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="seqDocType"><span th:text="#{set.numbering.docType}">Document type</span> <span class="required">*</span></label>
+                                <select class="form-control" id="seqDocType" name="docType" required>
+                                    <option value="INVOICE" th:selected="${form.docType == 'INVOICE'}">Invoice</option>
+                                    <option value="SALES" th:selected="${form.docType == 'SALES'}">Sales receipt</option>
+                                    <option value="CREDIT" th:selected="${form.docType == 'CREDIT'}">Credit note</option>
+                                    <option value="PURCHASE" th:selected="${form.docType == 'PURCHASE'}">Purchase order</option>
+                                    <option value="EXPENSE" th:selected="${form.docType == 'EXPENSE'}">Expense</option>
+                                    <option value="PAYMENT" th:selected="${form.docType == 'PAYMENT'}">Payment</option>
+                                    <option value="QUOTE" th:selected="${form.docType == 'QUOTE'}">Quote</option>
+                                    <option value="OTHER" th:selected="${form.docType == 'OTHER'}">Other</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('docType')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="seqPrefix" th:text="#{set.numbering.prefix}">Prefix</label>
+                                <input class="form-control font-mono" id="seqPrefix" name="prefix" type="text" th:value="${form.prefix}"
+                                       th:placeholder="#{set.numbering.prefixPlaceholder}">
+                                <div class="form-hint" th:text="#{set.numbering.prefixHint}">Placed before the number, e.g. INV-.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="seqSuffix" th:text="#{set.numbering.suffix}">Suffix</label>
+                                <input class="form-control font-mono" id="seqSuffix" name="suffix" type="text" th:value="${form.suffix}"
+                                       th:placeholder="#{set.numbering.suffixPlaceholder}">
+                                <div class="form-hint" th:text="#{set.numbering.suffixHint}">Placed after the number, e.g. -2026.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="seqPadding"><span th:text="#{set.numbering.padding}">Zero padding</span> <span class="required">*</span></label>
+                                <input class="form-control" id="seqPadding" name="padding" type="number" min="1" max="12" th:value="${form.padding}" required>
+                                <div class="form-hint" th:text="#{set.numbering.paddingHint}">Minimum digits, e.g. 4 makes 1 display as 0001.</div>
+                                <div th:replace="~{layout/common :: fieldError('padding')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="seqNext"><span th:text="#{set.numbering.next}">Next number</span> <span class="required">*</span></label>
+                                <input class="form-control" id="seqNext" name="nextNumber" type="number" min="1" th:value="${form.nextNumber}" required>
+                                <div class="form-hint" th:text="#{set.numbering.nextHint}">The first number assigned by this sequence.</div>
+                                <div th:replace="~{layout/common :: fieldError('nextNumber')}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{set.numbering.preferences}">Preferences</h3>
+                    </div>
+                    <div class="section-body">
+                        <label class="switch">
+                            <input type="hidden" name="resetYearly" value="false">
+                            <input type="checkbox" name="resetYearly" th:checked="${form.resetYearly}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.numbering.resetYearly}">Reset numbering each year</span>
+                        </label>
+                        <div class="form-hint" th:text="#{set.numbering.resetHint}">Numbers restart from &quot;next number&quot; on 1 January.</div>
+                        <hr style="margin:var(--sp-4) 0">
+                        <label class="switch">
+                            <input type="hidden" name="active" value="false">
+                            <input type="checkbox" name="active" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.numbering.isActive}">Sequence is active</span>
+                        </label>
+                        <div class="form-hint" th:text="#{set.numbering.activeHint}">Inactive sequences are never used for new documents.</div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

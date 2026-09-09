@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.role.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings/roles}" th:text="#{set.roles.title}">Roles</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{set.role.edit.title}">Edit role</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{set.role.new.title}">New role</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{set.role.edit.title}">Edit role</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{set.role.new.title}">New role</h1>
+            <p class="page-subtitle" th:text="#{set.role.subtitle}">Define a role and choose which permissions it grants.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/settings/roles}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="roleForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.role.save}">Save role</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="roleForm" th:action="${mode == 'edit'} ? @{/settings/roles/{id}(id=${editingId})} : @{/settings/roles}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.role.basicInfo}">Role information</h3>
+                            <div class="card-subtitle" th:text="#{set.role.basicHint}">Helpful names and notes for your role</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="roleName"><span th:text="#{set.roles.name}">Role name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="roleName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{set.role.namePlaceholder}" required autofocus>
+                                <div class="form-hint" th:text="#{set.role.nameHint}">Uppercase letters, e.g. MANAGER.</div>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="roleDescription" th:text="#{set.roles.description}">Description</label>
+                                <input class="form-control" id="roleDescription" name="description" type="text" th:value="${form.description}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.role.permissionsTitle}">Permissions</h3>
+                            <div class="card-subtitle" th:text="#{set.role.permissionsHint}">Tick the actions this role may perform</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <th:block th:each="entry : ${grouped}">
+                            <div class="permission-group mb-4">
+                                <div class="d-flex align-center gap-2 mb-2">
+                                    <span class="badge badge-neutral font-mono" th:text="${#strings.toUpperCase(entry.key)}">SETTINGS</span>
+                                    <span class="text-xs text-secondary" th:text="#{set.role.count(${entry.value.size()})}">12 permissions</span>
+                                </div>
+                                <div class="checkbox-grid">
+                                    <label class="checkbox permission-check" th:each="p : ${entry.value}">
+                                        <input type="checkbox" name="permissionIds" th:value="${p.id}" th:checked="${selected.contains(p.id)}">
+                                        <span class="checkbox-box"></span>
+                                        <span class="permission-code" th:text="${#strings.substringAfter(p.code, '.')}">users.edit</span>
+                                        <span class="permission-desc" th:text="${p.description}">Edit users</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </th:block>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

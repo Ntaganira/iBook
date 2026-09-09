@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.fiscalYear.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.fiscalYear.title}">Fiscal Year</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.fiscalYear.title}">Fiscal Year</h1>
+            <p class="page-subtitle" th:text="#{set.fiscalYear.subtitle}">Define the accounting year used for reports and financial close.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-primary" type="submit" form="fiscalForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.save}">Save changes</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="fiscalForm" th:action="@{/settings/fiscal-year}" method="post" novalidate>
+        <div class="grid grid-12">
+            <div class="col-span-6 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.fiscalYear.start}">Fiscal year start month</h3>
+                            <div class="card-subtitle" th:text="#{set.fiscalYear.hint}">Select the month your accounting year begins</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="fiscalMonth" th:text="#{set.fiscalYear.startMonth}">Start month</label>
+                            <select class="form-control" id="fiscalMonth" name="fiscalYearStart">
+                                <option th:each="m : ${months}" th:value="${m}"
+                                        th:selected="${m == company.fiscalYearStart}"
+                                        th:text="${m}">July</option>
+                            </select>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked readonly>
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.fiscalYear.closing}">Year-end closing enabled</span>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="alert alert--info">
+                    <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                    <div class="alert-body" th:text="#{set.fiscalYear.info}">If you change the start month after transactions have been recorded, past reports are re-computed against the new fiscal periods.</div>
+                </div>
+            </div>
+
+            <div class="col-span-6 d-flex flex-column gap-5">
+                <div class="grid grid-2">
+                    <div class="stat-tile">
+                        <div class="stat-tile-label" th:text="#{set.fiscalYear.currentYear}">Current fiscal year</div>
+                        <div class="stat-tile-value text-md" th:text="${company.fiscalYearStart != null ? (company.fiscalYearStart + ' 2026 – ' + (company.fiscalYearStart == 'December' ? '02' : '01')) : ''}">July 2026 – Jun 2027</div>
+                        <div class="stat-tile-sub" th:text="#{set.fiscalYear.periodLabel('Jul 2026 – Jun 2027')}">Jul 2026 – Jun 2027 reporting period</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-label" th:text="#{set.fiscalYear.lastClosed}">Last closed year</div>
+                        <div class="stat-tile-value text-md" th:text="#{set.fiscalYear.notClosed}">— Not closed —</div>
+                    </div>
+                </div>
+                <section class="card p-5">
+                    <h4 class="text-md font-semibold mb-2" th:text="#{set.fiscalYear.tasksTitle}">At year-end</h4>
+                    <p class="text-sm text-secondary" th:text="#{set.fiscalYear.tasksHint}">Before closing a fiscal year you should: record all transactions, reconcile bank accounts, review outstanding invoices, and calculate depreciation.</p>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

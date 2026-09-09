@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.security
+ * - File      : Principal.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Authenticated user principal implementation
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.security;
 
 import org.springframework.security.core.GrantedAuthority;

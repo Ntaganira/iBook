@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook
+ * - File      : IBookApplication.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Ebook Online Spring Boot application entry point
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook;
 
 import org.springframework.boot.SpringApplication;

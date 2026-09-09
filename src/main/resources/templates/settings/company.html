@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.company.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.company.title}">Company Profile</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.company.title}">Company Profile</h1>
+            <p class="page-subtitle" th:text="#{set.company.subtitle}">Your business identity used on documents, invoices and reports.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-primary" type="submit" form="companyForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.save}">Save changes</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="companyForm" th:action="@{/settings/company}" th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.company.basicInfo}">Company information</h3>
+                            <div class="card-subtitle" th:text="#{set.company.basicHint}">Details and registration of your business</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="companyName"><span th:text="#{set.company.name}">Company name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="companyName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{set.company.namePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyLegal" th:text="#{set.company.legalName}">Legal name</label>
+                                <input class="form-control" id="companyLegal" name="legalName" type="text" th:value="${form.legalName}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyTin" th:text="#{set.company.tin}">TIN</label>
+                                <input class="form-control" id="companyTin" name="tin" type="text" th:value="${form.tin}"
+                                       th:placeholder="#{set.company.tinPlaceholder}">
+                                <div class="form-hint" th:text="#{set.company.tinHint}">RRA tax identification number shown on EBM invoices.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyEmail" th:text="#{common.email}">Email</label>
+                                <input class="form-control" id="companyEmail" name="email" type="email" th:value="${form.email}"
+                                       placeholder="accounts@company.rw">
+                                <div th:replace="~{layout/common :: fieldError('email')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyPhone" th:text="#{common.phone}">Phone</label>
+                                <input class="form-control" id="companyPhone" name="phone" type="tel" th:value="${form.phone}"
+                                       placeholder="+250 7XX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyWebsite" th:text="#{set.company.website}">Website</label>
+                                <input class="form-control" id="companyWebsite" name="website" type="url" th:value="${form.website}"
+                                       placeholder="https://example.rw">
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="companyAddress" th:text="#{set.company.address}">Address</label>
+                                <input class="form-control" id="companyAddress" name="address" type="text" th:value="${form.address}"
+                                       placeholder="Street, building, plot">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyCity" th:text="#{common.city}">City</label>
+                                <input class="form-control" id="companyCity" name="city" type="text" th:value="${form.city}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyCountry" th:text="#{set.company.country}">Country</label>
+                                <input class="form-control" id="companyCountry" name="country" type="text" th:value="${form.country}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyCurrency"><span th:text="#{set.company.currency}">Base currency</span> <span class="required">*</span></label>
+                                <select class="form-control" id="companyCurrency" name="currencyCode" required>
+                                    <option th:each="c : ${currencies}" th:value="${c.code}"
+                                            th:selected="${c.code == form.currencyCode}"
+                                            th:text="${c.code + ' - ' + c.name}">RWF - Rwandan Franc</option>
+                                </select>
+                                <div class="form-hint" th:text="#{set.company.currencyHint}">The default currency for your books.</div>
+                                <div th:replace="~{layout/common :: fieldError('currencyCode')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyLogo" th:text="#{set.company.logo}">Logo URL</label>
+                                <input class="form-control" id="companyLogo" name="logoUrl" type="text" th:value="${form.logoUrl}"
+                                       placeholder="https://…/logo.png">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="companyFiscal"><span th:text="#{set.company.fiscalStart}">Fiscal year starts</span> <span class="required">*</span></label>
+                                <select class="form-control" id="companyFiscal" name="fiscalYearStart" required>
+                                    <option th:each="m : ${months}" th:value="${m}"
+                                            th:selected="${m == form.fiscalYearStart}"
+                                            th:text="${m}">January</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-span-4 d-flex flex-column gap-5">
+                <section class="card p-5">
+                    <h4 class="text-md font-semibold mb-2" th:text="#{set.company.previewTitle}">Where this is used</h4>
+                    <p class="text-sm text-secondary" th:text="#{set.company.previewHint}">The company name, logo and currency appear on invoices, estimates, statements and printed reports.</p>
+                    <div class="company-card-preview mt-4" th:if="${company != null and company.name != null}">
+                        <div class="fw-600" th:text="${company.name}">Company name</div>
+                        <div class="text-xs text-secondary" th:if="${company.tin != null}" th:text="'TIN ' + ${company.tin}">TIN 101234567</div>
+                        <div class="badge badge-success mt-2" th:text="${company.currencyCode}">RWF</div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{set.company.fiscalTitle}">Fiscal year</h3>
+                    </div>
+                    <div class="section-body">
+                        <p class="text-sm text-secondary" th:text="#{set.company.fiscalEditHint}">Change the fiscal year start month from the Fiscal Year page.</p>
+                        <a class="btn btn-secondary btn-sm" th:href="@{/settings/fiscal-year}" th:text="#{nav.settings.fiscalYear}">Fiscal Year</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

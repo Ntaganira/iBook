@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.config
+ * - File      : WebConfig.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Web MVC, cookie resolver and locale change configuration
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.config;
 
 import org.springframework.context.annotation.Bean;

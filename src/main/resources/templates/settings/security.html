@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.security.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.security.title}">Security</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.security.title}">Security</h1>
+            <p class="page-subtitle" th:text="#{set.security.subtitle}">Passwords, sessions and login policies for your workspace.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:text="#{common.cancel}" onclick="history.back()">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="securityForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.security.save}">Save settings</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="securityForm" th:action="@{/settings/security}" th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.security.passwords}">Password policy</h3>
+                            <div class="card-subtitle" th:text="#{set.security.passwordsHint}">Strength requirements for all user passwords.</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="pwMinLength"><span th:text="#{set.security.minLength}">Minimum length</span> <span class="required">*</span></label>
+                                <input class="form-control" id="pwMinLength" name="passwordMinLength" type="number" min="8" max="32" th:value="${form.passwordMinLength}" required>
+                                <div th:replace="~{layout/common :: fieldError('passwordMinLength')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="pwExpiry"><span th:text="#{set.security.expiry}">Password expiry (days)</span> <span class="required">*</span></label>
+                                <input class="form-control" id="pwExpiry" name="passwordExpiryDays" type="number" min="0" th:value="${form.passwordExpiryDays}" required>
+                                <div class="form-hint" th:text="#{set.security.expiryHint}">0 means passwords never expire.</div>
+                                <div th:replace="~{layout/common :: fieldError('passwordExpiryDays')}"></div>
+                            </div>
+                        </div>
+                        <div class="form-grid mt-3">
+                            <input type="hidden" name="requireUppercase" value="false"><label class="checkbox form-option"><input type="checkbox" name="requireUppercase" th:checked="${form.requireUppercase}"><span class="checkbox-box"></span><span th:text="#{set.security.requireUppercase}">Require an uppercase letter</span></label>
+                            <input type="hidden" name="requireNumber" value="false"><label class="checkbox form-option"><input type="checkbox" name="requireNumber" th:checked="${form.requireNumber}"><span class="checkbox-box"></span><span th:text="#{set.security.requireNumber}">Require a number</span></label>
+                            <input type="hidden" name="requireSpecialChar" value="false"><label class="checkbox form-option"><input type="checkbox" name="requireSpecialChar" th:checked="${form.requireSpecialChar}"><span class="checkbox-box"></span><span th:text="#{set.security.requireSpecialChar}">Require a special character</span></label>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.security.sessions}">Login &amp; sessions</h3>
+                            <div class="card-subtitle" th:text="#{set.security.sessionsHint}">How many failed attempts are tolerated and how sessions behave.</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="maxAttempts"><span th:text="#{set.security.maxAttempts}">Max login attempts</span> <span class="required">*</span></label>
+                                <input class="form-control" id="maxAttempts" name="maxLoginAttempts" type="number" min="1" th:value="${form.maxLoginAttempts}" required>
+                                <div th:replace="~{layout/common :: fieldError('maxLoginAttempts')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="lockout"><span th:text="#{set.security.lockout}">Lockout duration (minutes)</span> <span class="required">*</span></label>
+                                <input class="form-control" id="lockout" name="lockoutMinutes" type="number" min="1" th:value="${form.lockoutMinutes}" required>
+                                <div th:replace="~{layout/common :: fieldError('lockoutMinutes')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="sessionTimeout"><span th:text="#{set.security.sessionTimeout}">Session timeout (minutes)</span> <span class="required">*</span></label>
+                                <input class="form-control" id="sessionTimeout" name="sessionTimeoutMinutes" type="number" min="5" th:value="${form.sessionTimeoutMinutes}" required>
+                                <div th:replace="~{layout/common :: fieldError('sessionTimeoutMinutes')}"></div>
+                            </div>
+                            <div class="form-group d-flex align-center pt-3">
+                                <label class="switch">
+                                    <input type="hidden" name="twoFactorRequired" value="false">
+                                    <input type="checkbox" name="twoFactorRequired" th:checked="${form.twoFactorRequired}">
+                                    <span class="switch-track"></span>
+                                    <span class="switch-label" th:text="#{set.security.twoFactor}">Require two-factor authentication for all users</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.security.signup}">Public signup</h3>
+                            <div class="card-subtitle" th:text="#{set.security.signupHint}">Allow people to create free accounts, and which role they get.</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="switch">
+                                    <input type="hidden" name="allowPublicSignup" value="false">
+                                    <input type="checkbox" name="allowPublicSignup" th:checked="${form.allowPublicSignup}">
+                                    <span class="switch-track"></span>
+                                    <span class="switch-label" th:text="#{set.security.allowSignup}">Allow public sign-up</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="defaultRole"><span th:text="#{set.security.defaultRole}">Default role for new accounts</span> <span class="required">*</span></label>
+                                <select class="form-control" id="defaultRole" name="defaultRole" required>
+                                    <option th:each="r : ${roles}" th:value="${r.name}" th:selected="${form.defaultRole == r.name}" th:text="${r.name}">Role</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('defaultRole')}"></div>
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label class="switch">
+                                <input type="hidden" name="ipWhitelistEnabled" value="false">
+                                <input type="checkbox" name="ipWhitelistEnabled" th:checked="${form.ipWhitelistEnabled}">
+                                <span class="switch-track"></span>
+                                <span class="switch-label" th:text="#{set.security.ipWhitelist}">Restrict access to a list of trusted IP addresses</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

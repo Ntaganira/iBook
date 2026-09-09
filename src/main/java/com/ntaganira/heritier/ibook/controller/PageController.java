@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.controller
+ * - File      : PageController.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Thymeleaf view routing controller
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.controller;
 
 import org.springframework.stereotype.Controller;

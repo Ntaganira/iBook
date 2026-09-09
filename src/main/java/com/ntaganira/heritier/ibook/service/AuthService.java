@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.service
+ * - File      : AuthService.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Authentication and account recovery service
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.service;
 
 import com.ntaganira.heritier.ibook.dto.RegisterForm;

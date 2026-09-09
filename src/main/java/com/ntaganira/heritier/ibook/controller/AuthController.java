@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.controller
+ * - File      : AuthController.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Sign-in, registration and password reset controller
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.controller;
 
 import com.ntaganira.heritier.ibook.dto.ForgotPasswordForm;

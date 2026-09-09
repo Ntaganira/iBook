@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.branch.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings/branches}" th:text="#{set.branches.title}">Branches</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{set.branch.edit.title}">Edit branch</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{set.branch.new.title}">New branch</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{set.branch.edit.title}">Edit branch</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{set.branch.new.title}">New branch</h1>
+            <p class="page-subtitle" th:text="#{set.branch.subtitle}">Add or update a business location.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/settings/branches}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="branchForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.branch.save}">Save branch</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="branchForm" th:action="${mode == 'edit'} ? @{/settings/branches/{id}(id=${editingId})} : @{/settings/branches}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.branch.basicInfo}">Branch information</h3>
+                            <div class="card-subtitle" th:text="#{set.branch.basicHint}">Used on documents and user assignments</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="branchName"><span th:text="#{set.branch.name}">Branch name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="branchName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{set.branches.namePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="branchCode"><span th:text="#{set.branch.code}">Branch code</span> <span class="required">*</span></label>
+                                <input class="form-control" id="branchCode" name="code" type="text" th:value="${form.code}"
+                                       th:placeholder="#{set.branches.codePlaceholder}">
+                                <div class="form-hint" th:text="#{set.branch.codeHint}">Uppercase letters or digits, e.g. KGL.</div>
+                                <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="branchContact" th:text="#{set.branch.contactPerson}">Contact person</label>
+                                <input class="form-control" id="branchContact" name="contactPerson" type="text" th:value="${form.contactPerson}"
+                                       th:placeholder="#{set.branch.contactPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="branchPhone" th:text="#{common.phone}">Phone</label>
+                                <input class="form-control" id="branchPhone" name="phone" type="tel" th:value="${form.phone}"
+                                       placeholder="+250 7XX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="branchEmail" th:text="#{common.email}">Email</label>
+                                <input class="form-control" id="branchEmail" name="email" type="email" th:value="${form.email}"
+                                       placeholder="branch@company.rw">
+                                <div th:replace="~{layout/common :: fieldError('email')}"></div>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="branchAddress" th:text="#{set.branch.address}">Address</label>
+                                <input class="form-control" id="branchAddress" name="address" type="text" th:value="${form.address}"
+                                       th:placeholder="#{set.branch.addressPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="branchCity" th:text="#{common.city}">City</label>
+                                <input class="form-control" id="branchCity" name="city" type="text" th:value="${form.city}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="branchCountry" th:text="#{set.branch.country}">Country</label>
+                                <input class="form-control" id="branchCountry" name="country" type="text" th:value="${form.country}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{set.branch.preferences}">Preferences</h3>
+                    </div>
+                    <div class="section-body">
+                        <label class="switch">
+                            <input type="hidden" name="defaultBranch" value="false">
+                            <input type="checkbox" name="defaultBranch" th:checked="${form.defaultBranch}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.branch.default}">Set as default branch</span>
+                        </label>
+                        <div class="form-hint" th:text="#{set.branch.defaultHint}">The default branch is used for new documents and reports.</div>
+                        <hr style="margin:var(--sp-4) 0">
+                        <label class="switch">
+                            <input type="hidden" name="active" value="false">
+                            <input type="checkbox" name="active" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{set.branch.isActive}">Branch is active</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

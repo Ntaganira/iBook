@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.currency.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings/currencies}" th:text="#{set.currencies.title}">Currencies</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{set.currency.edit.title}">Edit currency</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{set.currency.new.title}">New currency</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{set.currency.edit.title}">Edit currency</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{set.currency.new.title}">New currency</h1>
+            <p class="page-subtitle" th:text="#{set.currency.subtitle}">Add a currency your business transacts in.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/settings/currencies}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="currencyForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{set.currency.save}">Save currency</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="currencyForm" th:action="${mode == 'edit'} ? @{/settings/currencies/{id}(id=${editingId})} : @{/settings/currencies}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{set.currency.basicInfo}">Currency information</h3>
+                            <div class="card-subtitle" th:text="#{set.currency.basicHint}">Codes follow the ISO 4217 standard</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="curCode"><span th:text="#{set.currency.code}">Currency code</span> <span class="required">*</span></label>
+                                <input class="form-control" id="curCode" name="code" type="text" th:value="${form.code}"
+                                       th:placeholder="#{set.currency.codePlaceholder}" required autofocus>
+                                <div class="form-hint" th:text="#{set.currency.codeHint}">Three uppercase letters, e.g. USD.</div>
+                                <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="curName"><span th:text="#{set.currency.name}">Name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="curName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{set.currency.namePlaceholder}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="curSymbol" th:text="#{set.currency.symbol}">Symbol</label>
+                                <input class="form-control" id="curSymbol" name="symbol" type="text" th:value="${form.symbol}"
+                                       placeholder="$">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="curDecimals"><span th:text="#{set.currencies.decimals}">Decimals</span> <span class="required">*</span></label>
+                                <input class="form-control" id="curDecimals" name="decimals" type="number" min="0" max="4" th:value="${form.decimals}" required>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="curRate"><span th:text="#{set.currencies.rateToBase}">Exchange rate to base</span> <span class="required">*</span></label>
+                                <input class="form-control" id="curRate" name="exchangeRateToBase" type="number" step="0.0001" min="0" th:value="${form.exchangeRateToBase}" required>
+                                <div th:replace="~{layout/common :: fieldError('exchangeRateToBase')}"></div>
+                            </div>
+                        </div>
+                        <hr style="margin:var(--sp-4) 0">
+                        <div class="d-flex gap-5">
+                            <label class="switch">
+                                <input type="hidden" name="base" value="false">
+                                <input type="checkbox" name="base" th:checked="${form.base}">
+                                <span class="switch-track"></span>
+                                <span class="switch-label" th:text="#{set.currency.isBase}">Base currency</span>
+                            </label>
+                            <label class="switch">
+                                <input type="hidden" name="enabled" value="false">
+                                <input type="checkbox" name="enabled" th:checked="${form.enabled}">
+                                <span class="switch-track"></span>
+                                <span class="switch-label" th:text="#{set.currency.isEnabled}">Enabled</span>
+                            </label>
+                        </div>
+                        <div class="form-hint mt-2" th:text="#{set.currency.baseHint}">The base currency always has a rate of 1.0000 and cannot be disabled.</div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

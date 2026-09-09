@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.notifications.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.notifications.title}">Notifications</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.notifications.title}">Notifications</h1>
+            <p class="page-subtitle" th:text="#{set.notifications.subtitle}">Choose which modules send you alerts and how.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <th:block th:each="p : ${preferences.content}">
+            <div class="col-span-6">
+                <div class="card p-5">
+                    <form th:action="@{/settings/notifications/{moduleCode}(moduleCode=${p.moduleCode})}" method="post">
+                        <div class="d-flex align-center justify-between mb-3">
+                            <div>
+                                <div class="fw-600" th:text="${p.moduleName}">Invoice reminders</div>
+                                <div class="text-xs font-mono text-muted" th:text="${p.moduleCode}">invoice_reminder</div>
+                            </div>
+                            <span class="badge badge-success" th:if="${p.active}" th:text="#{common.status.active}">Active</span>
+                            <span class="badge badge-muted" th:unless="${p.active}" th:text="#{common.status.inactive}">Inactive</span>
+                        </div>
+                        <p class="text-sm text-secondary mb-3" th:text="${p.triggers}">Sent 3 days before due date</p>
+                        <div class="d-flex flex-column gap-3">
+                            <label class="checkbox"><input type="checkbox" name="emailEnabled" th:checked="${p.emailEnabled}"><span class="checkbox-box"></span><span th:text="#{set.notifications.email}">Email</span></label>
+                            <label class="checkbox"><input type="checkbox" name="inAppEnabled" th:checked="${p.inAppEnabled}"><span class="checkbox-box"></span><span th:text="#{set.notifications.inApp}">In-app</span></label>
+                            <label class="checkbox"><input type="checkbox" name="smsEnabled" th:checked="${p.smsEnabled}"><span class="checkbox-box"></span><span th:text="#{set.notifications.sms}">SMS</span></label>
+                            <label class="switch">
+                                <input type="checkbox" name="active" th:checked="${p.active}">
+                                <span class="switch-track"></span>
+                                <span class="switch-label" th:if="${p.active}" th:text="#{set.notifications.on}">On</span>
+                                <span class="switch-label" th:unless="${p.active}" th:text="#{set.notifications.off}">Off</span>
+                            </label>
+                        </div>
+                        <div class="d-flex justify-end mt-3">
+                            <button class="btn btn-secondary btn-sm" type="submit">
+                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-check"/></svg>
+                                <span th:text="#{set.notifications.save}">Save</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </th:block>
+        <div class="col-span-12" th:if="${#lists.isEmpty(preferences.content)}">
+            <div class="card">
+                <div class="empty-state">
+                    <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-bell"/></svg></div>
+                    <p class="text-secondary" th:text="#{set.notifications.none}">No notification preferences found.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 pagination-wrap" th:if="${preferences.totalPages > 1}">
+            <div class="d-flex align-center justify-between">
+                <span class="text-sm text-secondary" th:text="#{set.records(${preferences.totalElements})}">12 records</span>
+                <div th:replace="~{layout/pagination :: pagination(${preferences.number + 1}, ${preferences.totalPages},
+                     ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+            </div>
+        </div>
+    </div>
+
+    <section class="card p-5 mt-4">
+        <h4 class="text-md font-semibold mb-2" th:text="#{set.notifications.noteTitle}">A note on channels</h4>
+        <p class="text-sm text-secondary" th:text="#{set.notifications.noteBody}">SMS notifications require a configured SMS provider. Email uses your outbound SMTP settings. In-app notifications appear in the bell icon menu.</p>
+        <a class="btn btn-secondary btn-sm mt-3" th:href="@{/settings/security}" th:text="#{set.notifications.securityLink}">Review security settings</a>
+    </section>
+
+</main>
+</body>
+</html>

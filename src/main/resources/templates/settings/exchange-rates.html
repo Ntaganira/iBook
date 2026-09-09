@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.rates.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.rates.title}">Exchange Rates</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.rates.title}">Exchange Rates</h1>
+            <p class="page-subtitle" th:text="#{set.rates.subtitle}">Rates used to convert foreign currencies to your base currency.</p>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="section-header">
+            <div>
+                <h3 th:text="#{set.rates.addTitle}">Add an exchange rate</h3>
+                <div class="card-subtitle" th:text="#{set.rates.addHint(${baseCurrency})}">Newest rates for __0__%s are applied first".replace(': ', '__')}</div>
+            </div>
+        </div>
+        <div class="section-body">
+            <form id="rateForm" th:action="@{/settings/exchange-rates}" th:object="${form}" method="post" novalidate>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="rateBase"><span th:text="#{set.rates.baseCurrency}">Base currency</span> <span class="required">*</span></label>
+                        <input class="form-control font-mono" id="rateBase" name="baseCurrency" type="text" th:value="${form.baseCurrency}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rateQuote"><span th:text="#{set.rates.quoteCurrency}">Quote currency</span> <span class="required">*</span></label>
+                        <select class="form-control" id="rateQuote" name="quoteCurrency" required>
+                            <option value="" th:text="#{set.rates.select}" >Select currency</option>
+                            <option th:each="c : ${currencies}" th:value="${c.code}"
+                                    th:selected="${form.quoteCurrency != null and form.quoteCurrency == c.code}"
+                                    th:text="${c.code + ' - ' + c.name}">USD - US Dollar</option>
+                        </select>
+                        <div th:replace="~{layout/common :: fieldError('quoteCurrency')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rateValue"><span th:text="#{set.rates.rate}">Rate</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rateValue" name="rate" type="number" step="0.0001" min="0" th:value="${form.rate}" required>
+                        <div th:replace="~{layout/common :: fieldError('rate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rateDate"><span th:text="#{set.rates.date}">Effective date</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rateDate" name="effectiveDate" type="date" th:value="${form.effectiveDate}" required>
+                        <div th:replace="~{layout/common :: fieldError('effectiveDate')}"></div>
+                    </div>
+                    <div class="form-group d-flex align-end">
+                        <button class="btn btn-primary" type="submit">
+                            <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                            <span th:text="#{set.rates.add}">Add rate</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'quoteCurrency', #{set.rates.pair}, ${sort}, ${dir})}">Currency pair</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'rate', #{set.rates.rate}, ${sort}, ${dir})}">Rate</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'effectiveDate', #{set.rates.date}, ${sort}, ${dir})}">Effective date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${rates.content}">
+                        <td class="fw-600 font-mono">
+                            <span th:text="${r.quoteCurrency}">USD</span>
+                            <span class="text-secondary mx-1">/</span>
+                            <span th:text="${r.baseCurrency}">RWF</span>
+                        </td>
+                        <td class="cell-secondary font-mono" th:text="${#numbers.formatDecimal(r.rate, 1, 4, 'POINT')}">1,135.5000</td>
+                        <td class="cell-secondary" th:text="${#temporals.format(r.effectiveDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(rates.content)}">
+                        <td class="table-empty" colspan="3">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-clock"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.rates.none}">No exchange rates yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${rates.totalPages > 1}">
+            <span th:text="#{set.showing(${rates.number * 20 + 1}, ${rates.totalElements})}">Showing records</span>
+            <div th:replace="~{layout/pagination :: pagination(${rates.number + 1}, ${rates.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

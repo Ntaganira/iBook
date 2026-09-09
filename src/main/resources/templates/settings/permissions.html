@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.permissions.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.permissions.title}">Permissions</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.permissions.title}">Permissions</h1>
+            <p class="page-subtitle" th:text="#{set.permissions.subtitle}">Fine-grained actions that can be granted to roles.</p>
+        </div>
+        <div class="page-actions">
+            <span class="badge badge-neutral" th:text="#{set.permissions.total(${total})}">75 permissions</span>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <th:block th:each="entry : ${modules}">
+            <div class="col-span-6">
+                <div class="card">
+                    <div class="table-toolbar">
+                        <div class="d-flex align-center gap-2">
+                            <span class="badge badge-primary font-mono" th:text="${#strings.toUpperCase(entry.key)}">SETTINGS</span>
+                            <span class="text-sm text-secondary" th:text="#{set.permissions.inGroup(${entry.value.size()})}">12 permissions</span>
+                        </div>
+                        <div class="toolbar-spacer"></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <tbody>
+                                <tr th:each="p : ${entry.value}">
+                                    <td class="font-mono cell-secondary" style="width:45%" th:text="${#strings.substringAfter(p.code, '.')}">users.edit</td>
+                                    <td class="cell-secondary" th:text="${p.description}">Edit users</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+
+</main>
+</body>
+</html>

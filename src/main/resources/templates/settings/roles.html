@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.roles.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.roles.title}">Roles</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.roles.title}">Roles</h1>
+            <p class="page-subtitle" th:text="#{set.roles.subtitle}">Groups of permissions assigned to users.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/settings/roles/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{set.roles.new}">New role</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{set.roles.name}, ${sort}, ${dir})}">Role</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'description', #{set.roles.description}, ${sort}, ${dir})}">Description</th>
+                        <th th:text="#{set.roles.permissions}">Permissions</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${roles.content}">
+                        <td class="fw-600" th:text="${r.name}">ADMIN</td>
+                        <td class="cell-secondary" th:text="${r.description}">Full access to the platform</td>
+                        <td><span class="badge badge-neutral" th:text="${r.permissions.size()}">75</span></td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/settings/roles/{id}/edit(id=${r.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/settings/permissions}"><svg class="ebook-icon"><use href="#icon-shield"/></svg><span th:text="#{set.roles.viewPermissions}">View permissions</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(roles.content)}">
+                        <td class="table-empty" colspan="4">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-shield"/></svg></div>
+                                <p class="text-secondary" th:text="#{set.roles.none}">No roles found.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${roles.totalPages > 1}">
+            <span th:text="#{set.records(${roles.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${roles.number + 1}, ${roles.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

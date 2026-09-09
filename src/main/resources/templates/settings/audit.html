@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{set.audit.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/settings}" th:text="#{set.breadcrumb}">System Settings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{set.audit.title}">Audit trail</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{set.audit.title}">Audit trail</h1>
+            <p class="page-subtitle" th:text="#{set.audit.subtitle}">A record of every important action taken in this workspace.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="toolbar">
+            <form class="search-form" th:action="@{/settings/audit}" method="get">
+                <svg class="ebook-icon search-icon ebook-icon--sm"><use href="#icon-search"/></svg>
+                <input class="form-control" type="search" name="q" th:value="${q}"
+                       th:placeholder="#{set.audit.searchPlaceholder}" aria-label="#{set.audit.searchPlaceholder}">
+                <input type="hidden" name="sort" th:value="${sort}">
+                <input type="hidden" name="dir" th:value="${dir}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{set.audit.search}">Search</button>
+            </form>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'createdAt', #{set.audit.createdAt}, ${sort}, ${dir})}">Date &amp; time</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'actor', #{set.audit.actor}, ${sort}, ${dir})}">User</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'module', #{set.audit.module}, ${sort}, ${dir})}">Module</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'action', #{set.audit.action}, ${sort}, ${dir})}">Action</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'target', #{set.audit.target}, ${sort}, ${dir})}">Target</th>
+                        <th th:text="#{set.audit.ip}">IP address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${logs.content}">
+                        <td class="cell-secondary text-sm text-nowrap" th:text="${#temporals.format(l.createdAt, 'dd MMM yyyy HH:mm')}">09 Sep 2026 10:24</td>
+                        <td class="fw-600" th:text="${l.actor}">admin@ebookonline.rw</td>
+                        <td><span class="badge badge-neutral" th:text="${#strings.capitalize(#strings.replace(l.module, '_', ' '))}">Settings</span></td>
+                        <td th:text="${l.action}">UPDATE</td>
+                        <td class="cell-secondary" th:text="${l.target}">Branch / Kigali HQ</td>
+                        <td class="cell-secondary font-mono text-sm" th:text="${l.ipAddress}">127.0.0.1</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(logs.content)}">
+                        <td class="table-empty" colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-shield"/></svg></div>
+                                <p class="text-secondary" th:if="${q != null and !#strings.isEmpty(q)}" th:text="#{set.audit.noResults}">No audit entries matched your search.</p>
+                                <p class="text-secondary" th:unless="${q != null and !#strings.isEmpty(q)}" th:text="#{set.audit.none}">No activity recorded yet. Actions you perform will appear here.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${logs.totalPages > 1}">
+            <span th:text="#{set.records(${logs.totalElements})}">12 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${logs.number + 1}, ${logs.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

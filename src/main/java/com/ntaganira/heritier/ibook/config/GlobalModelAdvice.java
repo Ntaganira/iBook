@@ -1,3 +1,13 @@
+/**
+ * <pre>
+ * - Project   : Ebook Online - Cloud Accounting Platform
+ * - Package   : com.ntaganira.heritier.ibook.config
+ * - File      : GlobalModelAdvice.java
+ * - Date      : 2026. 09. 09.
+ * - User      : Hntaganira
+ * - Desc      : Global controller advice exposing request attributes
+ * </pre>
+ */
 package com.ntaganira.heritier.ibook.config;
 
 import jakarta.servlet.http.HttpServletRequest;
