@@ -56,16 +56,6 @@ public class PageController {
         return "banking/transactions";
     }
 
-    @GetMapping("/accounts")
-    public String chartOfAccounts() {
-        return "accounts/list";
-    }
-
-    @GetMapping("/journals/new")
-    public String newJournalEntry() {
-        return "journals/form";
-    }
-
     @GetMapping("/reports")
     public String reports() {
         return "reports/index";

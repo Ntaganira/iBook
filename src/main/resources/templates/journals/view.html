@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{je.view.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/journals}" th:text="#{je.title}">Journal entries</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${entry.entryNo}">JE-2026-00001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${entry.entryNo}">JE-2026-00001</h1>
+            <p class="page-subtitle">
+                <span th:text="${entry.entryDate != null ? #temporals.format(entry.entryDate, 'dd MMM yyyy') : '—'}">07 Sep 2026</span>
+                <span th:if="${entry.createdBy != null}" th:text="' · ' + ${entry.createdBy}">· admin</span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/journals}" th:text="#{common.back}">Back</a>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-8">
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h3 th:text="#{je.lines}">Journal lines</h3>
+                    <span class="badge badge-success" th:if="${entry.status.name() == 'POSTED'}" th:text="#{common.status.posted}">Posted</span>
+                    <span class="badge badge-muted" th:unless="${entry.status.name() == 'POSTED'}" th:text="#{common.status.draft}">Draft</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="w-4">#</th>
+                                <th class="w-40" th:text="#{je.account}">Account</th>
+                                <th th:text="#{je.memo}">Memo</th>
+                                <th class="num w-20" th:text="#{je.debit}">Debit</th>
+                                <th class="num w-20" th:text="#{je.credit}">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="line, iStat : ${entry.lines}">
+                                <td class="cell-secondary" th:text="${iStat.count}">1</td>
+                                <td>
+                                    <div class="cell-primary" th:text="${line.accountCode + ' ' + line.accountName}">5001 Rent expense</div>
+                                </td>
+                                <td class="cell-secondary" th:text="${line.memo != null ? line.memo : '—'}">—</td>
+                                <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(line.getDebitValue(), 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(line.getCreditValue(), 1, 0, 'COMMA')}">RWF 0</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2"></td>
+                                <td class="text-right font-semibold" th:text="#{je.totals}">Totals</td>
+                                <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(entry.totalDebits != null ? entry.totalDebits : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(entry.totalCredits != null ? entry.totalCredits : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-4">
+            <div class="card mb-5">
+                <div class="card-header"><h3 th:text="#{je.meta}">Details</h3></div>
+                <div class="card-body">
+                    <dl class="detail-list">
+                        <div>
+                            <dt th:text="#{je.entryNo}">Entry no</dt>
+                            <dd th:text="${entry.entryNo}">JE-2026-00001</dd>
+                        </div>
+                        <div>
+                            <dt th:text="#{je.transactionDate}">Date</dt>
+                            <dd th:text="${entry.entryDate != null ? #temporals.format(entry.entryDate, 'dd MMM yyyy') : '—'}">07 Sep 2026</dd>
+                        </div>
+                        <div>
+                            <dt th:text="#{je.reference}">Reference</dt>
+                            <dd th:text="${entry.reference != null ? entry.reference : '—'}">INV-001</dd>
+                        </div>
+                        <div>
+                            <dt th:text="#{je.entryMemo}">Memo</dt>
+                            <dd th:text="${entry.memo != null ? entry.memo : '—'}">July rent accrual</dd>
+                        </div>
+                        <div>
+                            <dt th:text="#{common.status}">Status</dt>
+                            <dd th:if="${entry.status.name() == 'POSTED'}" th:text="#{common.status.posted}">Posted</dd>
+                            <dd th:unless="${entry.status.name() == 'POSTED'}" th:text="#{common.status.draft}">Draft</dd>
+                        </div>
+                        <div>
+                            <dt th:text="#{je.createdByLabel}">Created by</dt>
+                            <dd th:text="${entry.createdBy != null ? entry.createdBy : '—'}">admin</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

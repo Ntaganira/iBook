@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{trial.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/}" th:text="#{nav.dashboard}">Dashboard</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{trial.title}">Trial balance</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{trial.title}">Trial balance</h1>
+            <p class="page-subtitle" th:text="#{trial.subtitle(${#temporals.format(asOf, 'dd MMM yyyy')})}">Account balances as of the selected period.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/accounting/ledger}" th:text="#{led.title}">Ledger</a>
+            <a class="btn btn-ghost" th:href="@{/accounting/periods}" th:text="#{period.title}">Periods</a>
+        </div>
+    </div>
+
+    <div class="grid grid-3 mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{trial.totalDebits}">Total debits</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandDebits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:text="#{trial.debitsHint}">Posted debit activity</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{trial.totalCredits}">Total credits</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandCredits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:text="#{trial.creditsHint}">Posted credit activity</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{trial.outcome}">Outcome</div>
+            <div class="stat-tile-value text-md">
+                <span class="badge badge-success" th:if="${difference.abs().doubleValue() <= 0.01}"><span class="badge-dot"></span><span th:text="#{trial.balanced}">Balanced</span></span>
+                <span class="badge badge-error" th:unless="${difference.abs().doubleValue() <= 0.01}"><span class="badge-dot"></span><span th:text="#{trial.outOfBalance}">Out of balance</span></span>
+            </div>
+            <div class="stat-tile-sub" th:text="#{trial.difference}">Debits − credits</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="w-15" th:text="#{coa.code}">Code</th>
+                        <th th:text="#{coa.account}">Account</th>
+                        <th class="num" th:text="#{trial.opening}">Opening</th>
+                        <th class="num" th:text="#{trial.debits}">Debits</th>
+                        <th class="num" th:text="#{trial.credits}">Credits</th>
+                        <th class="num" th:text="#{common.balance}">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <th:block th:each="section : ${sections}">
+                        <tr class="coa-type-row">
+                            <td colspan="6" class="coa-type-label" th:text="${section.typeLabel}">Assets</td>
+                        </tr>
+                        <tr th:each="row : ${section.rows}">
+                            <td class="font-mono text-xs" th:text="${row.code}">1101</td>
+                            <td>
+                                <span class="cell-primary" th:text="${row.name}">BK Bank</span>
+                            </td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(row.opening, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td class="num" th:text="${row.debits != null and row.debits.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.debits, 1, 0, 'COMMA') : '—'}">—</td>
+                            <td class="num" th:text="${row.credits != null and row.credits.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.credits, 1, 0, 'COMMA') : '—'}">—</td>
+                            <td class="num font-semibold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(row.balance, 1, 0, 'COMMA')}">RWF 0</td>
+                        </tr>
+                        <tr class="coa-type-total">
+                            <td colspan="2" th:text="#{trial.subtotal}">Subtotal</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.opening, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.debits, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.credits, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.balance, 1, 0, 'COMMA')}">RWF 0</td>
+                        </tr>
+                    </th:block>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="text-right font-bold" th:text="#{trial.grandTotals}">Grand totals</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandOpening, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandDebits, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandCredits, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandOpening.add(grandDebits).subtract(grandCredits), 1, 0, 'COMMA')}">RWF 0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

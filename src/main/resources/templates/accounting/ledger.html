@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{led.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/}" th:text="#{nav.dashboard}">Dashboard</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{led.title}">General ledger</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{led.title}">General ledger</h1>
+            <p class="page-subtitle" th:text="#{led.subtitle}">Posted activity for every account, or a single account.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/accounting/trial-balance}" th:text="#{trial.title}">Trial balance</a>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="card-body" method="get" th:action="@{/accounting/ledger}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="ledAccount" th:text="#{led.account}">Account</label>
+                    <select class="form-control" id="ledAccount" name="account">
+                        <option value="" th:text="#{led.allAccounts}">All accounts</option>
+                        <option th:each="a : ${accounts}" th:value="${a.id}"
+                                th:text="${a.code + ' — ' + a.name}"
+                                th:selected="${selected != null and selected.id == a.id}">1101 BK Bank</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ledFrom" th:text="#{led.from}">From</label>
+                    <input class="form-control" id="ledFrom" type="date" name="from" th:value="${from}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ledTo" th:text="#{led.to}">To</label>
+                    <input class="form-control" id="ledTo" type="date" name="to" th:value="${to}">
+                </div>
+                <div class="form-group d-flex align-end">
+                    <button class="btn btn-secondary" type="submit">
+                        <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                        <span th:text="#{common.apply}">Apply</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid grid-3 mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{led.opening}">Opening balance</div>
+            <div class="stat-tile-value text-md money" th:text="${selected == null ? '—' : baseCurrency + ' ' + #numbers.formatDecimal(opening, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub">
+                <span th:if="${selected != null}" th:text="${selected.code + ' ' + selected.name}">1101 BK Bank</span>
+                <span th:unless="${selected != null}" th:text="#{led.allAccounts}">All accounts</span>
+            </div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{led.totalDebits}">Total debits</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalDebits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:text="#{led.periodActivity}">Period activity</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{led.totalCredits}">Total credits</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalCredits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:text="#{led.periodActivity}">Period activity</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{led.date}">Date</th>
+                        <th th:text="#{je.entryNo}">Entry</th>
+                        <th th:text="#{led.account}">Account</th>
+                        <th th:text="#{je.memo}">Memo</th>
+                        <th class="num" th:text="#{je.debit}">Debit</th>
+                        <th class="num" th:text="#{je.credit}">Credit</th>
+                        <th class="num" th:if="${selected != null}" th:text="#{led.runningBalance}">Running balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${rows}">
+                        <td class="cell-secondary" th:text="${row.date != null ? #temporals.format(row.date, 'dd MMM yyyy') : '—'}">07 Sep 2026</td>
+                        <td class="font-mono text-xs" th:text="${row.entryNo}">JE-2026-00001</td>
+                        <td class="cell-secondary" th:text="${row.reference}">—</td>
+                        <td class="cell-secondary" th:text="${row.memo != null ? row.memo : '—'}">—</td>
+                        <td class="num" th:text="${row.debit != null and row.debit.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.debit, 1, 0, 'COMMA') : '—'}">—</td>
+                        <td class="num" th:text="${row.credit != null and row.credit.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.credit, 1, 0, 'COMMA') : '—'}">—</td>
+                        <td class="num font-semibold" th:if="${selected != null}"
+                            th:text="${row.running != null ? baseCurrency + ' ' + #numbers.formatDecimal(row.running, 1, 0, 'COMMA') : '—'}">—</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(rows)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-book"/></svg></div>
+                                <p class="text-secondary" th:text="#{led.none}">No posted activity in this range.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{period.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/}" th:text="#{nav.dashboard}">Dashboard</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{period.title}">Accounting periods</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{period.title}">Accounting periods</h1>
+            <p class="page-subtitle" th:text="#{period.subtitle}">Monthly periods that control when entries can be posted.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/accounting/fiscal-close}" th:text="#{fisc.title}">Close fiscal year</a>
+            <form method="post" th:action="@{/accounting/periods/generate}" class="d-flex gap-2 align-center">
+                <input class="form-control form-control--sm w-20" type="number" name="year" th:value="${year}" required>
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-layers"/></svg>
+                    <span th:text="#{period.generate}">Generate year</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{period.code}">Code</th>
+                        <th th:text="#{period.label}">Label</th>
+                        <th class="num" th:text="#{period.fiscalYear}">Fiscal year</th>
+                        <th th:text="#{period.startDate}">Start</th>
+                        <th th:text="#{period.endDate}">End</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${periods}">
+                        <td class="font-mono text-xs" th:text="${p.code}">FY2026-M01</td>
+                        <td class="cell-primary" th:text="${p.label}">July 2026</td>
+                        <td class="num" th:text="${p.fiscalYear}">2026</td>
+                        <td class="cell-secondary" th:text="${#temporals.format(p.startDate, 'dd MMM yyyy')}">01 Jul 2026</td>
+                        <td class="cell-secondary" th:text="${#temporals.format(p.endDate, 'dd MMM yyyy')}">31 Jul 2026</td>
+                        <td>
+                            <span class="badge badge-success" th:if="${p.status.name() == 'OPEN'}" th:text="#{common.status.open}">Open</span>
+                            <span class="badge badge-muted" th:unless="${p.status.name() == 'OPEN'}" th:text="#{common.status.closed}">Closed</span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <form th:action="@{/accounting/periods/{id}/toggle(id=${p.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-pause"/></svg>
+                                            <span th:if="${p.status.name() == 'OPEN'}" th:text="#{period.close}">Close</span>
+                                            <span th:unless="${p.status.name() == 'OPEN'}" th:text="#{period.reopen}">Reopen</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(periods)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-calendar"/></svg></div>
+                                <p class="text-secondary" th:text="#{period.none}">No periods yet. Generate the current fiscal year.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -11,6 +11,10 @@
 package com.ntaganira.heritier.ibook.config;
 
 import com.ntaganira.heritier.ibook.entity.*;
+import com.ntaganira.heritier.ibook.enums.AccountType;
+import com.ntaganira.heritier.ibook.enums.JournalEntryStatus;
+import com.ntaganira.heritier.ibook.enums.JournalEntryType;
+import com.ntaganira.heritier.ibook.enums.PeriodStatus;
 import com.ntaganira.heritier.ibook.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +23,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +48,9 @@ public class DataSeeder {
                                       NotificationPreferenceRepository notificationPreferenceRepository,
                                       SecuritySettingsRepository securitySettingsRepository,
                                       AuditLogRepository auditLogRepository,
+                                      AccountRepository accountRepository,
+                                      JournalEntryRepository journalEntryRepository,
+                                      AccountingPeriodRepository accountingPeriodRepository,
                                       PasswordEncoder passwordEncoder) {
         return args -> {
             seedRolesAndPermissions(roleRepository, permissionRepository);
@@ -73,6 +82,9 @@ public class DataSeeder {
             seedNotificationPreferences(notificationPreferenceRepository);
             seedSecurity(securitySettingsRepository);
             seedAuditSamples(auditLogRepository);
+            seedAccounts(accountRepository);
+            seedJournalEntries(accountRepository, journalEntryRepository);
+            seedAccountingPeriods(accountingPeriodRepository, companyRepository);
         };
     }
 
@@ -266,7 +278,7 @@ public class DataSeeder {
         seq(repository, "Purchase Orders", "PURCHASE_ORDER", "PO-", null, 4, 1, true);
         seq(repository, "Credit Notes", "CREDIT_NOTE", "CN-", null, 4, 1, true);
         seq(repository, "Expenses", "EXPENSE", "EXP-", null, 4, 1, true);
-        seq(repository, "Journal Entries", "JOURNAL", "JE-", null, 5, 1, true);
+        seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }
 
     private void seq(NumberingSequenceRepository repository, String name, String docType,
@@ -361,5 +373,150 @@ public class DataSeeder {
                 .action("IMPORT_CHART").target("chart#default").detail("Imported standard Rwandan chart of accounts").build());
         repository.save(AuditLog.builder().actor("admin@ebookonline.rw").module("settings").action("EMAIL_TEST")
                 .target("mail#smtp").detail("SMTP test message sent successfully").build());
+    }
+
+    private void seedAccounts(AccountRepository repository) {
+        if (repository.count() > 0) {
+            return;
+        }
+        account(repository, "1000", "Bank accounts", AccountType.ASSET, null, "0", true);
+        account(repository, "1101", "BK Bank — Current", AccountType.ASSET, "1000", "5000000", true);
+        account(repository, "1102", "COGEBANQUE — Savings", AccountType.ASSET, "1000", "2400000", true);
+        account(repository, "1105", "MTN Mobile Money", AccountType.ASSET, "1000", "800000", true);
+        account(repository, "1201", "Accounts receivable", AccountType.ASSET, null, "0", true);
+        account(repository, "1301", "Inventory — goods for resale", AccountType.ASSET, null, "12000000", true);
+        account(repository, "1401", "Prepaid expenses", AccountType.ASSET, null, "500000", true);
+        account(repository, "1501", "Office equipment", AccountType.ASSET, null, "6500000", true);
+        account(repository, "1509", "Accumulated depreciation — office equipment", AccountType.ASSET, "1501", "-1100000", true);
+        account(repository, "2000", "Current liabilities", AccountType.LIABILITY, null, "0", true);
+        account(repository, "2001", "Accounts payable", AccountType.LIABILITY, null, "0", true);
+        account(repository, "2002", "Accrued expenses", AccountType.LIABILITY, null, "750000", true);
+        account(repository, "2101", "VAT payable", AccountType.LIABILITY, null, "0", true);
+        account(repository, "2102", "PAYE payable", AccountType.LIABILITY, null, "0", true);
+        account(repository, "2301", "Short-term loans", AccountType.LIABILITY, null, "4000000", true);
+        account(repository, "2401", "Long-term loan — bank", AccountType.LIABILITY, null, "8000000", true);
+        account(repository, "3000", "Owner's equity", AccountType.EQUITY, null, "0", true);
+        account(repository, "3001", "Owner's equity — share capital", AccountType.EQUITY, null, "3000000", true);
+        account(repository, "3005", "Owner's drawings", AccountType.EQUITY, null, "0", true);
+        account(repository, "3100", "Retained earnings", AccountType.EQUITY, null, "-350000", true);
+        account(repository, "4000", "Income", AccountType.REVENUE, null, "0", true);
+        account(repository, "4001", "Consulting services", AccountType.REVENUE, null, "0", true);
+        account(repository, "4002", "Product sales", AccountType.REVENUE, null, "0", true);
+        account(repository, "4003", "Interest income", AccountType.REVENUE, null, "0", true);
+        account(repository, "5000", "Operating expenses", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5001", "Rent expense", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5002", "Salaries & wages", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5003", "Utilities", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5004", "Travel & transport", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5005", "Office supplies", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5006", "Depreciation expense", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5101", "Bank charges", AccountType.EXPENSE, null, "0", true);
+    }
+
+    private void account(AccountRepository repository, String code, String name, AccountType type,
+                         String parentCode, String opening, boolean active) {
+        Long parentId = parentCode == null || parentCode.isBlank()
+                ? null
+                : repository.findByCodeIgnoreCase(parentCode).map(Account::getId).orElse(null);
+        repository.save(Account.builder().code(code).name(name).type(type).parentId(parentId)
+                .openingBalance(new BigDecimal(opening)).active(active).build());
+    }
+
+    private void seedJournalEntries(AccountRepository accountRepository,
+                                    JournalEntryRepository journalEntryRepository) {
+        if (journalEntryRepository.count() > 0) {
+            return;
+        }
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00001", "2026-07-31", "RENT-2026-07",
+                "July rent accrual", JournalEntryStatus.POSTED, Map.of("5001", "900000", "2002", "-900000"));
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00002", "2026-08-05", "CAP-2026-08",
+                "Owner capital — cash top-up", JournalEntryStatus.POSTED, Map.of("1101", "500000", "3001", "-500000"));
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00003", "2026-08-15", "INV-2026-0014",
+                "Consulting income — project KW-14", JournalEntryStatus.POSTED, Map.of("1102", "2400000", "4001", "-2400000"));
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00004", "2026-08-20", "EXP-2026-0021",
+                "Field visit transport reimbursement", JournalEntryStatus.POSTED, Map.of("5004", "185000", "1105", "-185000"));
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00005", "2026-09-01", "DEP-2026-08",
+                "August depreciation — office equipment", JournalEntryStatus.POSTED, Map.of("5006", "110000", "1509", "-110000"));
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00006", "2026-09-05", "DRAW-2026-09",
+                "Owner drawings — August", JournalEntryStatus.POSTED, Map.of("3005", "300000", "1101", "-300000"));
+        journalEntry(journalEntryRepository, accountRepository, "JE-2026-00007", "2026-09-07", null,
+                "Draft accrual — pending review", JournalEntryStatus.DRAFT, Map.of("5001", "75000", "2002", "-75000"));
+    }
+
+    private void journalEntry(JournalEntryRepository repository, AccountRepository accountRepository, String entryNo,
+                              String date, String reference, String memo, JournalEntryStatus status,
+                              Map<String, String> lines) {
+        List<JournalLine> journalLines = new ArrayList<>();
+        BigDecimal totalDebits = BigDecimal.ZERO;
+        BigDecimal totalCredits = BigDecimal.ZERO;
+        int order = 0;
+        for (Map.Entry<String, String> lineEntry : lines.entrySet()) {
+            Account account = accountRepository.findByCodeIgnoreCase(lineEntry.getKey()).orElse(null);
+            if (account == null) {
+                continue;
+            }
+            BigDecimal amount = new BigDecimal(lineEntry.getValue());
+            boolean debit = amount.signum() > 0;
+            BigDecimal debitValue = debit ? amount.abs() : BigDecimal.ZERO;
+            BigDecimal creditValue = debit ? BigDecimal.ZERO : amount.abs();
+            totalDebits = totalDebits.add(debitValue);
+            totalCredits = totalCredits.add(creditValue);
+            journalLines.add(JournalLine.builder().accountId(account.getId()).accountCode(account.getCode())
+                    .accountName(account.getName()).memo(null).debit(debitValue).credit(creditValue)
+                    .sortOrder(order++).build());
+        }
+        JournalEntry entry = JournalEntry.builder().entryNo(entryNo).entryDate(LocalDate.parse(date))
+                .type(JournalEntryType.MANUAL).status(status).reference(reference).memo(memo)
+                .totalDebits(totalDebits).totalCredits(totalCredits).createdBy("admin@ebookonline.rw").build();
+        for (JournalLine line : journalLines) {
+            entry.addLine(line);
+        }
+        repository.save(entry);
+    }
+
+    private void seedAccountingPeriods(AccountingPeriodRepository repository, CompanyRepository companyRepository) {
+        if (repository.count() > 0) {
+            return;
+        }
+        String fiscalYearStart = companyRepository.findFirstByOrderByIdAsc()
+                .map(Company::getFiscalYearStart).orElse("July");
+        int startMonth = fiscalYearStartMonth(fiscalYearStart);
+        LocalDate today = LocalDate.now();
+        int fiscalYear = today.getMonthValue() >= startMonth ? today.getYear() : today.getYear() - 1;
+        int created = 0;
+        for (int m = 0; m < 12; m++) {
+            int monthIndex = ((startMonth - 1) + m) % 12 + 1;
+            int year = fiscalYear + ((startMonth - 1) + m) / 12;
+            YearMonth yearMonth = YearMonth.of(year, monthIndex);
+            LocalDate start = yearMonth.atDay(1);
+            LocalDate end = yearMonth.atEndOfMonth();
+            String code = "FY" + fiscalYear + "-M" + String.format("%02d", m + 1);
+            String label = capitalize(yearMonth.getMonth().name().toLowerCase(java.util.Locale.ENGLISH)) + " " + year;
+            repository.save(AccountingPeriod.builder().code(code).label(label).fiscalYear(fiscalYear)
+                    .startDate(start).endDate(end)
+                    .status(end.isBefore(today) ? PeriodStatus.CLOSED : PeriodStatus.OPEN).build());
+            created++;
+        }
+    }
+
+    private static int fiscalYearStartMonth(String fiscalYearStart) {
+        if (fiscalYearStart == null || fiscalYearStart.isBlank()) {
+            return 1;
+        }
+        String[] months = {"January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"};
+        for (int i = 0; i < months.length; i++) {
+            if (months[i].equalsIgnoreCase(fiscalYearStart.trim())) {
+                return i + 1;
+            }
+        }
+        return 1;
+    }
+
+    private static String capitalize(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 }

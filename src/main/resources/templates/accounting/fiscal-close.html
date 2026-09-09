@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{fisc.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/}" th:text="#{nav.dashboard}">Dashboard</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{fisc.title}">Fiscal year closing</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{fisc.title}">Fiscal year closing</h1>
+            <p class="page-subtitle" th:text="#{fisc.subtitle}">Close open periods and finalize the year's books.</p>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-body">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" th:text="#{fisc.company}">Company</label>
+                    <div class="cell-primary" th:text="${company != null ? company.name : '—'}">iBook Ltd</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" th:text="#{fisc.period}">Fiscal year period</label>
+                    <div class="cell-primary"
+                         th:text="${#temporals.format(range.start, 'dd MMM yyyy') + ' – ' + #temporals.format(range.end, 'dd MMM yyyy')}">01 Jul 2026 – 30 Jun 2027</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" th:text="#{fisc.fiscalYearStart}">Fiscal year start</label>
+                    <div class="cell-primary" th:text="${company != null ? company.fiscalYearStart : '—'}">July</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-3 mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fisc.openPeriods}">Open periods</div>
+            <div class="stat-tile-value text-md money" th:text="${openPeriods}">0</div>
+            <div class="stat-tile-sub" th:text="#{fisc.openHint}">Periods still accepting entries</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fisc.closedPeriods}">Closed periods</div>
+            <div class="stat-tile-value text-md money" th:text="${closedPeriods}">0</div>
+            <div class="stat-tile-sub" th:text="#{fisc.closedHint}">Locked against new entries</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fisc.postedEntries}">Posted entries</div>
+            <div class="stat-tile-value text-md money" th:text="${postedEntries}">0</div>
+            <div class="stat-tile-sub" th:text="#{fisc.postedHint}">Entries affecting balances</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12 mb-5">
+        <div class="col-span-6">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{fisc.netIncome}">Net income</h3></div>
+                <div class="card-body">
+                    <div class="stat-tile" style="border:1px solid var(--border);padding:var(--sp-4);margin-bottom:var(--sp-4)">
+                        <div class="stat-tile-label" th:text="#{fisc.netIncomeHint}">Revenues − expenses for the year</div>
+                        <div class="stat-tile-value money text-success" th:if="${netIncome.doubleValue() >= 0}"
+                             th:text="${baseCurrency + ' ' + #numbers.formatDecimal(netIncome, 1, 0, 'COMMA')}">RWF 0</div>
+                        <div class="stat-tile-value money" th:unless="${netIncome.doubleValue() >= 0}"
+                             th:text="${baseCurrency + ' ' + #numbers.formatDecimal(netIncome, 1, 0, 'COMMA')}">RWF 0</div>
+                    </div>
+                    <div class="alert alert--warning">
+                        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+                        <div class="alert-body" th:text="#{fisc.warning}">Closing the year locks all open periods. Retained earnings are updated in the closing entry.</div>
+                    </div>
+                </div>
+                <div class="card-body pt-0">
+                    <form method="post" th:action="@{/accounting/fiscal-close}" th:data-confirm="${confirmText}">
+                        <button class="btn btn-danger" type="submit">
+                            <svg class="ebook-icon"><use href="#icon-lock"/></svg>
+                            <span th:text="#{fisc.closeButton}">Close fiscal year</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.querySelector('form[data-confirm]').addEventListener('submit', function (e) {
+            if (!window.confirm(this.dataset.confirm)) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+</main>
+</body>
+</html>

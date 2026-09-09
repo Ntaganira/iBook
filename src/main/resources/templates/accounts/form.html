@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{coa.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/accounts}" th:text="#{coa.title}">Chart of accounts</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{coa.editAccount}">Edit account</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{coa.new}">New account</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{coa.editAccount}">Edit account</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{coa.new}">New account</h1>
+            <p class="page-subtitle" th:text="#{coa.form.subtitle}">Accounts are the building blocks of the chart of accounts.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/accounts}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="accountForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{coa.saveAccount}">Save account</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="accountForm" th:action="${mode == 'edit'} ? @{/accounts/{id}(id=${editingId})} : @{/accounts}"
+          th:object="${form}" method="post" novalidate>
+
+        <div class="grid grid-12">
+            <div class="col-span-8 d-flex flex-column gap-5">
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{coa.details}">Account details</h3>
+                            <div class="card-subtitle" th:text="#{coa.detailsHint}">Codes are unique and shown in mono on lists.</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="accCode"><span th:text="#{coa.accountCode}">Account code</span> <span class="required">*</span></label>
+                                <input class="form-control" id="accCode" name="code" type="text" th:value="${form.code}"
+                                       th:placeholder="#{coa.codePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="accType"><span th:text="#{coa.accountType}">Account type</span> <span class="required">*</span></label>
+                                <select class="form-control" id="accType" name="type" required>
+                                    <option th:each="t : ${T(com.ntaganira.heritier.ibook.enums.AccountType).values()}"
+                                            th:value="${t.name()}" th:text="${typeLabels[t.name()]}"
+                                            th:selected="${form.type == t.name()}">Asset</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('type')}"></div>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="accName"><span th:text="#{coa.accountName}">Account name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="accName" name="name" type="text" th:value="${form.name}"
+                                       th:placeholder="#{coa.namePlaceholder}" required>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="accParent"><span th:text="#{coa.parentAccount}">Parent account</span> <span class="hint" th:text="#{coa.optional}">optional</span></label>
+                                <select class="form-control" id="accParent" name="parentId">
+                                    <option value="" th:text="#{coa.noParent}">— No parent —</option>
+                                    <option th:each="p : ${parents}" th:value="${p.id}"
+                                            th:text="${p.code + ' — ' + p.name}"
+                                            th:selected="${form.parentId == p.id}">1000 Bank accounts</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="accDesc"><span th:text="#{coa.description}">Description</span> <span class="hint" th:text="#{coa.optional}">optional</span></label>
+                                <input class="form-control" id="accDesc" name="description" type="text" th:value="${form.description}"
+                                       th:placeholder="#{coa.descriptionPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="accBalance" th:text="#{coa.openingBalance}">Opening balance</label>
+                                <input class="form-control amount-control" id="accBalance" name="openingBalance"
+                                       type="number" step="0.01" th:value="${form.openingBalance}" value="0">
+                                <div class="form-hint" th:text="#{coa.openingHint}">Opening amounts follow the account's normal balance side.</div>
+                                <div th:replace="~{layout/common :: fieldError('openingBalance')}"></div>
+                            </div>
+                            <div class="form-group d-flex align-end">
+                                <label class="switch">
+                                    <input type="hidden" name="active" value="false">
+                                    <input type="checkbox" name="active" th:checked="${form.active}">
+                                    <span class="switch-track"></span>
+                                    <span class="switch-label" th:text="#{coa.isActive}">Active</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-span-4">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{coa.form.tips}">Tips</h3></div>
+                    <div class="card-body">
+                        <div class="alert alert--info">
+                            <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                            <div class="alert-body" th:text="#{coa.form.tipsHint}">Use parent accounts to group sub-accounts. Reported balances total from child accounts automatically.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>
