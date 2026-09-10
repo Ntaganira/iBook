@@ -449,6 +449,11 @@
     return Object.assign({}, extra, o);
   }
 
+  function parseChart(v) {
+    if (!v) return [];
+    try { return JSON.parse(v); } catch (e) { return []; }
+  }
+
   function initCharts() {
     if (typeof Chart === "undefined") return;
     var colors = defaultChartColors();
@@ -460,10 +465,10 @@
       new Chart(ctx, {
         type: "line",
         data: {
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+          labels: parseChart(ctx.dataset.labels),
           datasets: [
-            { label: "Revenue", data: [18.2, 22.5, 19.8, 26.4, 29.1, 24.6, 31.2, 28.9, 33.4, 30.1, 36.8, 41.6], borderColor: colors.c1, backgroundColor: hexToRgba(colors.c1, 0.12), fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0 },
-            { label: "Expenses", data: [11.4, 13.2, 12.1, 15.8, 14.2, 16.5, 15.9, 18.1, 17.3, 19.4, 20.2, 21.8], borderColor: colors.c3, backgroundColor: hexToRgba(colors.c3, 0.08), fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0 }
+            { label: "Revenue", data: parseChart(ctx.dataset.revenue), borderColor: colors.c1, backgroundColor: hexToRgba(colors.c1, 0.12), fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0 },
+            { label: "Expenses", data: parseChart(ctx.dataset.expenses), borderColor: colors.c3, backgroundColor: hexToRgba(colors.c3, 0.08), fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0 }
           ]
         },
         options: buildBaseOptions(null, {})
@@ -476,10 +481,10 @@
       new Chart(ctx, {
         type: "bar",
         data: {
-          labels: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+          labels: parseChart(ctx.dataset.labels),
           datasets: [
-            { label: "Inflow", data: [42.8, 45.1, 47.6, 49.2, 52.4, 55.9], backgroundColor: colors.c2, borderRadius: 6, yAxisID: "y" },
-            { label: "Outflow", data: [36.4, 38.2, 40.5, 41.9, 43.7, 45.1], backgroundColor: colors.c4, borderRadius: 6, yAxisID: "y" }
+            { label: "Inflow", data: parseChart(ctx.dataset.cashIn), backgroundColor: colors.c2, borderRadius: 6, yAxisID: "y" },
+            { label: "Outflow", data: parseChart(ctx.dataset.cashOut), backgroundColor: colors.c4, borderRadius: 6, yAxisID: "y" }
           ]
         },
         options: buildBaseOptions({
@@ -489,7 +494,7 @@
       });
     }
 
-    // Receivables aging (doughnut)
+    // Receivables aging (doughnut) - sample data
     ctx = doc.getElementById("chartAging");
     if (ctx) {
       new Chart(ctx, {
@@ -508,8 +513,8 @@
       new Chart(ctx, {
         type: "line",
         data: {
-          labels: ["Q1", "Q2", "Q3", "Q4"],
-          datasets: [{ label: "Net profit", data: [4.2, 6.1, 7.8, 10.4], borderColor: colors.c2, backgroundColor: hexToRgba(colors.c2, 0.14), fill: true, tension: 0.4, borderWidth: 2.5, pointBackgroundColor: colors.c2, pointRadius: 3 }]
+          labels: parseChart(ctx.dataset.labels),
+          datasets: [{ label: "Net profit", data: parseChart(ctx.dataset.profit), borderColor: colors.c2, backgroundColor: hexToRgba(colors.c2, 0.14), fill: true, tension: 0.4, borderWidth: 2.5, pointBackgroundColor: colors.c2, pointRadius: 3 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: colors.grid } } } }
       });
@@ -521,30 +526,30 @@
       new Chart(ctx, {
         type: "pie",
         data: {
-          labels: ["COGS", "Salaries", "Rent", "Transport", "Marketing", "Utilities"],
-          datasets: [{ data: [34, 28, 12, 9, 8, 9], backgroundColor: [colors.c1, colors.c2, colors.c3, colors.c5, colors.c6, colors.c4], borderWidth: 2, borderColor: "transparent" }]
+          labels: parseChart(ctx.dataset.labels),
+          datasets: [{ data: parseChart(ctx.dataset.expenses), backgroundColor: [colors.c1, colors.c2, colors.c3, colors.c5, colors.c6, colors.c4], borderWidth: 2, borderColor: "transparent" }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { color: colors.text, usePointStyle: true, boxWidth: 8, font: { size: 11 } } } } }
       });
     }
 
-    // KPI sparklines
-    var sparkConfigs = {
-      sparkRevenue: { c: colors.c1, data: [18, 20, 19, 24, 27, 25, 29, 31, 30, 32, 31, 31] },
-      sparkExpenses: { c: colors.c3, data: [14, 15, 13, 16, 15, 17, 16, 18, 19, 18, 19, 18] },
-      sparkProfit: { c: colors.c2, data: [4, 5, 6, 8, 12, 9, 11, 13, 11, 13, 12, 13] },
-      sparkCash: { c: colors.c6, data: [20, 19, 21, 20, 22, 21, 23, 22, 22, 21, 22, 21] },
-      sparkAR: { c: colors.c5, data: [21, 22, 21, 23, 24, 25, 24, 26, 25, 27, 26, 25] },
-      sparkAP: { c: colors.c4, data: [16, 15, 14, 15, 13, 14, 13, 12, 13, 12, 11, 13] },
-      sparkInventory: { c: colors.secondary, data: [8, 8, 9, 8, 9, 10, 9, 10, 9, 10, 9, 10] }
+    // KPI sparklines (data-driven)
+    var sparkColors = {
+      sparkRevenue: colors.c1,
+      sparkExpenses: colors.c3,
+      sparkProfit: colors.c2,
+      sparkCash: colors.c6,
+      sparkAR: colors.c5,
+      sparkAP: colors.c4,
+      sparkInventory: colors.c2
     };
-    Object.keys(sparkConfigs).forEach(function (id) {
-      var el = doc.getElementById(id);
-      if (!el) return;
-      var cfg = sparkConfigs[id];
+    doc.querySelectorAll("canvas[id^='spark']").forEach(function (el) {
+      var data = parseChart(el.dataset.spark);
+      if (!data.length) return;
+      var c = sparkColors[el.id] || colors.c1;
       new Chart(el, {
         type: "line",
-        data: { labels: Array.apply(null, new Array(cfg.data.length)).map(function (_, i) { return i + 1; }), datasets: [{ data: cfg.data, borderColor: cfg.c, backgroundColor: hexToRgba(cfg.c, 0.08), fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 }] },
+        data: { labels: Array.apply(null, new Array(data.length)).map(function (_, i) { return i + 1; }), datasets: [{ data: data, borderColor: c, backgroundColor: hexToRgba(c, 0.08), fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, elements: { point: { radius: 0 } }, scales: { x: { display: false }, y: { display: false } } }
       });
     });
@@ -610,6 +615,63 @@
     }
 
   /* ----------------------------------------------------------------------
+     Column visibility toggles (table-toolbar checkboxes)
+  ---------------------------------------------------------------------- */
+  function initColumns() {
+    doc.querySelectorAll("[data-columns]").forEach(function (toolbar) {
+      var table = toolbar.closest(".card") ? toolbar.closest(".card").querySelector("table.table") : null;
+      if (!table) table = doc.querySelector("table.table");
+      if (!table) return;
+      var key = "ebook:cols:" + (toolbar.getAttribute("data-columns") || "default");
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem(key)); } catch (e) {}
+      var checks = toolbar.querySelectorAll("[data-col]");
+      checks.forEach(function (cb) {
+        var col = cb.getAttribute("data-col");
+        var isHidden = saved ? !saved[col] : cb.hasAttribute("data-col-default-hidden");
+        cb.checked = !isHidden;
+        applyColVis(table, col, isHidden);
+        cb.addEventListener("change", function () {
+          applyColVis(table, col, !cb.checked);
+          persistColState(checks, key);
+        });
+      });
+      if (saved) {
+        checks.forEach(function (cb) {
+          var col = cb.getAttribute("data-col");
+          cb.checked = !!saved[col];
+          applyColVis(table, col, !saved[col]);
+        });
+      }
+    });
+  }
+
+  function applyColVis(table, col, hide) {
+    var indices = [];
+    table.querySelectorAll("td[data-col='" + col + "']").forEach(function (td) {
+      indices.push(td.cellIndex);
+      td.classList.toggle("is-hidden", hide);
+    });
+    table.querySelectorAll("th[data-col='" + col + "']").forEach(function (th) {
+      th.classList.toggle("is-hidden", hide);
+    });
+    if (table.tHead && table.tHead.rows[0]) {
+      indices.forEach(function (idx) {
+        var th = table.tHead.rows[0].cells[idx];
+        if (th) th.classList.toggle("is-hidden", hide);
+      });
+    }
+  }
+
+  function persistColState(checks, key) {
+    var state = {};
+    checks.forEach(function (cb) {
+      state[cb.getAttribute("data-col")] = cb.checked;
+    });
+    try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {}
+  }
+
+  /* ----------------------------------------------------------------------
      Boot
   ---------------------------------------------------------------------- */
     ready(function () {
@@ -627,6 +689,7 @@
       initDatePresets();
       initAutosize();
       initCopy();
+      initColumns();
       initShortcuts();
 
       // Theme toggle delegation

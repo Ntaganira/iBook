@@ -43,14 +43,47 @@
                 <svg class="ebook-icon"><use href="#icon-search"/></svg>
                 <input type="text" name="q" th:value="${q}" th:placeholder="#{coa.searchPlaceholder}">
             </div>
-            <div class="form-group mb-0">
-                <select class="form-control form-control--sm" name="type" onchange="this.form.submit()">
-                    <option value="" th:text="#{coa.allTypes}">All types</option>
-                    <option th:each="t : ${T(com.ntaganira.heritier.ibook.enums.AccountType).values()}"
-                            th:value="${t.name()}" th:text="${typeLabels[t.name()]}"
-                            th:selected="${type == t.name()}">Assets</option>
-                </select>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.filter}">Filter</span>
+                    <span class="filter-badge" th:if="${type != null and type != ''}"
+                          th:text="${typeLabels[type]}">Assets</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{coa.typeFilter}">Account type</div>
+                    <a class="dropdown-item" th:href="@{/accounts(q=${q})}"
+                       th:classappend="${type == null or type == ''} ? 'active'">
+                        <svg class="ebook-icon" th:if="${type == null or type == ''}"><use href="#icon-check"/></svg>
+                        <span th:text="#{coa.allTypes}">All types</span>
+                    </a>
+                    <a class="dropdown-item" th:each="t : ${T(com.ntaganira.heritier.ibook.enums.AccountType).values()}"
+                       th:href="@{/accounts(q=${q}, type=${t.name()})}"
+                       th:classappend="${type == t.name()} ? 'active'">
+                        <svg class="ebook-icon" th:if="${type == t.name()}"><use href="#icon-check"/></svg>
+                        <span th:text="${typeLabels[t.name()]}">Assets</span>
+                    </a>
+                </div>
             </div>
+            <div class="dropdown" data-columns="accounts">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-columns"/></svg>
+                    <span th:text="#{common.columns}">Columns</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{common.visibleColumns}">Visible columns</div>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="code" checked><span class="checkbox-box"></span><span th:text="#{coa.code}">Code</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="name" checked><span class="checkbox-box"></span><span th:text="#{coa.account}">Account</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="type" checked><span class="checkbox-box"></span><span th:text="#{common.type}">Type</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="parent" checked><span class="checkbox-box"></span><span th:text="#{coa.parent}">Parent</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="opening" checked><span class="checkbox-box"></span><span th:text="#{coa.openingBalance}">Opening balance</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="balance" checked><span class="checkbox-box"></span><span th:text="#{common.balance}">Balance</span></label>
+                </div>
+            </div>
+            <a class="btn btn-ghost btn-sm" th:href="@{/accounts}"
+               th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
             <div class="toolbar-spacer"></div>
             <span class="text-sm text-muted" th:text="#{coa.totalAccounts(${totalAccounts})}">58 accounts</span>
         </form>
@@ -59,12 +92,12 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th th:text="#{coa.code}">Code</th>
-                        <th th:text="#{coa.account}">Account</th>
-                        <th th:text="#{common.type}">Type</th>
-                        <th class="w-25" th:text="#{coa.parent}">Parent</th>
-                        <th class="num" th:text="#{coa.openingBalance}">Opening balance</th>
-                        <th class="num" th:text="#{common.balance}">Balance</th>
+                        <th data-col="code" th:text="#{coa.code}">Code</th>
+                        <th data-col="name" th:text="#{coa.account}">Account</th>
+                        <th data-col="type" th:text="#{common.type}">Type</th>
+                        <th data-col="parent" class="w-25" th:text="#{coa.parent}">Parent</th>
+                        <th data-col="opening" class="num" th:text="#{coa.openingBalance}">Opening balance</th>
+                        <th data-col="balance" class="num" th:text="#{common.balance}">Balance</th>
                         <th class="actions-cell" th:text="#{common.actions}">Actions</th>
                     </tr>
                 </thead>
@@ -77,18 +110,18 @@
                             </td>
                         </tr>
                         <tr th:each="account : ${section.accounts}">
-                            <td class="font-mono text-xs" th:text="${account.code}">1101</td>
-                            <td>
+                            <td data-col="code" class="font-mono text-xs" th:text="${account.code}">1101</td>
+                            <td data-col="name">
                                 <span class="cell-primary" th:text="${account.name}">BK Bank</span>
                                 <span class="badge badge-muted" th:unless="${account.active}" th:text="#{common.status.inactive}">Inactive</span>
                             </td>
-                            <td>
+                            <td data-col="type">
                                 <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(account.type.name())}"
                                       th:text="${typeLabels[account.type.name()]}">Asset</span>
                             </td>
-                            <td class="cell-secondary" th:text="${parentLabels[account.id] != null ? parentLabels[account.id] : '—'}">—</td>
-                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(account.openingBalance != null ? account.openingBalance : 0, 1, 0, 'COMMA')}">RWF 0</td>
-                            <td class="num font-semibold"
+                            <td data-col="parent" class="cell-secondary" th:text="${parentLabels[account.id] != null ? parentLabels[account.id] : '—'}">—</td>
+                            <td data-col="opening" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(account.openingBalance != null ? account.openingBalance : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td data-col="balance" class="num font-semibold"
                                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(balances[account.id] != null ? balances[account.id] : 0, 1, 0, 'COMMA')}">RWF 0</td>
                             <td class="actions-cell">
                                 <div class="row-actions dropdown">

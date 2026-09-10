@@ -10,8 +10,8 @@
     <!-- Page header -->
     <div class="page-header">
         <div>
-            <h1 class="page-title" th:text="#{dash.greeting}">Good morning, John</h1>
-            <p class="page-subtitle" th:text="#{dash.subtitle('07 Sep 2026')}">Here's how your business performed this month as of <strong>07 Sep 2026</strong>.</p>
+            <h1 class="page-title" th:text="${dash.greeting}">Good morning, John</h1>
+            <p class="page-subtitle" th:text="#{dash.subtitle(${#temporals.format(dash.asOf, 'dd MMM yyyy')})}">Here's how your business performed this month as of <strong>07 Sep 2026</strong>.</p>
         </div>
         <div class="page-actions">
             <div class="dropdown">
@@ -44,12 +44,12 @@
                 <span class="kpi-label" th:text="#{dash.totalRevenue}">Total Revenue</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-trending-up"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 48,250,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.revenue.value, 1, 0, 'COMMA')}">RWF 48,250,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>12.4%</span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.revenue})}"></span>
                 <span class="kpi-compare" th:text="#{dash.vsLastMonth}">vs last month</span>
             </div>
-            <div class="kpi-spark"><canvas id="sparkRevenue"></canvas></div>
+            <div class="kpi-spark"><canvas id="sparkRevenue" th:attr="data-spark=${dash.sparks.revenue}"></canvas></div>
         </div>
 
         <div class="kpi-card kpi-card--expenses">
@@ -57,12 +57,12 @@
                 <span class="kpi-label" th:text="#{dash.totalExpenses}">Total Expenses</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-trending-down"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 31,840,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.expenses.value, 1, 0, 'COMMA')}">RWF 31,840,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta up" style="color:var(--success-700);background:var(--success-50)"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-down"/></svg>3.1%</span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.expenses})}"></span>
                 <span class="kpi-compare" th:text="#{dash.vsLastMonth}">vs last month</span>
             </div>
-            <div class="kpi-spark"><canvas id="sparkExpenses"></canvas></div>
+            <div class="kpi-spark"><canvas id="sparkExpenses" th:attr="data-spark=${dash.sparks.expenses}"></canvas></div>
         </div>
 
         <div class="kpi-card kpi-card--profit">
@@ -70,12 +70,12 @@
                 <span class="kpi-label" th:text="#{dash.netProfit}">Net Profit</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-pie-chart"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 16,410,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.profit.value, 1, 0, 'COMMA')}">RWF 16,410,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>28.9%</span>
-                <span class="kpi-compare" th:text="#{dash.profitMargin('34%')}">profit margin 34%</span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.profit})}"></span>
+                <span class="kpi-compare" th:text="#{dash.profitMargin(${#numbers.formatDecimal(dash.margin, 1, 1, 'COMMA') + '%'})}">profit margin 34%</span>
             </div>
-            <div class="kpi-spark"><canvas id="sparkProfit"></canvas></div>
+            <div class="kpi-spark"><canvas id="sparkProfit" th:attr="data-spark=${dash.sparks.profit}"></canvas></div>
         </div>
 
         <div class="kpi-card kpi-card--cash">
@@ -83,12 +83,12 @@
                 <span class="kpi-label" th:text="#{dash.cashBalance}">Cash Balance</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-bank"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 22,780,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.cash.value, 1, 0, 'COMMA')}">RWF 22,780,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta flat"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-minus"/></svg>0.0%</span>
-                <span class="kpi-compare" th:text="#{dash.acrossAccounts}">across 4 accounts</span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.cash})}"></span>
+                <span class="kpi-compare" th:text="#{dash.acrossAccounts(${dash.cashAccountCount})}">across 4 accounts</span>
             </div>
-            <div class="kpi-spark"><canvas id="sparkCash"></canvas></div>
+            <div class="kpi-spark"><canvas id="sparkCash" th:attr="data-spark=${dash.sparks.cash}"></canvas></div>
         </div>
     </div>
 
@@ -99,33 +99,37 @@
                 <span class="kpi-label" th:text="#{dash.accountsReceivable}">Accounts Receivable</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-users"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 25,400,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.receivables.value, 1, 0, 'COMMA')}">RWF 25,400,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>6.2%</span>
-                <span class="kpi-compare"><a href="#" class="text-info" th:text="#{dash.overdue('RWF 4,200,000')}">RWF 4,200,000 overdue</a></span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.receivables})}"></span>
             </div>
+            <div class="kpi-compare mt-1 text-muted" th:if="${dash.receivables.value.signum() == 0}" th:text="#{dash.noOutstanding}">No outstanding balances</div>
+            <a class="kpi-compare mt-1 text-info" th:if="${dash.receivables.value.signum() > 0}" th:href="@{/sales/aging}"
+               th:text="#{dash.overdue(${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.receivables.value, 1, 0, 'COMMA')})}">Overdue</a>
         </div>
         <div class="kpi-card kpi-card--ap">
             <div class="kpi-top">
                 <span class="kpi-label" th:text="#{dash.accountsPayable}">Accounts Payable</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-truck"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 12,950,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.payables.value, 1, 0, 'COMMA')}">RWF 12,950,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta down"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-down"/></svg>4.8%</span>
-                <span class="kpi-compare"><a href="#" class="text-info" th:text="#{dash.dueSoon('RWF 1,300,000')}">RWF 1,300,000 due soon</a></span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.payables})}"></span>
             </div>
+            <div class="kpi-compare mt-1 text-muted" th:if="${dash.payables.value.signum() == 0}" th:text="#{dash.noUnpaid}">No unpaid bills</div>
+            <a class="kpi-compare mt-1 text-info" th:if="${dash.payables.value.signum() > 0}" th:href="@{/purchases/aging}"
+               th:text="#{dash.dueSoon(${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.payables.value, 1, 0, 'COMMA')})}">Due soon</a>
         </div>
         <div class="kpi-card kpi-card--inventory">
             <div class="kpi-top">
                 <span class="kpi-label" th:text="#{dash.inventoryValue}">Inventory Value</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-box"/></svg></span>
             </div>
-            <div class="kpi-value">RWF 9,640,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.inventory.value, 1, 0, 'COMMA')}">RWF 9,640,000</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="kpi-delta up"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-arrow-up"/></svg>2.3%</span>
-                <span class="kpi-compare" th:text="#{dash.unitsInStock('1,240')}">1,240 units in stock</span>
+                <span th:replace="~{layout/common :: kpiDelta(${dash.inventory})}"></span>
             </div>
+            <div class="kpi-compare mt-1 text-muted" th:text="#{dash.inventoryOnHand}">On-hand valuation</div>
         </div>
     </div>
 
@@ -143,7 +147,10 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="chart-box"><canvas id="chartRevenueExpenses"></canvas></div>
+                <div class="chart-box"><canvas id="chartRevenueExpenses"
+                                               th:attr="data-labels=${dash.labelsJson},
+                                                        data-revenue=${dash.revenueJson},
+                                                        data-expenses=${dash.expensesJson}"></canvas></div>
             </div>
         </div>
 
@@ -159,7 +166,7 @@
                 <div class="d-flex justify-content-between mt-4 pt-3" style="border-top:1px solid var(--border)">
                     <div>
                         <div class="text-xs text-muted" th:text="#{dash.totalOutstanding}">Total outstanding</div>
-                        <div class="text-lg font-bold money">RWF 25.4M</div>
+                        <div class="text-lg font-bold money" th:text="${dash.baseCurrency + ' 25.4M'}">RWF 25.4M</div>
                     </div>
                     <a class="btn btn-soft btn-sm" th:href="@{/sales/aging}" th:text="#{dash.viewAging}">View aging</a>
                 </div>
@@ -174,7 +181,10 @@
                 <h3 th:text="#{dash.cashFlow}">Cash Flow</h3>
             </div>
             <div class="card-body">
-                <div class="chart-box"><canvas id="chartCashFlow"></canvas></div>
+                <div class="chart-box"><canvas id="chartCashFlow"
+                                               th:attr="data-labels=${dash.labelsJson},
+                                                        data-cash-in=${dash.cashInJson},
+                                                        data-cash-out=${dash.cashOutJson}"></canvas></div>
             </div>
         </div>
 
@@ -183,7 +193,9 @@
                 <h3 th:text="#{dash.profitTrend}">Profit Trend</h3>
             </div>
             <div class="card-body">
-                <div class="chart-box"><canvas id="chartProfit"></canvas></div>
+                <div class="chart-box"><canvas id="chartProfit"
+                                               th:attr="data-labels=${dash.labelsJson},
+                                                        data-profit=${dash.profitJson}"></canvas></div>
             </div>
         </div>
 
@@ -192,12 +204,14 @@
                 <h3 th:text="#{dash.expenseBreakdown}">Expense Breakdown</h3>
             </div>
             <div class="card-body">
-                <div class="chart-box"><canvas id="chartExpenses"></canvas></div>
+                <div class="chart-box"><canvas id="chartExpenses"
+                                               th:attr="data-labels=${dash.expenseLabelsJson},
+                                                        data-expenses=${dash.expenseDataJson}"></canvas></div>
             </div>
         </div>
     </div>
 
-    <!-- Bottom row: recent activity + cash flow planner -->
+    <!-- Bottom row: recent activity + right column -->
     <div class="grid grid-12">
         <div class="card col-span-7">
             <div class="card-header">
@@ -205,7 +219,7 @@
                     <h3 th:text="#{dash.recentActivity}">Recent Activity</h3>
                     <div class="card-subtitle" th:text="#{dash.latestTransactions}">Latest transactions across your business</div>
                 </div>
-                <a class="btn btn-ghost btn-sm" th:href="@{/activity}" th:text="#{common.viewAll}">View all</a>
+                <a class="btn btn-ghost btn-sm" th:href="@{/journals}" th:text="#{common.viewAll}">View all</a>
             </div>
             <div class="table-wrap">
                 <table class="table">
@@ -220,60 +234,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td class="cell-secondary" style="font-size:var(--fs-md)">07 Sep</td>
-                            <td><a class="cell-link" th:href="@{/invoices/450}">INV-2026-00450</a></td>
-                            <td><span class="cell-primary">Gorilla Retreat Ltd</span></td>
-                            <td class="cell-secondary">2010 Accounts Receivable</td>
-                            <td class="num money money-positive">+RWF 860,000</td>
-                            <td class="num"><span class="badge badge-paid" th:text="#{common.status.paid}">Paid</span></td>
-                        </tr>
-                        <tr>
-                            <td class="cell-secondary" style="font-size:var(--fs-md)">06 Sep</td>
-                            <td><a class="cell-link" th:href="@{/bills/211}">BILL-2026-00211</a></td>
-                            <td><span class="cell-primary">Zanazi Suppliers</span></td>
-                            <td class="cell-secondary">2200 Accounts Payable</td>
-                            <td class="num money money-negative">-RWF 1,150,000</td>
-                            <td class="num"><span class="badge badge-pending" th:text="#{common.status.pending}">Pending</span></td>
-                        </tr>
-                        <tr>
-                            <td class="cell-secondary" style="font-size:var(--fs-md)">05 Sep</td>
-                            <td><a class="cell-link" th:href="@{/banking/transactions/9082}">TXN-2026-09082</a></td>
-                            <td><span class="cell-primary">MTN MoMo cash-in</span></td>
-                            <td class="cell-secondary">1105 MTN MoMo</td>
-                            <td class="num money money-positive">+RWF 1,200,000</td>
-                            <td class="num"><span class="badge badge-success" th:text="#{common.status.matched}">Matched</span></td>
-                        </tr>
-                        <tr>
-                            <td class="cell-secondary" style="font-size:var(--fs-md)">04 Sep</td>
-                            <td><a class="cell-link" th:href="@{/purchases/expenses/919}">EXP-2026-00919</a></td>
-                            <td><span class="cell-primary">Fuel &amp; transport</span></td>
-                            <td class="cell-secondary">7100 Transport</td>
-                            <td class="num money money-negative">-RWF 84,500</td>
-                            <td class="num"><span class="badge badge-approved" th:text="#{common.status.approved}">Approved</span></td>
-                        </tr>
-                        <tr>
-                            <td class="cell-secondary" style="font-size:var(--fs-md)">03 Sep</td>
-                            <td><a class="cell-link" th:href="@{/sales/payments/318}">PAY-2026-00318</a></td>
-                            <td><span class="cell-primary">ABC Construction Ltd</span></td>
-                            <td class="cell-secondary">2010 Accounts Receivable</td>
-                            <td class="num money money-positive">+RWF 2,400,000</td>
-                            <td class="num"><span class="badge badge-paid" th:text="#{common.status.recorded}">Recorded</span></td>
-                        </tr>
-                        <tr>
-                            <td class="cell-secondary" style="font-size:var(--fs-md)">02 Sep</td>
-                            <td><a class="cell-link" th:href="@{/invoices/448}">INV-2026-00448</a></td>
-                            <td><span class="cell-primary">Kivu Fresh Ltd</span></td>
-                            <td class="cell-secondary">2010 Accounts Receivable</td>
-                            <td class="num money money-positive">+RWF 540,000</td>
-                            <td class="num"><span class="badge badge-sent" th:text="#{common.status.sent}">Sent</span></td>
+                        <tr th:each="row : ${dash.activity}">
+                            <td class="cell-secondary" style="font-size:var(--fs-md)"
+                                th:text="${row.date != null ? #temporals.format(row.date, 'dd MMM') : '—'}">07 Sep</td>
+                            <td><a class="cell-link" th:href="@{/journals/{id}(id=${row.id})}" th:text="${row.entryNo}">JE-2026-00450</a></td>
+                            <td><span class="cell-primary" th:text="${row.memo != null ? row.memo : row.entryNo}">Invoice INV-2026-00450</span></td>
+                            <td class="cell-secondary" th:text="${row.accountName != null ? row.accountName : '—'}">2010 Accounts Receivable</td>
+                            <td class="num money" th:classappend="${row.inflow} ? 'money-positive' : 'money-negative'"
+                                th:text="|${row.inflow ? '+' : '-'} ${dash.baseCurrency} ${#numbers.formatDecimal(row.amount, 1, 0, 'COMMA')}|">+RWF 860,000</td>
+                            <td class="num">
+                                <span class="badge badge-success" th:if="${row.status == 'POSTED'}" th:text="#{common.status.posted}">Posted</span>
+                                <span class="badge badge-muted" th:unless="${row.status == 'POSTED'}" th:text="#{common.status.draft}">Draft</span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <div class="table-footer">
-                <span th:text="#{dash.showingLatest('1,284')}">Showing latest 6 of 1,284 transactions</span>
-                <a class="btn btn-ghost btn-sm" th:href="@{/banking/transactions}" th:text="#{dash.allTransactions}">All transactions</a>
+                <span th:text="#{dash.showingLatest(${dash.activityTotal})}">Showing latest 6 of 1,284 transactions</span>
+                <a class="btn btn-ghost btn-sm" th:href="@{/journals}" th:text="#{dash.allTransactions}">All transactions</a>
             </div>
         </div>
 
@@ -303,6 +282,38 @@
                         <span class="text-lg font-bold money money-positive">RWF 3.6M</span>
                     </div>
                     <a class="btn btn-soft btn-sm mt-3" th:href="@{/budgets/cash-flow-forecast}" th:text="#{dash.openPlanner}">Open planner</a>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 th:text="#{dash.alerts}">Alerts</h3>
+                        <div class="card-subtitle" th:text="#{dash.alertsSubtitle}">Things that need your attention</div>
+                    </div>
+                    <span class="badge badge-info" th:text="${#lists.size(dash.alerts)}">3</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="d-flex flex-column">
+                        <div class="notification-item" th:each="alert : ${dash.alerts}"
+                             th:classappend="${alert.level == 'error' or alert.level == 'warning'} ? 'notification-item--unread'">
+                            <span class="notification-icon"
+                                  th:classappend="${alert.level == 'error'} ? 'notification-icon--error' : (${alert.level == 'warning'} ? 'notification-icon--warning' : (${alert.level == 'success'} ? 'notification-icon--success' : 'notification-icon--info'))">
+                                <svg class="ebook-icon">
+                                    <use th:href="${alert.level == 'error'} ? '#icon-alert-circle' : (${alert.level == 'warning'} ? '#icon-alert-triangle' : (${alert.level == 'success'} ? '#icon-check-circle' : '#icon-info'))"/>
+                                </svg>
+                            </span>
+                            <div class="notification-text">
+                                <div class="notification-title" th:text="${alert.title}">Draft journal entries</div>
+                                <div class="notification-desc" th:text="${alert.detail}">3 journal entries awaiting posting.</div>
+                            </div>
+                            <a class="notification-link" th:if="${alert.href != null and !#strings.isEmpty(alert.href)}"
+                               th:href="${alert.href}" th:aria-label="#{common.viewAll}">
+                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 

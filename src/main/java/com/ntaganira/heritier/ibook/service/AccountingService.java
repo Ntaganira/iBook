@@ -166,8 +166,15 @@ public class AccountingService {
     // ----- Journals -----
 
     @Transactional(readOnly = true)
-    public Page<JournalEntry> listJournalEntries(String q, Pageable pageable) {
-        return journalEntryRepository.search(q, pageable);
+    public Page<JournalEntry> listJournalEntries(String q, String status, Pageable pageable) {
+        JournalEntryStatus entryStatus = null;
+        if (status != null && !status.isBlank()) {
+            try {
+                entryStatus = JournalEntryStatus.valueOf(status.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return journalEntryRepository.search(q, entryStatus, pageable);
     }
 
     @Transactional(readOnly = true)

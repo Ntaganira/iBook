@@ -35,39 +35,85 @@
                 <svg class="ebook-icon"><use href="#icon-search"/></svg>
                 <input type="text" name="q" th:value="${q}" th:placeholder="#{je.searchPlaceholder}">
             </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.filter}">Filter</span>
+                    <span class="filter-badge" th:if="${status == 'POSTED'}" th:text="#{common.status.posted}">Posted</span>
+                    <span class="filter-badge" th:if="${status == 'DRAFT'}" th:text="#{common.status.draft}">Draft</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{je.statusFilter}">Entry status</div>
+                    <a class="dropdown-item" th:href="@{/journals(q=${q})}"
+                       th:classappend="${status == null or status == ''} ? 'active'">
+                        <svg class="ebook-icon" th:if="${status == null or status == ''}"><use href="#icon-check"/></svg>
+                        <span th:text="#{je.allStatuses}">All statuses</span>
+                    </a>
+                    <a class="dropdown-item" th:href="@{/journals(q=${q}, status='POSTED')}"
+                       th:classappend="${status == 'POSTED'} ? 'active'">
+                        <svg class="ebook-icon" th:if="${status == 'POSTED'}"><use href="#icon-check"/></svg>
+                        <span th:text="#{common.status.posted}">Posted</span>
+                    </a>
+                    <a class="dropdown-item" th:href="@{/journals(q=${q}, status='DRAFT')}"
+                       th:classappend="${status == 'DRAFT'} ? 'active'">
+                        <svg class="ebook-icon" th:if="${status == 'DRAFT'}"><use href="#icon-check"/></svg>
+                        <span th:text="#{common.status.draft}">Draft</span>
+                    </a>
+                </div>
+            </div>
+            <div class="dropdown" data-columns="journals">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-columns"/></svg>
+                    <span th:text="#{common.columns}">Columns</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{common.visibleColumns}">Visible columns</div>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="entryDate" checked><span class="checkbox-box"></span><span th:text="#{je.transactionDate}">Transaction date</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="entryNo" checked><span class="checkbox-box"></span><span th:text="#{je.entryNo}">Entry no</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="reference" checked><span class="checkbox-box"></span><span th:text="#{je.reference}">Reference</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="memo" checked><span class="checkbox-box"></span><span th:text="#{je.memo}">Memo</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="status" checked><span class="checkbox-box"></span><span th:text="#{common.status}">Status</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="amounts" checked><span class="checkbox-box"></span><span th:text="#{je.amount}">Amount</span></label>
+                </div>
+            </div>
+            <a class="btn btn-ghost btn-sm" th:href="@{/journals}"
+               th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
             <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:text="#{common.showing(${#lists.size(entries.content)}, ${entries.totalElements})}">Showing 1–20 of 42 records</span>
         </form>
 
         <div class="table-wrap">
             <table class="table">
                 <thead>
                     <tr>
-                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'entryDate', #{je.transactionDate}, ${sort}, ${dir})}">Date</th>
-                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'entryNo', #{je.entryNo}, ${sort}, ${dir})}">Entry no</th>
-                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'reference', #{je.reference}, ${sort}, ${dir})}">Reference</th>
-                        <th th:text="#{je.memo}">Memo</th>
-                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
-                        <th class="num" th:text="#{je.amount}">Debit</th>
-                        <th class="num" th:text="#{je.credit}">Credit</th>
+                        <th data-col="entryDate" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'entryDate', #{je.transactionDate}, ${sort}, ${dir})}">Date</th>
+                        <th data-col="entryNo" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'entryNo', #{je.entryNo}, ${sort}, ${dir})}">Entry no</th>
+                        <th data-col="reference" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'reference', #{je.reference}, ${sort}, ${dir})}">Reference</th>
+                        <th data-col="memo" th:text="#{je.memo}">Memo</th>
+                        <th data-col="status" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th data-col="amounts" class="num" th:text="#{je.amount}">Debit</th>
+                        <th data-col="amounts" class="num" th:text="#{je.credit}">Credit</th>
                         <th class="actions-cell" th:text="#{common.actions}">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:each="e : ${entries.content}">
-                        <td class="cell-secondary" th:text="${e.entryDate != null ? #temporals.format(e.entryDate, 'dd MMM yyyy') : '—'}">07 Sep 2026</td>
-                        <td>
+                        <td data-col="entryDate" class="cell-secondary" th:text="${e.entryDate != null ? #temporals.format(e.entryDate, 'dd MMM yyyy') : '—'}">07 Sep 2026</td>
+                        <td data-col="entryNo">
                             <span class="cell-primary font-mono text-xs">
                                 <a th:href="@{/journals/{id}(id=${e.id})}" th:text="${e.entryNo}">JE-2026-00001</a>
                             </span>
                         </td>
-                        <td class="cell-secondary" th:text="${e.reference != null ? e.reference : '—'}">INV-001</td>
-                        <td class="cell-secondary" th:text="${e.memo != null ? e.memo : '—'}">July rent accrual</td>
-                        <td>
+                        <td data-col="reference" class="cell-secondary" th:text="${e.reference != null ? e.reference : '—'}">INV-001</td>
+                        <td data-col="memo" class="cell-secondary" th:text="${e.memo != null ? e.memo : '—'}">July rent accrual</td>
+                        <td data-col="status">
                             <span class="badge badge-success" th:if="${e.status.name() == 'POSTED'}" th:text="#{common.status.posted}">Posted</span>
                             <span class="badge badge-muted" th:unless="${e.status.name() == 'POSTED'}" th:text="#{common.status.draft}">Draft</span>
                         </td>
-                        <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalDebits != null ? e.totalDebits : 0, 1, 0, 'COMMA')}">RWF 0</td>
-                        <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalCredits != null ? e.totalCredits : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td data-col="amounts" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalDebits != null ? e.totalDebits : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td data-col="amounts" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalCredits != null ? e.totalCredits : 0, 1, 0, 'COMMA')}">RWF 0</td>
                         <td class="actions-cell">
                             <div class="row-actions dropdown">
                                 <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>

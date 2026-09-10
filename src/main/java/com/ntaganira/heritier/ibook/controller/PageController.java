@@ -16,11 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PageController {
 
-    @GetMapping({"/", "/dashboard"})
-    public String dashboard() {
-        return "dashboard/index";
-    }
-
     @GetMapping("/customers")
     public String customers() {
         return "customers/list";

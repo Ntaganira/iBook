@@ -182,18 +182,28 @@ public class AccountingController {
 
     @GetMapping("/journals")
     public String journals(@RequestParam(value = "q", required = false) String q,
+                           @RequestParam(value = "status", required = false) String status,
                            @RequestParam(value = "sort", defaultValue = "entryDate") String sort,
                            @RequestParam(value = "dir", defaultValue = "desc") String dir,
                            @RequestParam(value = "page", defaultValue = "0") int page,
                            Model model) {
         SortSpec sp = resolveSortSpec(sort, dir, "entryDate", "entryDate", "entryNo", "reference", "status");
-        Page<JournalEntry> result = accountingService.listJournalEntries(q, PageRequest.of(page, PAGE_SIZE, sp.sort()));
+        Page<JournalEntry> result = accountingService.listJournalEntries(q, status, PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("entries", result);
         model.addAttribute("q", q);
+        model.addAttribute("status", status == null ? "" : status);
         model.addAttribute("baseCurrency", baseCurrency());
-        addListContext(model, "/journals",
-                q != null && !q.isBlank() ? "?q=" + UriUtils.encodeQueryParam(q, StandardCharsets.UTF_8) : "",
-                sp.field(), sp.dir());
+        StringBuilder fq = new StringBuilder();
+        if (q != null && !q.isBlank()) {
+            fq.append("q=").append(UriUtils.encodeQueryParam(q, StandardCharsets.UTF_8));
+        }
+        if (status != null && !status.isBlank()) {
+            if (!fq.isEmpty()) {
+                fq.append('&');
+            }
+            fq.append("status=").append(status);
+        }
+        addListContext(model, "/journals", fq.isEmpty() ? "" : "?" + fq, sp.field(), sp.dir());
         return "journals/list";
     }
 

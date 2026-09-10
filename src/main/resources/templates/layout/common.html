@@ -17,6 +17,20 @@
     </button>
 </th>
 
+<!-- KPI delta (dashboard cards): shows % change vs previous period or an em dash when not computable -->
+<span th:fragment="kpiDelta(kpi)">
+    <th:block th:if="${kpi.hasDelta and kpi.delta != null}">
+        <span class="kpi-delta" th:classappend="${kpi.delta.signum() >= 0} ? 'up' : 'down'"
+              th:style="${kpi.good} ? 'color:var(--success-700);background:var(--success-50)' : ''">
+            <svg class="ebook-icon ebook-icon--sm">
+                <use th:href="${kpi.delta.signum() >= 0} ? '#icon-arrow-up' : '#icon-arrow-down'"/>
+            </svg>
+            <span th:text="${#numbers.formatDecimal(kpi.delta, 1, 1, 'COMMA')}">12.4</span>%
+        </span>
+    </th:block>
+    <span class="kpi-delta flat" th:unless="${kpi.hasDelta and kpi.delta != null}">—</span>
+</span>
+
 <!-- Field validation errors -->
 <div th:fragment="fieldError(field)" th:if="${#fields.hasErrors(field)}">
     <div class="form-invalid-feedback" th:each="err : ${#fields.errors(field)}">

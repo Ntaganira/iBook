@@ -27,8 +27,9 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
     @Query("select j from JournalEntry j where (:q is null or :q = '' " +
             "   or lower(j.entryNo) like lower(concat('%', :q, '%')) " +
             "   or lower(j.reference) like lower(concat('%', :q, '%')) " +
-            "   or lower(j.memo) like lower(concat('%', :q, '%')))")
-    Page<JournalEntry> search(@Param("q") String q, Pageable pageable);
+            "   or lower(j.memo) like lower(concat('%', :q, '%'))) " +
+            "   and (:status is null or j.status = :status)")
+    Page<JournalEntry> search(@Param("q") String q, @Param("status") JournalEntryStatus status, Pageable pageable);
 
     long countByStatus(JournalEntryStatus status);
 }
