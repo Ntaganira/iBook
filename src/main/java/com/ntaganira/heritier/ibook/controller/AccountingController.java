@@ -21,7 +21,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -187,7 +186,7 @@ public class AccountingController {
                            @RequestParam(value = "dir", defaultValue = "desc") String dir,
                            @RequestParam(value = "page", defaultValue = "0") int page,
                            Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "entryDate", "entryDate", "entryNo", "reference", "status");
+        SortSpec sp = SortSpec.resolve(sort, dir, "entryDate", "entryDate", "entryNo", "reference", "status");
         Page<JournalEntry> result = accountingService.listJournalEntries(q, status, PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("entries", result);
         model.addAttribute("q", q);
@@ -203,7 +202,7 @@ public class AccountingController {
             }
             fq.append("status=").append(status);
         }
-        addListContext(model, "/journals", fq.isEmpty() ? "" : "?" + fq, sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/journals", fq.isEmpty() ? "" : "?" + fq, sp);
         return "journals/list";
     }
 
@@ -481,35 +480,6 @@ public class AccountingController {
     private static BigDecimal zero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }
-
-    private void addListContext(Model model, String basePath, String filterQuery, String sort, String dir) {
-        model.addAttribute("basePath", basePath);
-        model.addAttribute("filterQuery", filterQuery);
-        model.addAttribute("sort", sort);
-        model.addAttribute("dir", dir);
-    }
-
-    private SortSpec resolveSortSpec(String sort, String dir, String defaultField, String... allowed) {
-        if (sort == null || sort.isBlank()) {
-            sort = defaultField;
-        }
-        boolean ok = false;
-        for (String a : allowed) {
-            if (a.equals(sort)) {
-                ok = true;
-                break;
-            }
-        }
-        if (!ok) {
-            sort = defaultField;
-        }
-        String d = "desc".equalsIgnoreCase(dir) ? "desc" : "asc";
-        Sort sortDef = Sort.by(d.equals("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sort)
-                .and(Sort.by(Sort.Direction.DESC, "id"));
-        return new SortSpec(sort, d, sortDef);
-    }
-
-    private record SortSpec(String field, String dir, Sort sort) {}
 
     private record TypeSection(String typeLabel, List<Account> accounts, BigDecimal total) {}
 

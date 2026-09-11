@@ -8,10 +8,20 @@
 </div>
 
 <!-- Sortable table header: url may carry an existing query string; sort/dir/page are appended. -->
-<th th:fragment="thSort(url, field, label, sort, dir)">
-    <button class="th-sort" type="button"
-            th:classappend="${sort == field ? 'active' : ''}"
-            th:onclick="'window.location.href = \'' + (${url} + (#strings.contains(url, '?') ? '&' : '?') + 'sort=' + ${field} + '&dir=' + ${sort == field and dir == 'asc' ? 'desc' : 'asc'} + '&page=0') + '\''">
+<th th:fragment="thSort(url, field, label, sort, dir)"
+    th:with="sortUrl=${url + (url.contains('?') ? '&' : '?') + 'sort=' + field + '&dir=' + (sort == field and dir == 'asc' ? 'desc' : 'asc') + '&page=0'}">
+    <button class="th-sort" type="button" th:attr="data-sort-url=${sortUrl}"
+            th:classappend="${sort == field ? 'active' : ''}">
+        <span th:text="${label}">Column</span>
+        <svg class="ebook-icon ebook-icon--sm" th:style="${sort == field and dir == 'desc'} ? 'transform: rotate(180deg)' : ''"><use href="#icon-chevron-down"/></svg>
+    </button>
+</th>
+
+<!-- Sortable table header, right-aligned (numeric columns). -->
+<th th:fragment="thSortNum(url, field, label, sort, dir)" class="num"
+    th:with="sortUrl=${url + (url.contains('?') ? '&' : '?') + 'sort=' + field + '&dir=' + (sort == field and dir == 'asc' ? 'desc' : 'asc') + '&page=0'}">
+    <button class="th-sort" type="button" th:attr="data-sort-url=${sortUrl}"
+            th:classappend="${sort == field ? 'active' : ''}">
         <span th:text="${label}">Column</span>
         <svg class="ebook-icon ebook-icon--sm" th:style="${sort == field and dir == 'desc'} ? 'transform: rotate(180deg)' : ''"><use href="#icon-chevron-down"/></svg>
     </button>

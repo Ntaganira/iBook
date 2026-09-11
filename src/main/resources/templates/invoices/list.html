@@ -105,13 +105,13 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th th:text="#{inv.invoice}">Invoice</th>
-                        <th th:text="#{inv.customer}">Customer</th>
-                        <th th:text="#{inv.issued}">Issued</th>
-                        <th th:text="#{inv.due}">Due</th>
-                        <th class="num" th:text="#{common.amount}">Amount</th>
-                        <th class="num" th:text="#{inv.openBalance}">Open balance</th>
-                        <th th:text="#{common.status}">Status</th>
+                        <th><button class="th-sort" type="button" data-sort-col="0"><span th:text="#{inv.invoice}">Invoice</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="1"><span th:text="#{inv.customer}">Customer</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="2"><span th:text="#{inv.issued}">Issued</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="3"><span th:text="#{inv.due}">Due</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th class="num"><button class="th-sort" type="button" data-sort-col="4"><span th:text="#{common.amount}">Amount</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th class="num"><button class="th-sort" type="button" data-sort-col="5"><span th:text="#{inv.openBalance}">Open balance</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="6"><span th:text="#{common.status}">Status</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
                         <th class="actions-cell" th:text="#{common.actions}">Actions</th>
                     </tr>
                 </thead>

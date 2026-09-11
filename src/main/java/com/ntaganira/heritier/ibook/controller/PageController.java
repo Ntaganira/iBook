@@ -10,14 +10,52 @@
  */
 package com.ntaganira.heritier.ibook.controller;
 
+import com.ntaganira.heritier.ibook.entity.Customer;
+import com.ntaganira.heritier.ibook.service.CustomerService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriUtils;
+
+import java.nio.charset.StandardCharsets;
 
 @Controller
 public class PageController {
 
+    private static final int PAGE_SIZE = 25;
+
+    private final CustomerService customerService;
+
+    public PageController(CustomerService customerService) {
+        this.customerService = customerService;
+    }
+
     @GetMapping("/customers")
-    public String customers() {
+    public String customers(@RequestParam(value = "q", required = false) String q,
+                            @RequestParam(value = "type", required = false) String type,
+                            @RequestParam(value = "sort", defaultValue = "name") String sort,
+                            @RequestParam(value = "dir", defaultValue = "asc") String dir,
+                            @RequestParam(value = "page", defaultValue = "0") int page,
+                            Model model) {
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "companyName", "phone", "email", "city", "openingBalance", "active");
+        Page<Customer> result = customerService.listCustomers(q, type, PageRequest.of(page, PAGE_SIZE, sp.sort()));
+        model.addAttribute("customers", result);
+        model.addAttribute("q", q);
+        model.addAttribute("type", type == null ? "" : type);
+        StringBuilder fq = new StringBuilder();
+        if (q != null && !q.isBlank()) {
+            fq.append("q=").append(UriUtils.encodeQueryParam(q, StandardCharsets.UTF_8));
+        }
+        if (type != null && !type.isBlank()) {
+            if (!fq.isEmpty()) {
+                fq.append('&');
+            }
+            fq.append("type=").append(type);
+        }
+        SortSpec.addListContext(model, "/customers", fq.isEmpty() ? "" : "?" + fq, sp);
         return "customers/list";
     }
 

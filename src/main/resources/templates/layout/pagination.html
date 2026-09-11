@@ -5,44 +5,36 @@
 <!-- Pagination fragment. baseUrl may already contain a query string (filters/sort); the page param is appended with the correct separator. -->
 <nav class="pagination" th:aria-label="#{common.ariaPagination}" th:fragment="pagination(currentPage, totalPages, baseUrl)"
      th:with="sep=${#strings.contains(baseUrl, '?') ? '&' : '?'}">
-    <button class="page-btn" type="button"
-            th:disabled="${currentPage <= 1}"
-            th:onclick="'window.location.href = \'' + (${baseUrl + sep + 'page=' + (currentPage - 1)}) + '\''">
+    <a class="page-btn" th:if="${currentPage > 1}" th:href="${baseUrl + sep + 'page=' + (currentPage - 1)}" th:aria-label="#{common.prevPage}">
         <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg>
-    </button>
+    </a>
+    <span class="page-btn" th:unless="${currentPage > 1}" th:aria-hidden="true">
+        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-left"/></svg>
+    </span>
 
     <th:block th:if="${totalPages <= 7}">
-        <button class="page-btn" type="button"
-                th:each="i : ${#numbers.sequence(1, totalPages)}"
-                th:classappend="${i == currentPage ? 'active' : ''}"
-                th:text="${i}"
-                th:onclick="'window.location.href = \'' + (${baseUrl + sep + 'page=' + i}) + '\''">1</button>
+        <a class="page-btn" th:each="i : ${#numbers.sequence(1, totalPages)}"
+           th:href="${baseUrl + sep + 'page=' + i}" th:classappend="${i == currentPage ? 'active' : ''}" th:text="${i}">1</a>
     </th:block>
     <th:block th:unless="${totalPages <= 7}">
-        <button class="page-btn" type="button"
-                th:classappend="${1 == currentPage ? 'active' : ''}"
-                th:text="1"
-                th:onclick="'window.location.href = \'' + (${baseUrl + sep + 'page=1'}) + '\''">1</button>
+        <a class="page-btn" th:href="${baseUrl + sep + 'page=1'}" th:classappend="${1 == currentPage ? 'active' : ''}" th:text="1">1</a>
         <span class="page-ellipsis" th:if="${currentPage > 3}">…</span>
         <th:block th:each="i : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
                   th:if="${i > 1 and i < totalPages}">
-            <button class="page-btn" type="button"
-                    th:classappend="${i == currentPage ? 'active' : ''}"
-                    th:text="${i}"
-                    th:onclick="'window.location.href = \'' + (${baseUrl + sep + 'page=' + i}) + '\''">2</button>
+            <a class="page-btn" th:href="${baseUrl + sep + 'page=' + i}"
+               th:classappend="${i == currentPage ? 'active' : ''}" th:text="${i}">2</a>
         </th:block>
         <span class="page-ellipsis" th:if="${currentPage < totalPages - 2}">…</span>
-        <button class="page-btn" type="button"
-                th:classappend="${totalPages == currentPage ? 'active' : ''}"
-                th:text="${totalPages}"
-                th:onclick="'window.location.href = \'' + (${baseUrl + sep + 'page=' + totalPages}) + '\''">10</button>
+        <a class="page-btn" th:href="${baseUrl + sep + 'page=' + totalPages}"
+           th:classappend="${totalPages == currentPage ? 'active' : ''}" th:text="${totalPages}">10</a>
     </th:block>
 
-    <button class="page-btn" type="button"
-            th:disabled="${currentPage >= totalPages}"
-            th:onclick="'window.location.href = \'' + (${baseUrl + sep + 'page=' + (currentPage + 1)}) + '\''">
+    <a class="page-btn" th:if="${currentPage < totalPages}" th:href="${baseUrl + sep + 'page=' + (currentPage + 1)}" th:aria-label="#{common.nextPage}">
         <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg>
-    </button>
+    </a>
+    <span class="page-btn" th:unless="${currentPage < totalPages}" th:aria-hidden="true">
+        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-right"/></svg>
+    </span>
 </nav>
 </body>
 </html>

@@ -29,7 +29,7 @@
     <form id="companyForm" th:action="@{/settings/company}" th:object="${form}" method="post" novalidate>
 
         <div class="grid grid-12">
-            <div class="col-span-8 d-flex flex-column gap-5">
+            <div class="col-span-12 d-flex flex-column gap-5">
 
                 <section class="section">
                     <div class="section-header">
@@ -113,7 +113,7 @@
                 </section>
             </div>
 
-            <div class="col-span-4 d-flex flex-column gap-5">
+            <div class="col-span-12 d-flex flex-column gap-5">
                 <section class="card p-5">
                     <h4 class="text-md font-semibold mb-2" th:text="#{set.company.previewTitle}">Where this is used</h4>
                     <p class="text-sm text-secondary" th:text="#{set.company.previewHint}">The company name, logo and currency appear on invoices, estimates, statements and printed reports.</p>

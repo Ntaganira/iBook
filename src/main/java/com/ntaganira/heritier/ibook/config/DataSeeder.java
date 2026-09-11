@@ -46,12 +46,13 @@ public class DataSeeder {
                                       InvoiceTemplateRepository invoiceTemplateRepository,
                                       EmailTemplateRepository emailTemplateRepository,
                                       NotificationPreferenceRepository notificationPreferenceRepository,
-                                      SecuritySettingsRepository securitySettingsRepository,
-                                      AuditLogRepository auditLogRepository,
-                                      AccountRepository accountRepository,
-                                      JournalEntryRepository journalEntryRepository,
-                                      AccountingPeriodRepository accountingPeriodRepository,
-                                      PasswordEncoder passwordEncoder) {
+SecuritySettingsRepository securitySettingsRepository,
+                                       AuditLogRepository auditLogRepository,
+                                       AccountRepository accountRepository,
+                                       JournalEntryRepository journalEntryRepository,
+                                       AccountingPeriodRepository accountingPeriodRepository,
+                                       CustomerRepository customerRepository,
+                                       PasswordEncoder passwordEncoder) {
         return args -> {
             seedRolesAndPermissions(roleRepository, permissionRepository);
 
@@ -84,6 +85,7 @@ public class DataSeeder {
             seedAuditSamples(auditLogRepository);
             seedAccounts(accountRepository);
             seedJournalEntries(accountRepository, journalEntryRepository);
+            seedCustomers(customerRepository);
             seedAccountingPeriods(accountingPeriodRepository, companyRepository);
         };
     }
@@ -227,6 +229,41 @@ public class DataSeeder {
         branchRepository.save(Branch.builder().name("Huye Branch").code("HUY").city("Huye")
                 .country("Rwanda").contactPerson("Jean Mugisha").phone("+250722900505")
                 .email("huye@kigali-fresh.rw").defaultBranch(false).active(true).build());
+    }
+
+    private void seedCustomers(CustomerRepository customerRepository) {
+        if (customerRepository.count() > 0) {
+            return;
+        }
+        customer(customerRepository, "ABC Construction Ltd", "info@abcconstruction.rw", "+250 788 401 220", "Kigali", "101234568", "4850000", true);
+        customer(customerRepository, "Gorilla Retreat Ltd", "billing@gorillaretreat.rw", "+250 782 340 118", "Musanze", "101987654", "0", true);
+        customer(customerRepository, "Kivu Fresh Ltd", "sales@kivufresh.rw", "+250 788 190 774", "Karongi", "102345679", "540000", true);
+        customer(customerRepository, "Rwanda Artisan Co-op", "admin@rwandaartisan.biz", "+250 733 555 098", "Nyagatare", "103456780", "1275000", true);
+        customer(customerRepository, "Chantal Designs", "hello@chantaldesigns.rw", "+250 789 620 443", "Kigali", "104567891", "890000", true);
+        customer(customerRepository, "Mountance Logistics", "contact@mountance.co", "+250 722 081 336", "Huye", "105678902", "3450000", false);
+        customer(customerRepository, "Zanazi Suppliers", "orders@zanazi.rw", "+250 788 900 112", "Kigali", "106789013", "0", true);
+        customer(customerRepository, "Rwanda Fresh Farms", "ops@rwandafresh.rw", "+250 783 000 445", "Rwamagana", "107890124", "210000", true);
+        customer(customerRepository, "Volcano Tours", "bookings@volcanotours.rw", "+250 782 550 998", "Kinigi", "108901235", "675000", true);
+        customer(customerRepository, "Kigali Tech Hub", "admin@kigalitech.rw", "+250 730 110 220", "Kigali", "109012346", "0", true);
+        for (int i = 1; i <= 35; i++) {
+            customer(customerRepository, "Sample Customer " + i, "customer" + i + "@example.rw",
+                    "+250 788 000 " + String.format("%02d", i), "Kigali", "10000" + i, "0", true);
+        }
+    }
+
+    private void customer(CustomerRepository customerRepository, String name, String email, String phone,
+                          String city, String taxId, String openingBalance, boolean active) {
+        customerRepository.save(Customer.builder()
+                .name(name)
+                .companyName(name)
+                .email(email)
+                .phone(phone)
+                .city(city)
+                .country("Rwanda")
+                .taxId(taxId)
+                .openingBalance(new BigDecimal(openingBalance))
+                .active(active)
+                .build());
     }
 
     private void seedCurrencies(CurrencyRepository currencyRepository) {

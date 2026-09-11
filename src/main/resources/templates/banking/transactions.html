@@ -91,13 +91,13 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th th:text="#{tran.date}">Date</th>
-                        <th th:text="#{tran.description}">Description</th>
-                        <th th:text="#{tran.ref}">Reference</th>
-                        <th th:text="#{common.account}">Account</th>
-                        <th th:text="#{tran.categoryLabel}">Category</th>
-                        <th class="num" th:text="#{tran.amountLabel}">Amount</th>
-                        <th th:text="#{tran.statusLabel}">Status</th>
+                        <th><button class="th-sort" type="button" data-sort-col="0"><span th:text="#{tran.date}">Date</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="1"><span th:text="#{tran.description}">Description</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="2"><span th:text="#{tran.ref}">Reference</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="3"><span th:text="#{common.account}">Account</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="4"><span th:text="#{tran.categoryLabel}">Category</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th class="num"><button class="th-sort" type="button" data-sort-col="5"><span th:text="#{tran.amountLabel}">Amount</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
+                        <th><button class="th-sort" type="button" data-sort-col="6"><span th:text="#{tran.statusLabel}">Status</span> <svg class="ebook-icon"><use href="#icon-chevron-down"/></svg></button></th>
                         <th th:text="#{tran.matchHeader}">Match</th>
                         <th class="actions-cell" th:text="#{common.actions}">Actions</th>
                     </tr>

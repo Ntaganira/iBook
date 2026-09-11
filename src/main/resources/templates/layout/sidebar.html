@@ -296,7 +296,7 @@
         <div class="sidebar-section-title" th:text="#{nav.system}">System</div>
 
         <!-- System Settings -->
-        <div class="sidebar-group has-submenu" th:classappend="${#strings.startsWith(requestURI, '/settings') ? 'open' : ''}">
+        <div class="sidebar-group has-submenu" data-submenu>
             <button class="sidebar-menu-item" type="button" aria-expanded="false">
                 <svg class="ebook-icon"><use href="#icon-gear"/></svg>
                 <span class="sidebar-label" th:text="#{nav.settings}">System Settings</span>

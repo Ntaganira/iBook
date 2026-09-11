@@ -18,7 +18,6 @@ import jakarta.validation.Valid;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -114,10 +113,10 @@ public class SettingsController {
                            @RequestParam(value = "dir", defaultValue = "asc") String dir,
                            @RequestParam(value = "page", defaultValue = "0") int page,
                            Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "name", "name", "code", "city", "defaultBranch", "active");
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "code", "city", "defaultBranch", "active");
         Page<Branch> result = settingsService.listBranches(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("branches", result);
-        addListContext(model, "/settings/branches", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/branches", "", sp);
         return "settings/branches";
     }
 
@@ -190,7 +189,7 @@ public class SettingsController {
                         @RequestParam(value = "dir", defaultValue = "asc") String dir,
                         @RequestParam(value = "page", defaultValue = "0") int page,
                         Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "username", "username", "email", "firstName", "lastName", "enabled", "createdAt");
+        SortSpec sp = SortSpec.resolve(sort, dir, "username", "username", "email", "firstName", "lastName", "enabled", "createdAt");
         Page<User> result = settingsService.listUsers(q, roleId, PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("users", result);
         model.addAttribute("roles", settingsService.listRolesForSelect());
@@ -200,7 +199,7 @@ public class SettingsController {
                 ? "?q=" + (q == null ? "" : UriUtils.encodeQueryParam(q, StandardCharsets.UTF_8))
                 + (roleId != null ? "&role=" + roleId : "")
                 : "";
-        addListContext(model, "/settings/users", filterQuery, sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/users", filterQuery, sp);
         return "settings/users";
     }
 
@@ -296,10 +295,10 @@ public class SettingsController {
                         @RequestParam(value = "dir", defaultValue = "asc") String dir,
                         @RequestParam(value = "page", defaultValue = "0") int page,
                         Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "name", "name", "description");
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "description");
         Page<Role> result = settingsService.listRoles(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("roles", result);
-        addListContext(model, "/settings/roles", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/roles", "", sp);
         return "settings/roles";
     }
 
@@ -388,10 +387,10 @@ public class SettingsController {
                             @RequestParam(value = "dir", defaultValue = "asc") String dir,
                             @RequestParam(value = "page", defaultValue = "0") int page,
                             Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "name", "name", "module", "triggerEvent", "active");
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "module", "triggerEvent", "active");
         Page<ApprovalWorkflow> result = settingsService.listWorkflows(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("workflows", result);
-        addListContext(model, "/settings/workflows", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/workflows", "", sp);
         return "settings/workflows";
     }
 
@@ -449,10 +448,10 @@ public class SettingsController {
                              @RequestParam(value = "dir", defaultValue = "asc") String dir,
                              @RequestParam(value = "page", defaultValue = "0") int page,
                              Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "code", "code", "name", "decimals", "exchangeRateToBase", "enabled");
+        SortSpec sp = SortSpec.resolve(sort, dir, "code", "code", "name", "decimals", "exchangeRateToBase", "enabled");
         Page<Currency> result = settingsService.listCurrencies(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("currencies", result);
-        addListContext(model, "/settings/currencies", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/currencies", "", sp);
         return "settings/currencies";
     }
 
@@ -525,13 +524,13 @@ public class SettingsController {
                                 @RequestParam(value = "dir", defaultValue = "desc") String dir,
                                 @RequestParam(value = "page", defaultValue = "0") int page,
                                 Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "effectiveDate", "effectiveDate", "baseCurrency", "quoteCurrency", "rate");
+        SortSpec sp = SortSpec.resolve(sort, dir, "effectiveDate", "effectiveDate", "baseCurrency", "quoteCurrency", "rate");
         Page<ExchangeRate> rates = settingsService.listRates(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("rates", rates);
         model.addAttribute("currencies", settingsService.listCurrenciesForSelect());
         model.addAttribute("baseCurrency", getBaseCurrencyCode());
         model.addAttribute("form", new ExchangeRateForm(getBaseCurrencyCode(), null, null, java.time.LocalDate.now()));
-        addListContext(model, "/settings/exchange-rates", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/exchange-rates", "", sp);
         return "settings/exchange-rates";
     }
 
@@ -560,10 +559,10 @@ public class SettingsController {
                             @RequestParam(value = "dir", defaultValue = "asc") String dir,
                             @RequestParam(value = "page", defaultValue = "0") int page,
                             Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "name", "name", "docType", "prefix", "nextNumber", "resetYearly", "active");
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "docType", "prefix", "nextNumber", "resetYearly", "active");
         Page<NumberingSequence> result = settingsService.listNumbering(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("sequences", result);
-        addListContext(model, "/settings/numbering", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/numbering", "", sp);
         return "settings/numbering";
     }
 
@@ -627,10 +626,10 @@ public class SettingsController {
                                    @RequestParam(value = "dir", defaultValue = "asc") String dir,
                                    @RequestParam(value = "page", defaultValue = "0") int page,
                                    Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "name", "name", "layout", "paperSize", "defaultTemplate", "active");
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "layout", "paperSize", "defaultTemplate", "active");
         Page<InvoiceTemplate> result = settingsService.listInvoiceTemplates(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("templates", result);
-        addListContext(model, "/settings/invoice-templates", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/invoice-templates", "", sp);
         return "settings/invoice-templates";
     }
 
@@ -695,10 +694,10 @@ public class SettingsController {
                                  @RequestParam(value = "dir", defaultValue = "asc") String dir,
                                  @RequestParam(value = "page", defaultValue = "0") int page,
                                  Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "name", "name", "code", "contentType", "active");
+        SortSpec sp = SortSpec.resolve(sort, dir, "name", "name", "code", "contentType", "active");
         Page<EmailTemplate> result = settingsService.listEmailTemplates(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("templates", result);
-        addListContext(model, "/settings/email-templates", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/email-templates", "", sp);
         return "settings/email-templates";
     }
 
@@ -762,10 +761,10 @@ public class SettingsController {
                                 @RequestParam(value = "dir", defaultValue = "asc") String dir,
                                 @RequestParam(value = "page", defaultValue = "0") int page,
                                 Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "moduleName", "moduleName", "moduleCode", "active");
+        SortSpec sp = SortSpec.resolve(sort, dir, "moduleName", "moduleName", "moduleCode", "active");
         Page<NotificationPreference> result = settingsService.listNotifications(PageRequest.of(page, PAGE_SIZE, sp.sort()));
         model.addAttribute("preferences", result);
-        addListContext(model, "/settings/notifications", "", sp.field(), sp.dir());
+        SortSpec.addListContext(model, "/settings/notifications", "", sp);
         return "settings/notifications";
     }
 
@@ -814,12 +813,12 @@ public class SettingsController {
                         @RequestParam(value = "dir", defaultValue = "desc") String dir,
                         @RequestParam(value = "page", defaultValue = "0") int page,
                         Model model) {
-        SortSpec sp = resolveSortSpec(sort, dir, "createdAt", "createdAt", "actor", "module", "action", "target");
+        SortSpec sp = SortSpec.resolve(sort, dir, "createdAt", "createdAt", "actor", "module", "action", "target");
         model.addAttribute("logs", settingsService.listAudits(q, PageRequest.of(page, PAGE_SIZE, sp.sort())));
         model.addAttribute("q", q);
-        addListContext(model, "/settings/audit",
+        SortSpec.addListContext(model, "/settings/audit",
                 q != null && !q.isBlank() ? "?q=" + UriUtils.encodeQueryParam(q, StandardCharsets.UTF_8) : "",
-                sp.field(), sp.dir());
+                sp);
         return "settings/audit";
     }
 
@@ -841,36 +840,7 @@ public class SettingsController {
         return grouped;
     }
 
-    private void addListContext(Model model, String basePath, String filterQuery, String sort, String dir) {
-        model.addAttribute("basePath", basePath);
-        model.addAttribute("filterQuery", filterQuery);
-        model.addAttribute("sort", sort);
-        model.addAttribute("dir", dir);
-    }
-
-    private SortSpec resolveSortSpec(String sort, String dir, String defaultField, String... allowed) {
-        if (sort == null || sort.isBlank()) {
-            sort = defaultField;
-        }
-        boolean ok = false;
-        for (String a : allowed) {
-            if (a.equals(sort)) {
-                ok = true;
-                break;
-            }
-        }
-        if (!ok) {
-            sort = defaultField;
-        }
-        String d = "desc".equalsIgnoreCase(dir) ? "desc" : "asc";
-        Sort sortDef = Sort.by(d.equals("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sort)
-                .and(Sort.by(Sort.Direction.DESC, "id"));
-        return new SortSpec(sort, d, sortDef);
-    }
-
     private static final List<String> MONTHS = List.of(
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December");
-
-    private record SortSpec(String field, String dir, Sort sort) {}
 }

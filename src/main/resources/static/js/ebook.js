@@ -411,6 +411,81 @@
   }
 
   /* ----------------------------------------------------------------------
+     Client-side sort for static tables (th-sort with data-sort-col).
+     Server-driven lists use the thSort fragment (URL navigation) instead.
+  ---------------------------------------------------------------------- */
+  function initSort() {
+    doc.addEventListener("click", function (e) {
+      var btn = e.target.closest(".th-sort[data-sort-col]");
+      if (!btn) return;
+      var th = btn.closest("th");
+      var table = btn.closest("table");
+      if (!th || !table) return;
+
+      var col = parseInt(th.getAttribute("data-sort-col"), 10);
+      var dir = th.getAttribute("data-dir") === "asc" ? "desc" : "asc";
+      var numeric = th.classList.contains("num");
+
+      table.querySelectorAll("thead th[data-sort-col]").forEach(function (h) {
+        h.removeAttribute("data-dir");
+        var icon = h.querySelector(".ebook-icon");
+        if (icon) icon.style.transform = "";
+        var b = h.querySelector(".th-sort");
+        if (b) b.classList.remove("active");
+      });
+
+      th.setAttribute("data-dir", dir);
+      var icon = th.querySelector(".ebook-icon");
+      if (icon) icon.style.transform = dir === "desc" ? "rotate(180deg)" : "";
+      btn.classList.add("active");
+
+      var tbody = table.querySelector("tbody");
+      if (!tbody) return;
+      var rows = Array.prototype.slice.call(tbody.rows);
+
+      rows.sort(function (a, b) {
+        var av = a.cells[col] ? sortCellVal(a.cells[col], numeric) : (numeric ? 0 : "");
+        var bv = b.cells[col] ? sortCellVal(b.cells[col], numeric) : (numeric ? 0 : "");
+        if (numeric) {
+          return dir === "asc" ? av - bv : bv - av;
+        }
+        av = String(av).toLowerCase();
+        bv = String(bv).toLowerCase();
+        if (av < bv) return dir === "asc" ? -1 : 1;
+        if (av > bv) return dir === "asc" ? 1 : -1;
+        return 0;
+      });
+
+      rows.forEach(function (r) { tbody.appendChild(r); });
+    });
+  }
+
+  function initServerSort() {
+    doc.addEventListener("click", function (e) {
+      var btn = e.target.closest(".th-sort[data-sort-url]");
+      if (!btn) return;
+      var url = btn.getAttribute("data-sort-url");
+      if (url) window.location.href = url;
+    });
+  }
+
+  function sortCellVal(cell, numeric) {
+    if (numeric) {
+      var primary = cell.querySelector(".money");
+      var txt = (primary ? primary.textContent : cell.textContent || "").trim();
+      var v = parseFloat(txt.replace(/[^\d.-]/g, ""));
+      return isNaN(v) ? 0 : v;
+    }
+    var primary = cell.querySelector(".cell-primary");
+    var text = primary ? primary.textContent.trim() : (cell.textContent || "").trim();
+    if (/^\d{2}\s[A-Za-z]{3}\s\d{4}$/.test(text)) {
+      var t = Date.parse(text);
+      return isNaN(t) ? text : t;
+    }
+    return text;
+  }
+
+  /* ----------------------------------------------------------------------
      Number formatting (helper for local count-up)
   ---------------------------------------------------------------------- */
   function formatNumber(n) {
@@ -685,6 +760,8 @@
       initTabs();
       initAlerts();
       initTables();
+      initSort();
+      initServerSort();
       initCharts();
       initDatePresets();
       initAutosize();
