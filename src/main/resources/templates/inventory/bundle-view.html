@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${bundle.name}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/bundles}" th:text="#{inv.bnd.title}">Bundles</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${bundle.name}">Bundle</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${bundle.name}">Bundle</h1>
+            <p class="page-subtitle">
+                <span class="mono" th:text="${bundle.code}">KIT-1</span>
+                <span th:text="' · ' + ${bundle.bundleProductSku} + ' ' + ${bundle.bundleProductName}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <span class="badge" th:classappend="${bundle.active} ? 'badge-active' : 'badge-muted'">
+                <span class="badge-dot"></span>
+                <span th:text="${bundle.active} ? #{common.status.active} : #{common.status.inactive}">Active</span>
+            </span>
+            <a class="btn btn-secondary" th:href="@{/inventory/bundles/{id}/edit(id=${bundle.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{inv.bnd.edit}">Edit bundle</span>
+            </a>
+            <form th:action="@{/inventory/bundles/{id}/toggle(id=${bundle.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                    <span th:text="${bundle.active} ? #{inv.bnd.deactivate} : #{inv.bnd.activate}">Deactivate</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${bundle.lossMaking}">
+        <svg class="ebook-icon"><use href="#icon-alert-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{inv.bnd.lossTitle}">Priced below cost</div>
+            <span th:text="#{inv.bnd.lossHint}">The bundle sells for less than its parts cost. Every one sold loses the difference.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.unitCost}">Cost of one</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bundle.unitCost, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.sellingPrice}">Sells for</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bundle.sellingPrice, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.margin}">Margin</div>
+            <div class="stat-tile-value money" th:classappend="${bundle.lossMaking} ? 'text-error' : 'text-positive'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bundle.margin, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.buildable}">Can assemble</div>
+            <div class="stat-tile-value" th:classappend="${!availability.canBuild()} ? 'text-error'"
+                 th:text="${#numbers.formatDecimal(availability.buildable, 1, 0)}">0</div>
+            <div class="cell-secondary" th:text="#{inv.bnd.onHandNow(${#numbers.formatDecimal(availability.onHand, 1, 2)})}">0.00 on hand</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{inv.bnd.components}">What goes in</h3>
+            <form method="get" th:action="@{/inventory/bundles/{id}(id=${bundle.id})}">
+                <select class="form-control form-control--sm" name="warehouse" onchange="this.form.submit()">
+                    <option th:each="w : ${warehouses}" th:value="${w.id}" th:text="${w.name}"
+                            th:selected="${warehouseId != null and warehouseId == w.id}">Main store</option>
+                </select>
+            </form>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.prod.title}">Product</th>
+                        <th class="num" th:text="#{inv.bnd.perBundle}">Per bundle</th>
+                        <th class="num" th:text="#{inv.bnd.available}">At this location</th>
+                        <th class="num" th:text="#{inv.bnd.enoughFor}">Enough for</th>
+                        <th class="num" th:text="#{inv.mv.unitCost}">Unit cost</th>
+                        <th class="num" th:text="#{inv.bnd.lineCost}">Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c : ${availability.components}">
+                        <td>
+                            <span th:text="${c.name}">Product</span>
+                            <span class="cell-secondary" th:text="${c.sku}">SKU</span>
+                        </td>
+                        <td class="num" th:text="${#numbers.formatDecimal(c.perBundle, 1, 2) + ' ' + (c.unit != null ? c.unit : '')}">1.00</td>
+                        <td class="num cell-secondary" th:text="${#numbers.formatDecimal(c.available, 1, 2)}">0.00</td>
+                        <td class="num" th:classappend="${c.possibleBundles.signum() == 0} ? 'text-error'"
+                            th:text="${#numbers.formatDecimal(c.possibleBundles, 1, 0)}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(c.unitCost, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(c.lineCost, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(availability.components)}">
+                        <td class="table-empty" colspan="6">
+                            <p class="text-secondary" th:text="#{inv.bnd.noComponentsYet}">This bundle has no parts.</p>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-right font-bold" th:text="#{inv.bnd.unitCost}">Cost of one</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bundle.unitCost, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body" th:if="${bundle.description != null}">
+            <p class="text-sm" th:text="${bundle.description}"></p>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{inv.bnd.movements}">Assemblies</h3>
+                    <span class="text-sm text-muted" th:text="#{inv.bnd.movementsHint}">Stock written against this bundle's code</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{common.date}">Date</th>
+                                <th th:text="#{inv.prod.title}">Product</th>
+                                <th th:text="#{inv.wh.title}">Location</th>
+                                <th th:text="#{inv.mv.type}">Type</th>
+                                <th class="num" th:text="#{inv.mv.quantity}">Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="m : ${movements}">
+                                <td class="cell-secondary" th:text="${#temporals.format(m.movementDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td>
+                                    <span th:text="${m.productName}">Product</span>
+                                    <span class="cell-secondary" th:if="${m.notes != null}" th:text="${m.notes}"></span>
+                                </td>
+                                <td class="cell-secondary" th:text="${m.warehouseName != null ? m.warehouseName : '—'}">—</td>
+                                <td class="cell-secondary" th:text="${m.movementType.name()}">ADJUSTMENT_IN</td>
+                                <td class="num" th:classappend="${m.movementType.inbound} ? 'text-positive' : 'text-error'"
+                                    th:text="${(m.movementType.inbound ? '+' : '−') + #numbers.formatDecimal(m.quantity, 1, 2)}">+0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(movements)}">
+                                <td class="table-empty" colspan="5">
+                                    <p class="text-secondary" th:text="#{inv.bnd.noMovements}">Nothing has been assembled yet.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.bnd.assemble}">Assemble</h3></div>
+                <form th:action="@{/inventory/bundles/{id}/assemble(id=${bundle.id})}" method="post">
+                    <input type="hidden" name="warehouseId" th:value="${warehouseId}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="asmQty" th:text="#{inv.bnd.howMany}">How many bundles</label>
+                            <input class="form-control amount-control" id="asmQty" name="quantity"
+                                   type="number" step="1" min="1" value="1">
+                        </div>
+                        <button class="btn btn-primary w-full" type="submit" th:disabled="${!availability.canBuild()}">
+                            <svg class="ebook-icon"><use href="#icon-package"/></svg>
+                            <span th:text="#{inv.bnd.assemble}">Assemble</span>
+                        </button>
+                        <div class="form-hint mt-2" th:text="#{inv.bnd.assembleHint}">Consumes the parts at this location and creates bundle stock in their place.</div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.bnd.disassemble}">Take apart</h3></div>
+                <form th:action="@{/inventory/bundles/{id}/disassemble(id=${bundle.id})}" method="post">
+                    <input type="hidden" name="warehouseId" th:value="${warehouseId}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="disQty" th:text="#{inv.bnd.howMany}">How many bundles</label>
+                            <input class="form-control amount-control" id="disQty" name="quantity"
+                                   type="number" step="1" min="1" value="1">
+                        </div>
+                        <button class="btn btn-secondary w-full" type="submit"
+                                th:disabled="${availability.onHand.signum() == 0}">
+                            <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                            <span th:text="#{inv.bnd.disassemble}">Take apart</span>
+                        </button>
+                        <div class="form-hint mt-2" th:text="#{inv.bnd.disassembleHint}">Turns bundle stock back into its parts at this location.</div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body">
+                    <form th:action="@{/inventory/bundles/{id}/delete(id=${bundle.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{common.delete}">Delete</span>
+                        </button>
+                    </form>
+                    <div class="form-hint mt-2" th:text="#{inv.bnd.deleteHint}">Deleting removes the recipe only. Bundles already assembled stay on the shelf and in the ledger.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

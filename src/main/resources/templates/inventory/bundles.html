@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.bnd.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.bnd.title}">Bundles</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.bnd.title}">Bundles</h1>
+            <p class="page-subtitle" th:text="#{inv.bnd.subtitle}">Products made by putting other products together.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/inventory/bundles/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{inv.bnd.new}">New bundle</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.allTile}">Bundles</div>
+            <div class="stat-tile-value" th:text="${summary.all}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.status.active}">Active</div>
+            <div class="stat-tile-value" th:text="${summary.active}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.lossMaking}">Priced below cost</div>
+            <div class="stat-tile-value" th:classappend="${summary.lossMaking > 0} ? 'text-error'"
+                 th:text="${summary.lossMaking}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.bnd.totalCost}">Cost of one of each</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalCost, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/inventory/bundles}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{inv.bnd.searchPlaceholder}">
+            </div>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/inventory/bundles}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:text="#{inv.bnd.count(${#lists.size(bundles)})}">0 bundles</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.bnd.code}">Code</th>
+                        <th th:text="#{inv.bnd.bundle}">Bundle</th>
+                        <th th:text="#{inv.bnd.soldAs}">Sold as</th>
+                        <th class="num" th:text="#{inv.bnd.components}">Parts</th>
+                        <th class="num" th:text="#{inv.bnd.unitCost}">Cost</th>
+                        <th class="num" th:text="#{inv.bnd.sellingPrice}">Price</th>
+                        <th class="num" th:text="#{inv.bnd.margin}">Margin</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b : ${bundles}">
+                        <td class="mono" th:text="${b.code}">KIT-1</td>
+                        <td>
+                            <a class="cell-link" th:href="@{/inventory/bundles/{id}(id=${b.id})}" th:text="${b.name}">Bundle</a>
+                            <span class="cell-secondary" th:if="${b.description != null}" th:text="${b.description}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${b.bundleProductSku + ' — ' + b.bundleProductName}">SKU</td>
+                        <td class="num" th:text="${b.componentCount}">0</td>
+                        <td class="num money"
+                            th:text="${#numbers.formatDecimal(b.unitCost, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money"
+                            th:text="${#numbers.formatDecimal(b.sellingPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:classappend="${b.lossMaking} ? 'text-error' : 'text-positive'"
+                            th:text="${#numbers.formatDecimal(b.margin, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td>
+                            <span class="badge badge-active" th:if="${b.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                            <span class="badge badge-muted" th:unless="${b.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/inventory/bundles/{id}(id=${b.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/inventory/bundles/{id}/edit(id=${b.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(bundles)}">
+                        <td class="table-empty" colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-package"/></svg></div>
+                                <p class="text-secondary" th:text="#{inv.bnd.none}">No bundles yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/inventory/bundles/new}" th:text="#{inv.bnd.new}">New bundle</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{inv.bnd.ledgerHint}">A bundle carries stock of its own. Assembling consumes the parts and creates bundle stock at exactly what the parts cost, so nothing reaches the ledger — only selling the bundle does.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.bnd.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/bundles}" th:text="#{inv.bnd.title}">Bundles</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.bnd.form.breadcrumb}">New bundle</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.bnd.form.title}">New Bundle</h1>
+            <p class="page-subtitle" th:text="#{inv.bnd.form.subtitle}">Say which products go into one bundle and how many of each.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/inventory/bundles}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="bundleForm">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{inv.bnd.save}">Save bundle</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="bundleForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/inventory/bundles/{id}(id=${editingId})} : @{/inventory/bundles}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{inv.bnd.details}">Bundle details</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="bCode"><span th:text="#{inv.bnd.code}">Code</span> <span class="required">*</span></label>
+                        <input class="form-control" id="bCode" name="code" type="text"
+                               th:value="${form.code}" th:placeholder="#{inv.bnd.codePlaceholder}" required>
+                        <div class="form-hint" th:text="#{inv.bnd.codeHint}">Also used as the reference on the stock movements an assembly writes.</div>
+                        <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="bName" name="name" type="text" th:value="${form.name}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="bProduct"><span th:text="#{inv.bnd.soldAs}">Sold as</span> <span class="required">*</span></label>
+                        <select class="form-control" id="bProduct" name="bundleProductId" required>
+                            <option value="" th:text="#{inv.bnd.selectProduct}">Select the product customers buy…</option>
+                            <option th:each="p : ${products}" th:value="${p.id}"
+                                    th:text="${p.sku + ' — ' + p.name}"
+                                    th:selected="${form.bundleProductId != null and form.bundleProductId == p.id}">SKU</option>
+                        </select>
+                        <div class="form-hint" th:text="#{inv.bnd.productHint}">This product holds the bundle's stock. Its cost price is set to the rolled-up cost of the parts when you save.</div>
+                        <div th:replace="~{layout/common :: fieldError('bundleProductId')}"></div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="bDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="bDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                </div>
+                <label class="switch mt-2">
+                    <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                    <span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{common.status.active}">Active</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 th:text="#{inv.bnd.components}">What goes in</h3>
+                            <p class="text-sm text-muted" th:text="#{inv.bnd.componentsHint}">Quantities are per one bundle.</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" type="button" id="addLineBtn">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
+                            <span th:text="#{inv.bnd.addComponent}">Add part</span>
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table" id="bundleLinesTable">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{inv.prod.title}">Product</th>
+                                    <th class="num" th:text="#{inv.bnd.perBundle}">Per bundle</th>
+                                    <th class="num" th:text="#{inv.mv.unitCost}">Unit cost</th>
+                                    <th class="num" th:text="#{inv.bnd.lineCost}">Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="line, st : ${form.lines}">
+                                    <td>
+                                        <select class="form-control form-control--sm product-select"
+                                                th:name="'lines[' + ${st.index} + '].productId'">
+                                            <option value="" data-cost="" th:text="#{inv.bnd.selectComponent}">Select a product…</option>
+                                            <option th:each="p : ${products}" th:value="${p.id}"
+                                                    th:attr="data-cost=${p.costPrice}"
+                                                    th:text="${p.sku + ' — ' + p.name}"
+                                                    th:selected="${line.productId != null and line.productId == p.id}">SKU</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control qty-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].quantity'" th:value="${line.quantity}">
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control cost-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].unitCost'" th:value="${line.unitCost}" placeholder="0">
+                                    </td>
+                                    <td class="num money line-cost">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+                </div>
+            </div>
+
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.bnd.rollUp}">Cost of one bundle</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-between font-bold">
+                            <span th:text="#{inv.bnd.unitCost}">Rolled-up cost</span>
+                            <span class="money" id="sumCost">0.00</span>
+                        </div>
+                        <div class="form-hint mt-2" th:text="#{inv.bnd.rollUpHint}">Saving sets the bundle product's cost price to this figure, so cost of sales matches what an assembly capitalised.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script th:inline="javascript">
+        (function () {
+            var currency = /*[[${baseCurrency}]]*/ 'RWF';
+            var table = document.getElementById('bundleLinesTable');
+
+            function num(input) {
+                var v = parseFloat(input && input.value);
+                return isNaN(v) ? 0 : v;
+            }
+
+            function recalc() {
+                var total = 0;
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    var cost = num(row.querySelector('.qty-input')) * num(row.querySelector('.cost-input'));
+                    total += cost;
+                    var cell = row.querySelector('.line-cost');
+                    if (cell) {
+                        cell.textContent = cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                });
+                document.getElementById('sumCost').textContent =
+                    currency + ' ' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+
+            document.addEventListener('input', function (event) {
+                if (event.target.closest('#bundleLinesTable')) {
+                    recalc();
+                }
+            });
+
+            // Picking a part fills its cost from the product, unless a cost was typed already.
+            document.addEventListener('change', function (event) {
+                if (event.target.classList && event.target.classList.contains('product-select')) {
+                    var row = event.target.closest('tr');
+                    var opt = event.target.options[event.target.selectedIndex];
+                    var cost = row && row.querySelector('.cost-input');
+                    if (cost && !cost.value && opt) {
+                        cost.value = opt.getAttribute('data-cost') || '';
+                    }
+                    recalc();
+                }
+            });
+
+            document.getElementById('addLineBtn').addEventListener('click', function () {
+                var tbody = table.querySelector('tbody');
+                var index = tbody.querySelectorAll('tr').length;
+                var template = tbody.querySelector('select.product-select');
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td><select class="form-control form-control--sm product-select" name="lines[' + index + '].productId"></select></td>' +
+                    '<td><input class="form-control form-control--sm amount-control qty-input" type="number" step="0.01" min="0" name="lines[' + index + '].quantity" value="1"></td>' +
+                    '<td><input class="form-control form-control--sm amount-control cost-input" type="number" step="0.01" min="0" name="lines[' + index + '].unitCost" placeholder="0"></td>' +
+                    '<td class="num money line-cost">0.00</td>';
+                tbody.appendChild(tr);
+                var select = tr.querySelector('select.product-select');
+                if (template && select) {
+                    Array.prototype.slice.call(template.options).forEach(function (opt) {
+                        var copy = new Option(opt.text, opt.value);
+                        copy.setAttribute('data-cost', opt.getAttribute('data-cost') || '');
+                        select.appendChild(copy);
+                    });
+                }
+                recalc();
+            });
+
+            recalc();
+        })();
+    </script>
+
+</main>
+</body>
+</html>

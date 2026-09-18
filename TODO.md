@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**66 / 115 mapped · 49 remaining**
+**67 / 115 mapped · 48 remaining**
 
 How to check progress yourself:
 
@@ -64,7 +64,11 @@ Reads tables that already exist. All seven done.
       `categoryId`/`categoryName`; the product form now picks from a list instead of free text. An
       explicit **import** action folds brand names already typed on products into real brands and
       links them — nothing is migrated silently.
-- [ ] `/inventory/bundles` — needs `ProductBundle` + components
+- [x] `/inventory/bundles` — a bundle is a stocked product plus a recipe of components.
+      **Assembled, not virtual**: assembling consumes the parts and creates bundle stock at exactly
+      the rolled-up component cost, so inventory value is conserved and nothing reaches the ledger;
+      taking one apart is the reverse. Saving a bundle sets the bundle product's cost price to the
+      roll-up so cost of sales matches what an assembly capitalised.
 - [x] `/inventory/transfers` — draft/complete/cancel/void, paired `TRANSFER_OUT`/`TRANSFER_IN`
       movements at the two locations, per-location stock check before the stock moves. The move
       itself is non-posting; only stock that fails to arrive is written off from Inventory (1301)
@@ -224,6 +228,27 @@ Building these without the external piece produces a page that cannot work.
       per-location stock is only as good as that assumption, a site with no default warehouse set
       shows nothing anywhere, and the company-wide figure on `/inventory/valuation` is unaffected
       either way. The real fix is a location picker on bill and invoice lines.
+- [ ] **Re-saving a bundle silently revalues the bundles already on the shelf.** Saving sets the
+      bundle product's cost price to the new roll-up, and `/inventory/valuation` values stock at
+      whatever the cost price currently is. Measured: changing one component from 10 to 12 per bundle
+      raised reported stock value by **RWF 253,000** across 11 assembled bundles, with no journal
+      entry — the assemblies had capitalised them at the old cost. This is the standard-costing gap
+      that already applies to editing any product's cost price; bundles just make it automatic. A
+      real fix is weighted-average or FIFO costing, which is a much larger change. Until then, treat
+      a recipe change as something to do when little or none of the bundle is in stock. The same
+      side effect fires on **creating** a bundle: naming an existing product as the thing a bundle is
+      sold as overwrites that product's cost price with the roll-up, which is wrong if the product
+      was already stocked and priced in its own right. Pick a product that exists only to be the
+      bundle.
+- [ ] **Selling a bundle does not explode it into components.** A bundle has to be assembled before
+      it can be sold; invoicing the bundle product without assembling drives its stock negative
+      rather than depleting the parts. Making a sale explode the recipe would mean teaching
+      `InvoiceService` about bundles, which changes how every invoice posts — deliberately out of
+      scope here. Related gaps: a bundle may contain another bundle and assembly does **not**
+      cascade, so the inner one must be assembled first; the component costs are a snapshot taken
+      when the bundle was last saved, so a component price rise only reaches the roll-up on re-save;
+      and deleting a bundle removes the recipe while leaving assembled stock and its movements in
+      place.
 - [ ] **Free-text brands are only folded in when somebody presses the button.** `Product.brand` is
       still the denormalised name and still accepts whatever was there before, so a database that
       predates brands keeps its typed values until the import on `/inventory/brands` is run. Two
@@ -304,7 +329,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,759 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,827 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.
