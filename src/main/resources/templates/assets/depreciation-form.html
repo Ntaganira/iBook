@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.dep.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/depreciation}" th:text="#{ast.dep.title}">Depreciation</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.dep.form.breadcrumb}">New run</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.dep.form.title}">New Depreciation Run</h1>
+            <p class="page-subtitle" th:utext="#{ast.dep.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/assets/depreciation}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="runForm"
+                    th:disabled="${#lists.isEmpty(preview)}">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{ast.dep.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="runForm" name="postNow" value="true"
+                    th:disabled="${#lists.isEmpty(preview)}">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{ast.dep.savePost}">Save and post</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="runForm" method="post" novalidate th:object="${form}" th:action="@{/assets/depreciation}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{ast.dep.details}">Run details</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="dPeriod"><span th:text="#{ast.dep.periodEnd}">Charge up to</span> <span class="required">*</span></label>
+                        <input class="form-control" id="dPeriod" name="periodEnd" type="date"
+                               th:value="${form.periodEnd}" required>
+                        <div class="form-hint" th:text="#{ast.dep.periodEndHint}">Every in-service asset is brought up to date with this date, however far behind it is.</div>
+                        <div th:replace="~{layout/common :: fieldError('periodEnd')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="dNotes" th:text="#{ast.dep.notes}">Notes</label>
+                        <input class="form-control" id="dNotes" name="notes" type="text"
+                               th:value="${form.notes}" th:placeholder="#{ast.dep.notesPlaceholder}">
+                    </div>
+                </div>
+                <div class="form-hint mt-2">
+                    <a th:href="@{/assets/depreciation/new(periodEnd=${periodEnd})}" th:text="#{ast.dep.refreshPreview}">Refresh the preview for this date</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="#{ast.dep.preview}">What will be charged</h3>
+            <span class="text-sm text-muted"
+                  th:text="#{ast.dep.previewAsOf(${#temporals.format(periodEnd, 'dd MMM yyyy')})}">as at 30 Sep 2026</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{ast.assetNo}">Asset</th>
+                        <th th:text="#{ast.category}">Category</th>
+                        <th class="num" th:text="#{ast.cost}">Cost</th>
+                        <th class="num" th:text="#{ast.dep.opening}">Already charged</th>
+                        <th class="num" th:text="#{ast.dep.charge}">This run</th>
+                        <th class="num" th:text="#{ast.netBookValue}">Net book value after</th>
+                        <th th:text="#{ast.dep.accounts}">Accounts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${preview}">
+                        <td>
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${p.assetId})}" th:text="${p.assetNo}">FA-0001</a>
+                            <span class="cell-secondary" th:text="${p.assetName}">Asset</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${p.category != null ? p.category : '—'}">—</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.acquisitionCost, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.openingAccumulated, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money text-warning" th:text="${#numbers.formatDecimal(p.charge, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.closingNbv(), 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="cell-secondary mono"
+                            th:text="${(p.expenseAccountCode != null ? p.expenseAccountCode : '—') + ' / ' + (p.accumulatedAccountCode != null ? p.accumulatedAccountCode : '—')}">5006 / 1509</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(preview)}">
+                        <td class="table-empty" colspan="7">
+                            <p class="text-secondary" th:text="#{ast.dep.nothingDue}">Nothing is owed up to this date. Either everything is up to date, or no asset is in service.</p>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot th:if="${!#lists.isEmpty(preview)}">
+                    <tr>
+                        <td colspan="4" class="text-right font-bold" th:text="#{ast.dep.totalCharge}">Total charge</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(previewTotal, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{ast.dep.ledgerHint}">A run debits depreciation expense and credits accumulated depreciation in one entry. Each asset's share is worked out again at the moment of posting.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

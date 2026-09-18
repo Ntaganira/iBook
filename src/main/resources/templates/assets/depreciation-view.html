@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${run.runNo}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/depreciation}" th:text="#{ast.dep.title}">Depreciation</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${run.runNo}">DEP-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${run.runNo}">DEP-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="#{ast.dep.chargedTo} + ' ' + ${#temporals.format(run.periodEnd, 'dd MMM yyyy')}"></span>
+                <span th:if="${run.postedAt != null}"
+                      th:text="' · ' + #{ast.dep.postedOn} + ' ' + ${#temporals.format(run.postedAt, 'dd MMM yyyy HH:mm')}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="st=${run.status.name()}">
+            <span class="badge"
+                  th:classappend="${st == 'POSTED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : 'badge-muted')}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+            </span>
+            <form th:if="${run.postable}" th:action="@{/assets/depreciation/{id}/post(id=${run.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{ast.dep.post}">Post run</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${run.draft}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.dep.draftTitle}">Nothing has been charged yet</div>
+            <span th:text="#{ast.dep.draftHint}">The figures below were worked out when the run was prepared. Each one is worked out again at the moment of posting, so anything charged in the meantime is not charged twice.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${run.voided}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.dep.voidedTitle}">Run voided</div>
+            <span th:if="${run.stoppedReason != null}" th:text="${run.stoppedReason}"></span>
+            <span th:text="#{ast.dep.voidedHint}">A reversing entry was written and the charge was taken back off each asset. The original entry is untouched.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dep.charge}">Charge</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(run.totalCharge, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dep.assets}">Assets charged</div>
+            <div class="stat-tile-value" th:text="${run.assetCount}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dep.periodEnd}">Charged up to</div>
+            <div class="stat-tile-value" th:text="${#temporals.format(run.periodEnd, 'dd MMM yyyy')}">30 Sep 2026</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dep.entry}">Journal entry</div>
+            <div class="stat-tile-value">
+                <a class="cell-link" th:if="${run.journalEntryId != null}"
+                   th:href="@{/journals/{id}(id=${run.journalEntryId})}" th:text="#{ast.dep.viewEntry}">View</a>
+                <span th:if="${run.journalEntryId == null}" th:text="#{ast.dep.noEntry}">Not posted</span>
+            </div>
+            <div class="cell-secondary" th:if="${run.reversalJournalEntryId != null}">
+                <a class="cell-link" th:href="@{/journals/{id}(id=${run.reversalJournalEntryId})}"
+                   th:text="#{ast.dep.viewReversal}">Reversing entry</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{ast.dep.lines}">What each asset was charged</h3>
+            <span class="text-sm text-muted" th:if="${run.notes != null}" th:text="${run.notes}"></span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{ast.assetNo}">Asset</th>
+                        <th th:text="#{ast.category}">Category</th>
+                        <th class="num" th:text="#{ast.cost}">Cost</th>
+                        <th class="num" th:text="#{ast.dep.opening}">Already charged</th>
+                        <th class="num" th:text="#{ast.dep.charge}">This run</th>
+                        <th class="num" th:text="#{ast.dep.closing}">Accumulated after</th>
+                        <th class="num" th:text="#{ast.netBookValue}">Net book value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${run.entries}">
+                        <td>
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${e.assetId})}" th:text="${e.assetNo}">FA-0001</a>
+                            <span class="cell-secondary" th:text="${e.assetName}">Asset</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${e.category != null ? e.category : '—'}">—</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(e.acquisitionCost, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(e.openingAccumulated, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:classappend="${e.charged} ? 'text-warning'"
+                            th:text="${e.charged ? #numbers.formatDecimal(e.charge, 1, 'COMMA', 2, 'POINT') : '—'}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(e.closingAccumulated, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(e.closingNbv, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(run.entries)}">
+                        <td class="table-empty" colspan="7">
+                            <p class="text-secondary" th:text="#{ast.dep.noLines}">This run charged nothing.</p>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-right font-bold" th:text="#{ast.dep.totalCharge}">Total charge</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(run.totalCharge, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{ast.dep.ledgerHint}">A run debits depreciation expense and credits accumulated depreciation in one entry.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+        <div class="card-body d-flex flex-column gap-2">
+            <form th:if="${run.posted}" th:action="@{/assets/depreciation/{id}/void(id=${run.id})}" method="post">
+                <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                       th:placeholder="#{ast.dep.voidReason}">
+                <button class="btn btn-secondary btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                    <span th:text="#{ast.dep.void}">Void run</span>
+                </button>
+            </form>
+            <form th:if="${run.draft}" th:action="@{/assets/depreciation/{id}/delete(id=${run.id})}" method="post">
+                <button class="btn btn-ghost btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </form>
+            <div class="form-hint" th:text="#{ast.dep.voidHint}">Voiding writes a reversing entry and takes the charge back off each asset. A posted run is never deleted.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

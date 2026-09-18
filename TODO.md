@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**68 / 115 mapped · 47 remaining**
+**69 / 115 mapped · 46 remaining**
 
 How to check progress yourself:
 
@@ -121,7 +121,12 @@ Reads tables that already exist. All seven done.
 - [ ] `/assets/categories` · `/assets/locations` — both free text on `FixedAsset` today; promote the
       way brands were promoted
   
-- [ ] `/assets/depreciation` · `/assets/disposals` · `/assets/transfers`
+- [x] `/assets/depreciation` — prepare a run to a date, preview what each asset owes, post or void.
+      Charges **Dr depreciation expense / Cr accumulated depreciation** in one entry per run, grouped
+      by account pair rather than one entry per asset, with rounding drift on the last line. Each
+      asset's share is recomputed **at posting time**, so two drafts over the same period cannot both
+      charge it. Voiding writes a reversing entry and takes the charge back off each asset.
+- [ ] `/assets/disposals` · `/assets/transfers`
 
 ### Projects (7)
 `Project`, `TimeEntry`. Job costing tags existing journal lines to a project.
@@ -254,12 +259,24 @@ Building these without the external piece produces a page that cannot work.
       hand and never checked against 1509 — the seeded chart already carries −110,000 on 1509 that
       belongs to no registered asset. A reconciliation screen comparing the register's totals to
       1501/1509 is worth building before the register is trusted for a balance sheet.
-- [ ] **Asset depreciation is worked out but never charged.** `/assets/register` computes the
-      schedule and the "due but not yet posted" figure; only `/assets/depreciation` will write
-      `Dr 5006 / Cr 1509`. Until that route exists, `postedAccumulated` stays at zero for every asset
-      and net book value on the register equals cost less whatever opening balance was typed in.
+- [ ] **A depreciation run has no period lock and no fiscal-period check.** It charges up to any date
+      the user picks, including one inside a closed fiscal period, and nothing stops a run dated
+      before an earlier run's period end. The protection against double-charging is arithmetic — the
+      charge is always "due by that date less what has already been charged" recomputed at posting
+      time — not a lock, so a backdated run simply finds nothing owing rather than being refused.
       Straight line and reducing balance both prorate by **whole months** within a year, so an asset
       acquired mid-month earns nothing for the part month.
+- [ ] **`FixedAsset.depreciatedTo` is written but never read, and a void does not roll it back.**
+      `DepreciationService.post` stamps it with the run's period end; nothing else in the codebase
+      reads it — the charge is always derived from `postedAccumulated`, so the field is decorative
+      today. After voiding a run the stamp is left at the voided run's date, so an asset can claim to
+      be depreciated to December while carrying only September's charge. Harmless until somebody
+      trusts it; either roll it back on void or drop the column.
+- [ ] **Voiding a depreciation run unwinds every asset, even ones charged again since.** The void
+      subtracts each entry's charge from `postedAccumulated` and floors at zero. If a later run has
+      already charged the same asset, voiding the earlier run leaves the asset under-depreciated
+      relative to its schedule — the next run will notice and catch it up, but the ledger and the
+      register disagree until then. Voiding runs newest-first avoids it.
 - [ ] **Selling a bundle does not explode it into components.** A bundle has to be assembled before
       it can be sold; invoicing the bundle product without assembling drives its stock negative
       rather than depleting the parts. Making a sale explode the recipe would mean teaching
@@ -349,7 +366,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,916 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,977 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.
