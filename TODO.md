@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**64 / 115 mapped · 51 remaining**
+**65 / 115 mapped · 50 remaining**
 
 How to check progress yourself:
 
@@ -65,7 +65,11 @@ Reads tables that already exist. All seven done.
       movements at the two locations, per-location stock check before the stock moves. The move
       itself is non-posting; only stock that fails to arrive is written off from Inventory (1301)
       to Cost of sales (5200). Voiding writes mirror movements plus a reversing entry.
-- [ ] `/inventory/counts` — needs `StockCount` + count lines
+- [x] `/inventory/counts` — count sheet per location pre-filled with what the books say, draft /
+      post / cancel / void. Posting measures the variance against stock on hand **at that moment**,
+      not against the sheet's opening snapshot, so a sale during the count is not silently undone;
+      surpluses debit Inventory (1301) and credit Cost of sales (5200), shortages do the reverse,
+      posted gross in one entry. Voiding writes counter movements plus a reversing entry.
 - [x] **Products linked to invoice and bill lines** — picker with autofill; posting now moves stock
       and applies perpetual inventory (see Known issues for the accounting change)
 
@@ -216,10 +220,19 @@ Building these without the external piece produces a page that cannot work.
       per-location stock is only as good as that assumption, a site with no default warehouse set
       shows nothing anywhere, and the company-wide figure on `/inventory/valuation` is unaffected
       either way. The real fix is a location picker on bill and invoice lines.
-- [ ] **No `TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now
-      adds `TRF-`, but it returns early when any sequence exists, so databases predating this get a
-      random fallback like `TRF-2026-11501`. Add the row at `/settings/numbering` — same class of
-      drift as the missing `ESTIMATE` sequence and the missing 1402 and 5200 accounts.
+- [ ] **A stock count is not a freeze, and it counts one location at a time.** Nothing stops stock
+      moving while a sheet is open. Posting handles that by measuring the variance against on-hand at
+      the moment of posting rather than the opening snapshot — the line is flagged as drifted when
+      the two differ — but the counted figure itself is still whatever was on the shelf when somebody
+      looked, so a sale between counting and posting is written off as a shortage. The honest fix is
+      to stop trading during a count. A sheet also covers a single warehouse, so a company-wide count
+      means one sheet per location, and stock that arrived without a location sits at the default
+      warehouse (see below), which is where its variance will be posted.
+- [ ] **No `STOCK_COUNT` or `TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now
+      adds `TRF-` and `SC-`, but it returns early when any sequence exists, so databases predating
+      them get random fallbacks like `TRF-2026-11501` and `SC-2026-53104`. Add both rows at
+      `/settings/numbering` — same class of drift as the missing `ESTIMATE` sequence and the missing
+      1402 and 5200 accounts.
 - [ ] **A transfer is a single step, and stock in transit is nobody's.** There is no shipped-but-not-
       yet-received state: completing a transfer writes both movements at once. Modelling goods in
       transit properly needs a goods-in-transit account (there is no `1302`), which is a chart-of-
@@ -280,7 +293,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,640 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,721 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

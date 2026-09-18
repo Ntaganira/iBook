@@ -24,7 +24,6 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,6 +46,7 @@ public class StockTransferService {
     private final JournalEntryRepository journalEntryRepository;
     private final NumberingSequenceRepository numberingSequenceRepository;
     private final CompanyRepository companyRepository;
+    private final InventoryService inventoryService;
     private final AuditService auditService;
 
     public StockTransferService(StockTransferRepository transferRepository,
@@ -57,6 +57,7 @@ public class StockTransferService {
                                 JournalEntryRepository journalEntryRepository,
                                 NumberingSequenceRepository numberingSequenceRepository,
                                 CompanyRepository companyRepository,
+                                InventoryService inventoryService,
                                 AuditService auditService) {
         this.transferRepository = transferRepository;
         this.movementRepository = movementRepository;
@@ -66,6 +67,7 @@ public class StockTransferService {
         this.journalEntryRepository = journalEntryRepository;
         this.numberingSequenceRepository = numberingSequenceRepository;
         this.companyRepository = companyRepository;
+        this.inventoryService = inventoryService;
         this.auditService = auditService;
     }
 
@@ -100,32 +102,9 @@ public class StockTransferService {
                 zero(transferRepository.totalShortfallValue()));
     }
 
-    /**
-     * Stock on hand per product and location. Movements recorded without a location — every invoice,
-     * bill and credit note line writes one — are counted at the default warehouse, because that is
-     * the only place they could sensibly be. Without this, stock bought on a bill would be invisible
-     * to every location and no transfer could ever be raised against it.
-     */
     @Transactional(readOnly = true)
     public Map<Long, Map<Long, BigDecimal>> onHandByWarehouse(LocalDate asOf) {
-        Warehouse fallback = warehouseRepository.findFirstByDefaultLocationTrue().orElse(null);
-        Long fallbackId = fallback == null ? null : fallback.getId();
-        Map<Long, Map<Long, BigDecimal>> byProduct = new LinkedHashMap<>();
-        for (Object[] row : movementRepository.onHandByProductAndWarehouse(
-                asOf == null ? LocalDate.now() : asOf)) {
-            Long productId = ((Number) row[0]).longValue();
-            // Boxed on both branches: an unboxed long here would force fallbackId open and NPE
-            // when no default warehouse is configured.
-            Long warehouseId = row[1] == null
-                    ? fallbackId : Long.valueOf(((Number) row[1]).longValue());
-            if (warehouseId == null) {
-                continue;
-            }
-            BigDecimal qty = row[2] == null ? BigDecimal.ZERO : (BigDecimal) row[2];
-            byProduct.computeIfAbsent(productId, k -> new LinkedHashMap<>())
-                    .merge(warehouseId, qty, BigDecimal::add);
-        }
-        return byProduct;
+        return inventoryService.onHandByWarehouse(asOf);
     }
 
     @Transactional(readOnly = true)
@@ -136,22 +115,6 @@ public class StockTransferService {
         return onHandByWarehouse(LocalDate.now())
                 .getOrDefault(productId, Map.of())
                 .getOrDefault(warehouseId, BigDecimal.ZERO);
-    }
-
-    /** Per-location stock for one warehouse, for the picker on the transfer form. */
-    @Transactional(readOnly = true)
-    public Map<Long, BigDecimal> stockAt(Long warehouseId) {
-        Map<Long, BigDecimal> result = new LinkedHashMap<>();
-        if (warehouseId == null) {
-            return result;
-        }
-        for (Map.Entry<Long, Map<Long, BigDecimal>> e : onHandByWarehouse(LocalDate.now()).entrySet()) {
-            BigDecimal qty = e.getValue().get(warehouseId);
-            if (qty != null) {
-                result.put(e.getKey(), qty);
-            }
-        }
-        return result;
     }
 
     @Transactional(readOnly = true)

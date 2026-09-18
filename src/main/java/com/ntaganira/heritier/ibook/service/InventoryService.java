@@ -313,6 +313,50 @@ public class InventoryService {
         return onHandByProduct(LocalDate.now()).getOrDefault(productId, BigDecimal.ZERO);
     }
 
+    /**
+     * Stock on hand per product and location. Movements recorded without a location — every invoice,
+     * bill and credit note line writes one — are counted at the default warehouse, because that is
+     * the only place they could sensibly be. Without this, stock bought on a bill would be invisible
+     * to every location.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Map<Long, BigDecimal>> onHandByWarehouse(LocalDate asOf) {
+        Warehouse fallback = warehouseRepository.findFirstByDefaultLocationTrue().orElse(null);
+        Long fallbackId = fallback == null ? null : fallback.getId();
+        Map<Long, Map<Long, BigDecimal>> byProduct = new LinkedHashMap<>();
+        for (Object[] row : movementRepository.onHandByProductAndWarehouse(
+                asOf == null ? LocalDate.now() : asOf)) {
+            Long productId = ((Number) row[0]).longValue();
+            // Boxed on both branches: an unboxed long here would force fallbackId open and NPE
+            // when no default warehouse is configured.
+            Long warehouseId = row[1] == null
+                    ? fallbackId : Long.valueOf(((Number) row[1]).longValue());
+            if (warehouseId == null) {
+                continue;
+            }
+            BigDecimal qty = row[2] == null ? BigDecimal.ZERO : (BigDecimal) row[2];
+            byProduct.computeIfAbsent(productId, k -> new LinkedHashMap<>())
+                    .merge(warehouseId, qty, BigDecimal::add);
+        }
+        return byProduct;
+    }
+
+    /** Per-location stock for one warehouse, keyed by product. */
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> stockAt(Long warehouseId) {
+        Map<Long, BigDecimal> result = new LinkedHashMap<>();
+        if (warehouseId == null) {
+            return result;
+        }
+        for (Map.Entry<Long, Map<Long, BigDecimal>> e : onHandByWarehouse(LocalDate.now()).entrySet()) {
+            BigDecimal qty = e.getValue().get(warehouseId);
+            if (qty != null) {
+                result.put(e.getKey(), qty);
+            }
+        }
+        return result;
+    }
+
     @Transactional(readOnly = true)
     public List<StockMovement> movementsFor(Long productId) {
         return movementRepository.findByProductIdOrderByMovementDateAscIdAsc(productId);

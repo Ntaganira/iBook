@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.cnt.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/counts}" th:text="#{inv.cnt.title}">Stock Counts</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.cnt.form.breadcrumb}">New count</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.cnt.form.title}">New Stock Count</h1>
+            <p class="page-subtitle" th:utext="#{inv.cnt.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/inventory/counts}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="countForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{inv.cnt.saveDraft}">Save sheet</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="countForm" name="completeNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{inv.cnt.savePost}">Save and post</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="countForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/inventory/counts/{id}(id=${editingId})} : @{/inventory/counts}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{inv.cnt.details}">Count details</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="cntWarehouse"><span th:text="#{inv.wh.title}">Location</span> <span class="required">*</span></label>
+                        <select class="form-control" id="cntWarehouse" name="warehouseId"
+                                th:disabled="${mode == 'edit'}" required>
+                            <option value="" th:text="#{inv.cnt.selectWarehouse}">Select a location…</option>
+                            <option th:each="w : ${warehouses}" th:value="${w.id}" th:text="${w.name}"
+                                    th:selected="${form.warehouseId != null and form.warehouseId == w.id}">Main store</option>
+                        </select>
+                        <!-- A disabled select submits nothing, so the location still has to travel. -->
+                        <input type="hidden" th:if="${mode == 'edit'}" name="warehouseId" th:value="${form.warehouseId}">
+                        <div class="form-hint" th:if="${mode != 'edit'}" th:text="#{inv.cnt.warehouseHint}">Changing the location reloads the sheet with that location's stock.</div>
+                        <div th:replace="~{layout/common :: fieldError('warehouseId')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cntDate"><span th:text="#{inv.cnt.countDate}">Count date</span> <span class="required">*</span></label>
+                        <input class="form-control" id="cntDate" name="countDate" type="date"
+                               th:value="${form.countDate}" required>
+                        <div th:replace="~{layout/common :: fieldError('countDate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cntBy" th:text="#{inv.cnt.countedBy}">Counted by</label>
+                        <input class="form-control" id="cntBy" name="countedBy" type="text"
+                               th:value="${form.countedBy}" th:placeholder="#{inv.cnt.countedByPlaceholder}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cntRef" th:text="#{common.reference}">Reference</label>
+                        <input class="form-control" id="cntRef" name="reference" type="text"
+                               th:value="${form.reference}" th:placeholder="#{inv.cnt.referencePlaceholder}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <div>
+                    <h3 th:text="#{inv.cnt.sheet}">Count sheet</h3>
+                    <p class="text-sm text-muted" th:text="#{inv.cnt.sheetHint}">Leave a box empty to say the item was not counted. Zero means none was found.</p>
+                </div>
+                <span class="text-sm text-muted" id="countedSoFar"></span>
+            </div>
+            <div class="table-wrap">
+                <table class="table" id="countSheetTable">
+                    <thead>
+                        <tr>
+                            <th th:text="#{inv.prod.title}">Product</th>
+                            <th class="num" th:text="#{inv.cnt.expected}">Books say</th>
+                            <th class="num" th:text="#{inv.cnt.counted}">Counted</th>
+                            <th class="num" th:text="#{inv.cnt.variance}">Difference</th>
+                            <th class="num" th:text="#{inv.mv.unitCost}">Unit cost</th>
+                            <th class="num" th:text="#{inv.cnt.varianceValue}">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="line, st : ${form.lines}" th:if="${line.productId != null}">
+                            <td>
+                                <span th:text="${line.productName}">Product</span>
+                                <span class="cell-secondary" th:text="${line.productSku}">SKU</span>
+                                <input type="hidden" th:name="'lines[' + ${st.index} + '].productId'" th:value="${line.productId}">
+                                <input type="hidden" th:name="'lines[' + ${st.index} + '].productSku'" th:value="${line.productSku}">
+                                <input type="hidden" th:name="'lines[' + ${st.index} + '].productName'" th:value="${line.productName}">
+                                <input type="hidden" th:name="'lines[' + ${st.index} + '].unit'" th:value="${line.unit}">
+                                <input type="hidden" class="expected-input"
+                                       th:name="'lines[' + ${st.index} + '].expectedQuantity'" th:value="${line.expectedQuantity}">
+                            </td>
+                            <td class="num cell-secondary">
+                                <span th:text="${#numbers.formatDecimal(line.expectedValue(), 1, 2)}">0.00</span>
+                                <span class="cell-secondary" th:if="${line.unit != null}" th:text="${line.unit}">each</span>
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control counted-input" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].countedQuantity'" th:value="${line.countedQuantity}"
+                                       th:placeholder="#{inv.cnt.notCounted}">
+                            </td>
+                            <td class="num variance-cell">—</td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control cost-input" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].unitCost'" th:value="${line.unitCost}">
+                            </td>
+                            <td class="num money variance-value">—</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(form.lines)}">
+                            <td class="table-empty" colspan="6">
+                                <p class="text-secondary" th:text="#{inv.cnt.noProducts}">There are no stocked products to count. Add products that track stock first.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+        </div>
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.cnt.notes}">Notes</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <textarea class="form-control" name="notes" rows="2"
+                                      th:text="${form.notes}" th:placeholder="#{inv.cnt.notesPlaceholder}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.cnt.totals}">What this will post</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.cnt.surplusValue}">Found over</span>
+                            <span class="money text-positive" id="sumSurplus">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.cnt.shortageValue}">Found short</span>
+                            <span class="money text-error" id="sumShortage">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
+                            <span th:text="#{inv.cnt.netValue}">Net effect on stock</span>
+                            <span class="money" id="sumNet">0.00</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-hint" th:text="#{inv.cnt.ledgerHint}">Posting a count forces stock on hand to match what was found. Surpluses debit Inventory and credit Cost of sales; shortages do the reverse.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script th:inline="javascript">
+        (function () {
+            var currency = /*[[${baseCurrency}]]*/ 'RWF';
+            var table = document.getElementById('countSheetTable');
+            var warehouse = document.getElementById('cntWarehouse');
+            var editing = /*[[${mode == 'edit'}]]*/ false;
+            var newSheetUrl = /*[[@{/inventory/counts/new}]]*/ '/inventory/counts/new';
+
+            function num(input) {
+                var v = parseFloat(input && input.value);
+                return isNaN(v) ? 0 : v;
+            }
+
+            function money(value) {
+                return currency + ' ' + value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+
+            function recalc() {
+                var surplus = 0;
+                var shortage = 0;
+                var counted = 0;
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    var countedInput = row.querySelector('.counted-input');
+                    var varianceCell = row.querySelector('.variance-cell');
+                    var valueCell = row.querySelector('.variance-value');
+                    if (!countedInput || !varianceCell || !valueCell) {
+                        return;
+                    }
+                    if (countedInput.value === '') {
+                        varianceCell.textContent = '—';
+                        varianceCell.className = 'num variance-cell';
+                        valueCell.textContent = '—';
+                        return;
+                    }
+                    counted++;
+                    var diff = num(countedInput) - num(row.querySelector('.expected-input'));
+                    var value = diff * num(row.querySelector('.cost-input'));
+                    varianceCell.textContent = (diff > 0 ? '+' : '') + diff.toFixed(2);
+                    varianceCell.className = 'num variance-cell' + (diff > 0 ? ' text-positive' : (diff < 0 ? ' text-error' : ''));
+                    valueCell.textContent = value === 0 ? '—'
+                        : value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    if (value > 0) {
+                        surplus += value;
+                    } else if (value < 0) {
+                        shortage += -value;
+                    }
+                });
+                document.getElementById('sumSurplus').textContent = money(surplus);
+                document.getElementById('sumShortage').textContent = money(shortage);
+                document.getElementById('sumNet').textContent = money(surplus - shortage);
+                document.getElementById('countedSoFar').textContent =
+                    counted + ' / ' + table.querySelectorAll('tbody tr').length;
+            }
+
+            document.addEventListener('input', function (event) {
+                if (event.target.closest('#countSheetTable')) {
+                    recalc();
+                }
+            });
+
+            // A different location is a different sheet, so reload rather than keep stale figures.
+            if (warehouse && !editing) {
+                warehouse.addEventListener('change', function () {
+                    window.location = newSheetUrl +
+                        (warehouse.value ? '?warehouse=' + encodeURIComponent(warehouse.value) : '');
+                });
+            }
+
+            recalc();
+        })();
+    </script>
+
+</main>
+</body>
+</html>
