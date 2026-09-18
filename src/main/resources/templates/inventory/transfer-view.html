@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${transfer.transferNo}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/transfers}" th:text="#{inv.trf.title}">Stock Transfers</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${transfer.transferNo}">TRF-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${transfer.transferNo}">TRF-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="${transfer.fromWarehouseName + ' → ' + transfer.toWarehouseName}">Main → Branch</span>
+                <span th:text="' · ' + ${#temporals.format(transfer.transferDate, 'dd MMM yyyy')}"></span>
+                <span th:if="${transfer.reference != null}" th:text="' · ' + ${transfer.reference}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="st=${transfer.status.name()}">
+            <span class="badge"
+                  th:classappend="${st == 'COMPLETED' ? 'badge-active' : (st == 'VOID' or st == 'CANCELLED' ? 'badge-error' : 'badge-muted')}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+            </span>
+
+            <a class="btn btn-secondary" th:if="${transfer.editable}"
+               th:href="@{/inventory/transfers/{id}/edit(id=${transfer.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{inv.trf.view.edit}">Edit transfer</span>
+            </a>
+
+            <form th:if="${transfer.completable}"
+                  th:action="@{/inventory/transfers/{id}/complete(id=${transfer.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{inv.trf.complete}">Complete transfer</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${transfer.shortfallValue.signum() > 0}">
+        <svg class="ebook-icon"><use href="#icon-alert-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{inv.trf.shortTitle}">Stock lost in transit</div>
+            <span th:text="#{inv.trf.shortDetail(${#numbers.formatDecimal(transfer.shortfallQuantity, 1, 2)}, ${baseCurrency + ' ' + #numbers.formatDecimal(transfer.shortfallValue, 1, 'COMMA', 2, 'POINT')})}">2.00 units worth RWF 0.00</span>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${transfer.status.name() == 'VOID'}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{inv.trf.voidedTitle}">Transfer voided</div>
+            <span th:if="${transfer.stoppedReason != null}" th:text="${transfer.stoppedReason}"></span>
+            <span th:text="#{inv.trf.voidedHint}">The stock was moved back and the original movements were left in place.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${transfer.status.name() == 'CANCELLED'}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{inv.trf.cancelledTitle}">Transfer cancelled</div>
+            <span th:if="${transfer.stoppedReason != null}" th:text="${transfer.stoppedReason}"></span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.trf.sent}">Sent</div>
+            <div class="stat-tile-value" th:text="${#numbers.formatDecimal(transfer.totalSent, 1, 2)}">0.00</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.trf.received}">Received</div>
+            <div class="stat-tile-value" th:text="${#numbers.formatDecimal(transfer.totalReceived, 1, 2)}">0.00</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.trf.value}">Value moved</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(transfer.totalValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.trf.writeOff}">Written off</div>
+            <div class="stat-tile-value money" th:classappend="${transfer.shortfallValue.signum() > 0} ? 'text-error'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(transfer.shortfallValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{inv.trf.lineItems}">Items moved</h3>
+            <span class="text-sm text-muted" th:if="${transfer.completedAt != null}"
+                  th:text="#{inv.trf.completedOn} + ' ' + ${#temporals.format(transfer.completedAt, 'dd MMM yyyy HH:mm')}"></span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.prod.title}">Product</th>
+                        <th class="num" th:text="#{inv.trf.sent}">Sent</th>
+                        <th class="num" th:text="#{inv.trf.received}">Received</th>
+                        <th class="num" th:text="#{inv.trf.shortfall}">Lost</th>
+                        <th class="num" th:text="#{inv.mv.unitCost}">Unit cost</th>
+                        <th class="num" th:text="#{inv.trf.value}">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${transfer.lines}">
+                        <td>
+                            <span th:text="${l.productName}">Product</span>
+                            <span class="cell-secondary" th:text="${l.productSku}">SKU</span>
+                        </td>
+                        <td class="num" th:text="${#numbers.formatDecimal(l.quantitySent, 1, 2) + ' ' + (l.unit != null ? l.unit : '')}">0.00</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(l.quantityReceived, 1, 2)}">0.00</td>
+                        <td class="num" th:classappend="${l.shortfall.signum() > 0} ? 'text-error'"
+                            th:text="${l.shortfall.signum() == 0 ? '—' : #numbers.formatDecimal(l.shortfall, 1, 2)}">—</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitCost, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transfer.lines)}">
+                        <td class="table-empty" colspan="6">
+                            <p class="text-secondary" th:text="#{inv.trf.emptyLines}">No items on this transfer.</p>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-right font-bold" th:text="#{inv.trf.value}">Value</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(transfer.totalValue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body" th:if="${transfer.notes != null}">
+            <div class="cell-secondary" th:text="#{inv.trf.notes}">Notes</div>
+            <p class="text-sm" th:text="${transfer.notes}"></p>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{inv.trf.movements}">Stock movements</h3>
+                    <span class="text-sm text-muted" th:text="#{inv.trf.movementsHint}">Written when the transfer completed</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{common.date}">Date</th>
+                                <th th:text="#{inv.prod.title}">Product</th>
+                                <th th:text="#{inv.wh.title}">Location</th>
+                                <th th:text="#{inv.mv.type}">Type</th>
+                                <th class="num" th:text="#{inv.mv.quantity}">Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="m : ${movements}">
+                                <td class="cell-secondary" th:text="${#temporals.format(m.movementDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td>
+                                    <span th:text="${m.productName}">Product</span>
+                                    <span class="cell-secondary" th:if="${m.notes != null}" th:text="${m.notes}"></span>
+                                </td>
+                                <td class="cell-secondary" th:text="${m.warehouseName != null ? m.warehouseName : '—'}">—</td>
+                                <td class="cell-secondary" th:text="${m.movementType.name()}">TRANSFER_OUT</td>
+                                <td class="num" th:classappend="${m.movementType.inbound} ? 'text-positive' : 'text-error'"
+                                    th:text="${(m.movementType.inbound ? '+' : '−') + #numbers.formatDecimal(m.quantity, 1, 2)}">+0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(movements)}">
+                                <td class="table-empty" colspan="5">
+                                    <p class="text-secondary" th:text="#{inv.trf.noMovements}">No stock has moved yet — this transfer is still a draft.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.trf.posting}">Ledger</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{inv.trf.writeOffEntry}">Write-off entry</span>
+                        <a class="cell-link" th:if="${transfer.journalEntryId != null}"
+                           th:href="@{/journals/{id}(id=${transfer.journalEntryId})}" th:text="#{inv.trf.viewEntry}">View entry</a>
+                        <span th:if="${transfer.journalEntryId == null}" th:text="#{inv.trf.noEntry}">Nothing posted</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${transfer.reversalJournalEntryId != null}">
+                        <span class="text-muted" th:text="#{inv.trf.reversalEntry}">Reversing entry</span>
+                        <a class="cell-link" th:href="@{/journals/{id}(id=${transfer.reversalJournalEntryId})}"
+                           th:text="#{inv.trf.viewEntry}">View entry</a>
+                    </div>
+                    <div class="form-hint mt-2" th:text="#{inv.trf.ledgerHint}">A transfer does not reach the ledger. Only stock that fails to arrive is posted, as a write-off from inventory to cost of sales.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <form th:if="${transfer.status.name() == 'COMPLETED'}"
+                          th:action="@{/inventory/transfers/{id}/void(id=${transfer.id})}" method="post">
+                        <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                               th:placeholder="#{inv.trf.voidReason}">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                            <span th:text="#{inv.trf.void}">Void transfer</span>
+                        </button>
+                    </form>
+                    <form th:if="${transfer.status.name() == 'DRAFT'}"
+                          th:action="@{/inventory/transfers/{id}/cancel(id=${transfer.id})}" method="post">
+                        <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                               th:placeholder="#{inv.trf.cancelReason}">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-x-circle"/></svg>
+                            <span th:text="#{inv.trf.cancel}">Cancel transfer</span>
+                        </button>
+                    </form>
+                    <form th:if="${!transfer.completed and transfer.status.name() != 'VOID'}"
+                          th:action="@{/inventory/transfers/{id}/delete(id=${transfer.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{common.delete}">Delete</span>
+                        </button>
+                    </form>
+                    <div class="form-hint" th:text="#{inv.trf.voidHint}">Voiding moves the stock back and writes a reversing entry for anything written off. The original movements stay where they are.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

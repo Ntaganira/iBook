@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.trf.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/transfers}" th:text="#{inv.trf.title}">Stock Transfers</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.trf.form.breadcrumb}">New transfer</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.trf.form.title}">New Stock Transfer</h1>
+            <p class="page-subtitle" th:utext="#{inv.trf.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/inventory/transfers}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="transferForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{inv.trf.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="transferForm" name="completeNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{inv.trf.saveComplete}">Save and move stock</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="transferForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/inventory/transfers/{id}(id=${editingId})} : @{/inventory/transfers}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.trf.details}">Transfer details</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="trfFrom"><span th:text="#{inv.trf.from}">From location</span> <span class="required">*</span></label>
+                                <select class="form-control" id="trfFrom" name="fromWarehouseId" required>
+                                    <option value="" th:text="#{inv.trf.selectWarehouse}">Select a location…</option>
+                                    <option th:each="w : ${warehouses}" th:value="${w.id}" th:text="${w.name}"
+                                            th:selected="${form.fromWarehouseId != null and form.fromWarehouseId == w.id}">Main store</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('fromWarehouseId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="trfTo"><span th:text="#{inv.trf.to}">To location</span> <span class="required">*</span></label>
+                                <select class="form-control" id="trfTo" name="toWarehouseId" required>
+                                    <option value="" th:text="#{inv.trf.selectWarehouse}">Select a location…</option>
+                                    <option th:each="w : ${warehouses}" th:value="${w.id}" th:text="${w.name}"
+                                            th:selected="${form.toWarehouseId != null and form.toWarehouseId == w.id}">Branch</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('toWarehouseId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="trfDate"><span th:text="#{common.date}">Date</span> <span class="required">*</span></label>
+                                <input class="form-control" id="trfDate" name="transferDate" type="date"
+                                       th:value="${form.transferDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('transferDate')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="trfRef" th:text="#{common.reference}">Reference</label>
+                                <input class="form-control" id="trfRef" name="reference" type="text"
+                                       th:value="${form.reference}" th:placeholder="#{inv.trf.referencePlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 th:text="#{inv.trf.lineItems}">Items to move</h3>
+                            <p class="text-sm text-muted" th:text="#{inv.trf.linesHint}">Leave "received" empty when everything arrives.</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" type="button" id="addLineBtn">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
+                            <span th:text="#{inv.trf.addItem}">Add item</span>
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table" id="transferLinesTable">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{inv.prod.title}">Product</th>
+                                    <th class="num" th:text="#{inv.trf.available}">At source</th>
+                                    <th class="num" th:text="#{inv.trf.sent}">Sent</th>
+                                    <th class="num" th:text="#{inv.trf.received}">Received</th>
+                                    <th class="num" th:text="#{inv.mv.unitCost}">Unit cost</th>
+                                    <th class="num" th:text="#{inv.trf.value}">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="line, st : ${form.lines}">
+                                    <td>
+                                        <select class="form-control form-control--sm product-select"
+                                                th:name="'lines[' + ${st.index} + '].productId'">
+                                            <option value="" data-cost="" th:text="#{inv.trf.selectProduct}">Select a product…</option>
+                                            <option th:each="p : ${products}" th:value="${p.id}"
+                                                    th:attr="data-cost=${p.costPrice},data-unit=${p.unit}"
+                                                    th:text="${p.sku + ' — ' + p.name}"
+                                                    th:selected="${line.productId != null and line.productId == p.id}">SKU</option>
+                                        </select>
+                                    </td>
+                                    <td class="num cell-secondary available-cell">—</td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control sent-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].quantitySent'" th:value="${line.quantitySent}" placeholder="0">
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control received-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].quantityReceived'" th:value="${line.quantityReceived}"
+                                               th:placeholder="#{inv.trf.allArrived}">
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control cost-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].unitCost'" th:value="${line.unitCost}" placeholder="0">
+                                    </td>
+                                    <td class="num money line-value">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.trf.notes}">Notes</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <textarea class="form-control" name="notes" rows="2"
+                                      th:text="${form.notes}" th:placeholder="#{inv.trf.notesPlaceholder}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.trf.totals}">Totals</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.trf.sent}">Sent</span>
+                            <span id="sumSent" th:text="${#numbers.formatDecimal(form.totalSent(), 1, 2)}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.trf.received}">Received</span>
+                            <span id="sumReceived" th:text="${#numbers.formatDecimal(form.totalReceived(), 1, 2)}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.trf.shortfall}">Lost in transit</span>
+                            <span id="sumShort" class="text-error">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
+                            <span th:text="#{inv.trf.writeOff}">To write off</span>
+                            <span class="money" id="sumWriteOff">0.00</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-hint" th:text="#{inv.trf.ledgerHint}">A transfer does not reach the ledger. Only stock that fails to arrive is posted, as a write-off from inventory to cost of sales.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script th:inline="javascript">
+        (function () {
+            var currency = /*[[${baseCurrency}]]*/ 'RWF';
+            // {productId: {warehouseId: quantity}} — stock without a location counts at the default.
+            var stock = /*[[${onHand}]]*/ {};
+            var table = document.getElementById('transferLinesTable');
+            var fromSelect = document.getElementById('trfFrom');
+
+            function num(input) {
+                var v = parseFloat(input && input.value);
+                return isNaN(v) ? 0 : v;
+            }
+
+            function availableFor(productId) {
+                var from = fromSelect && fromSelect.value;
+                if (!productId || !from) {
+                    return null;
+                }
+                var perWarehouse = stock[productId];
+                if (!perWarehouse) {
+                    return 0;
+                }
+                var qty = perWarehouse[from];
+                return qty === undefined || qty === null ? 0 : parseFloat(qty);
+            }
+
+            function recalc() {
+                var sent = 0;
+                var received = 0;
+                var writeOff = 0;
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    var select = row.querySelector('.product-select');
+                    var sentInput = row.querySelector('.sent-input');
+                    var receivedInput = row.querySelector('.received-input');
+                    var costInput = row.querySelector('.cost-input');
+                    var s = num(sentInput);
+                    var r = receivedInput && receivedInput.value === '' ? s : num(receivedInput);
+                    var c = num(costInput);
+                    sent += s;
+                    received += r;
+                    if (s > r) {
+                        writeOff += (s - r) * c;
+                    }
+                    var valueCell = row.querySelector('.line-value');
+                    if (valueCell) {
+                        valueCell.textContent = (s * c).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                    var availCell = row.querySelector('.available-cell');
+                    if (availCell) {
+                        var avail = availableFor(select && select.value);
+                        if (avail === null) {
+                            availCell.textContent = '—';
+                            availCell.classList.remove('text-error');
+                        } else {
+                            availCell.textContent = avail.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            availCell.classList.toggle('text-error', s > avail);
+                        }
+                    }
+                });
+                document.getElementById('sumSent').textContent = sent.toFixed(2);
+                document.getElementById('sumReceived').textContent = received.toFixed(2);
+                document.getElementById('sumShort').textContent = (sent - received).toFixed(2);
+                document.getElementById('sumWriteOff').textContent =
+                    currency + ' ' + writeOff.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+
+            document.addEventListener('input', function (event) {
+                if (event.target.closest('#transferLinesTable')) {
+                    recalc();
+                }
+            });
+
+            document.addEventListener('change', function (event) {
+                if (event.target === fromSelect) {
+                    recalc();
+                }
+                if (event.target.classList && event.target.classList.contains('product-select')) {
+                    var row = event.target.closest('tr');
+                    var opt = event.target.options[event.target.selectedIndex];
+                    var cost = row && row.querySelector('.cost-input');
+                    if (cost && !cost.value && opt) {
+                        cost.value = opt.getAttribute('data-cost') || '';
+                    }
+                    recalc();
+                }
+            });
+
+            document.getElementById('addLineBtn').addEventListener('click', function () {
+                var tbody = table.querySelector('tbody');
+                var index = tbody.querySelectorAll('tr').length;
+                var template = tbody.querySelector('select.product-select');
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td><select class="form-control form-control--sm product-select" name="lines[' + index + '].productId"></select></td>' +
+                    '<td class="num cell-secondary available-cell">—</td>' +
+                    '<td><input class="form-control form-control--sm amount-control sent-input" type="number" step="0.01" min="0" name="lines[' + index + '].quantitySent" placeholder="0"></td>' +
+                    '<td><input class="form-control form-control--sm amount-control received-input" type="number" step="0.01" min="0" name="lines[' + index + '].quantityReceived"></td>' +
+                    '<td><input class="form-control form-control--sm amount-control cost-input" type="number" step="0.01" min="0" name="lines[' + index + '].unitCost" placeholder="0"></td>' +
+                    '<td class="num money line-value">0.00</td>';
+                tbody.appendChild(tr);
+                var select = tr.querySelector('select.product-select');
+                if (template && select) {
+                    Array.prototype.slice.call(template.options).forEach(function (opt) {
+                        var copy = new Option(opt.text, opt.value);
+                        ['data-cost', 'data-unit'].forEach(function (a) {
+                            copy.setAttribute(a, opt.getAttribute(a) || '');
+                        });
+                        select.appendChild(copy);
+                    });
+                }
+                recalc();
+            });
+
+            recalc();
+        })();
+    </script>
+
+</main>
+</body>
+</html>

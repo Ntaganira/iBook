@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**63 / 115 mapped · 52 remaining**
+**64 / 115 mapped · 51 remaining**
 
 How to check progress yourself:
 
@@ -61,7 +61,10 @@ Reads tables that already exist. All seven done.
 - [x] `/inventory/valuation` — at standard cost, as-of date
 - [ ] `/inventory/brands` — currently a free-text field on Product; needs its own entity
 - [ ] `/inventory/bundles` — needs `ProductBundle` + components
-- [ ] `/inventory/transfers` — `TRANSFER_IN`/`TRANSFER_OUT` exist; needs a paired-movement screen
+- [x] `/inventory/transfers` — draft/complete/cancel/void, paired `TRANSFER_OUT`/`TRANSFER_IN`
+      movements at the two locations, per-location stock check before the stock moves. The move
+      itself is non-posting; only stock that fails to arrive is written off from Inventory (1301)
+      to Cost of sales (5200). Voiding writes mirror movements plus a reversing entry.
 - [ ] `/inventory/counts` — needs `StockCount` + count lines
 - [x] **Products linked to invoice and bill lines** — picker with autofill; posting now moves stock
       and applies perpetual inventory (see Known issues for the accounting change)
@@ -190,6 +193,40 @@ Building these without the external piece produces a page that cannot work.
       (`/taxes/withholding`, Tier 3). Contractors are also linked to spend only through an optional
       supplier record, so an unlinked contractor shows no history, and a supplier shared by two
       contractors would show the same bills under both.
+- [ ] **Every money figure in the app is missing its thousands separators.** Thymeleaf's four-argument
+      `#numbers.formatDecimal(x, 1, 2, 'COMMA')` reads as *(value, minIntegerDigits, decimalDigits,
+      **decimalPointType**)* — so `'COMMA'` sets the **decimal point** to a comma and asks for no
+      grouping at all. `RWF 1510000.00` renders as `RWF 1510000,00`, and the `, 1, 0, 'COMMA')`
+      variant renders `RWF 1510000` flat. Confirmed live against known values. Grouping needs the
+      five-argument form, `#numbers.formatDecimal(x, 1, 'COMMA', 2, 'POINT')`. There are **357
+      occurrences across 57 templates**; the three `/inventory/transfers` templates have been
+      corrected, the rest have not. Note the grouped figures that do appear on screen (`RWF
+      1,250,000` and friends) are static placeholder markup in the command-palette fragment, not
+      formatted values — they are not evidence that anything works.
+- [ ] **`WarehouseForm` confirmed as a second instance of the record/primitive-`boolean` bug.**
+      Posting `/inventory/warehouses` with `active=true` but no `defaultLocation` silently
+      re-rendered the form with a 200 and saved nothing; sending both booleans saved normally. That
+      makes two of the sixteen record forms reproduced — `VendorForm` (500) and `WarehouseForm`
+      (silent no-op). Both still unfixed.
+- [ ] **Stock has no real location until a transfer gives it one.** `Invoice`, `Bill` and
+      `CreditNote` all write their stock movements with a null `warehouseId` — none of those forms
+      asks for a location. `StockTransferService.onHandByWarehouse` therefore counts every
+      warehouse-less movement at the **default** warehouse, because otherwise stock bought on a bill
+      would be invisible to every location and no transfer could be raised against it. Consequences:
+      per-location stock is only as good as that assumption, a site with no default warehouse set
+      shows nothing anywhere, and the company-wide figure on `/inventory/valuation` is unaffected
+      either way. The real fix is a location picker on bill and invoice lines.
+- [ ] **No `TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now
+      adds `TRF-`, but it returns early when any sequence exists, so databases predating this get a
+      random fallback like `TRF-2026-11501`. Add the row at `/settings/numbering` — same class of
+      drift as the missing `ESTIMATE` sequence and the missing 1402 and 5200 accounts.
+- [ ] **A transfer is a single step, and stock in transit is nobody's.** There is no shipped-but-not-
+      yet-received state: completing a transfer writes both movements at once. Modelling goods in
+      transit properly needs a goods-in-transit account (there is no `1302`), which is a chart-of-
+      accounts decision, not one to make silently. The shortfall is also recorded only as the gap
+      between the paired movements plus its journal entry — there is no separate `WRITE_OFF`
+      movement row, so the movement log shows `TRANSFER_OUT 10` against `TRANSFER_IN 8` rather than
+      an explicit loss line.
 - [ ] **Recurring invoices repeat a fixed price, and auto-posting has no guard rail.** A schedule
       stores its lines once; a price rise, a new VAT rate or a product cost change is picked up only
       by editing the schedule, and editing it affects future invoices only — invoices already raised
@@ -243,7 +280,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,562 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,640 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

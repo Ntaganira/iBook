@@ -37,6 +37,8 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
 
     List<StockMovement> findByProductIdOrderByMovementDateAscIdAsc(Long productId);
 
+    List<StockMovement> findByReferenceOrderByIdAsc(String reference);
+
     /** Signed quantity on hand per product, as of a date. */
     @Query("select m.productId, "
             + "coalesce(sum(case when m.movementType in "
@@ -47,6 +49,22 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
             + "  then m.quantity else -m.quantity end), 0) "
             + "from StockMovement m where m.movementDate <= :asOf group by m.productId")
     List<Object[]> onHandByProduct(@Param("asOf") LocalDate asOf);
+
+    /**
+     * Signed quantity on hand per product and location, as of a date. Movements with no location —
+     * every invoice, bill and credit note line — come back under a null warehouse id, which the
+     * caller has to attribute somewhere.
+     */
+    @Query("select m.productId, m.warehouseId, "
+            + "coalesce(sum(case when m.movementType in "
+            + "  (com.ntaganira.heritier.ibook.enums.MovementType.OPENING, "
+            + "   com.ntaganira.heritier.ibook.enums.MovementType.PURCHASE, "
+            + "   com.ntaganira.heritier.ibook.enums.MovementType.ADJUSTMENT_IN, "
+            + "   com.ntaganira.heritier.ibook.enums.MovementType.TRANSFER_IN) "
+            + "  then m.quantity else -m.quantity end), 0) "
+            + "from StockMovement m where m.movementDate <= :asOf "
+            + "group by m.productId, m.warehouseId")
+    List<Object[]> onHandByProductAndWarehouse(@Param("asOf") LocalDate asOf);
 
     long countByProductId(Long productId);
 }

@@ -381,6 +381,7 @@ SecuritySettingsRepository securitySettingsRepository,
         seq(repository, "Purchase Orders", "PURCHASE_ORDER", "PO-", null, 4, 1, true);
         seq(repository, "Credit Notes", "CREDIT_NOTE", "CN-", null, 4, 1, true);
         seq(repository, "Expenses", "EXPENSE", "EXP-", null, 4, 1, true);
+        seq(repository, "Stock Transfers", "TRANSFER", "TRF-", null, 4, 1, true);
         seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }
 
