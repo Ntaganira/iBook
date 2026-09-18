@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.title}">Asset Register</h1>
+            <p class="page-subtitle" th:text="#{ast.subtitle}">What the business owns, and what it is still worth.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/assets/register/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{ast.new}">New asset</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${accountsMissing}">
+        <svg class="ebook-icon"><use href="#icon-alert-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.accountsMissingTitle}">Accounts missing</div>
+            <span th:text="#{ast.accountsMissingHint}">One of 1501, 1509 or 5006 is not in the chart of accounts. Add them before depreciation is posted.</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/assets/register}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{ast.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/register(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{ast.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/register(status='ACTIVE')}" th:classappend="${status == 'ACTIVE'} ? 'active'">
+            <span th:text="#{ast.status.active}">In service</span> <span class="tab-count" th:text="${summary.active}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/register(status='DISPOSED')}" th:classappend="${status == 'DISPOSED'} ? 'active'">
+            <span th:text="#{ast.retired}">Retired</span> <span class="tab-count" th:text="${summary.retired}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.totalCost}">At cost</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalCost, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.totalAccumulated}">Written down so far</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalAccumulated, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.netBookValue}">Net book value</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.netBookValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary" th:text="#{ast.nbvHint}">Draft and in-service assets</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.status.active}">In service</div>
+            <div class="stat-tile-value" th:text="${summary.active}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/assets/register}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{ast.searchPlaceholder}">
+            </div>
+            <div class="dropdown" th:if="${!#lists.isEmpty(categories)}">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{ast.category}">Category</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{ast.category}">Category</div>
+                    <a class="dropdown-item" th:href="@{/assets/register}" th:text="#{ast.all}">All</a>
+                    <a class="dropdown-item" th:each="c : ${categories}"
+                       th:href="@{/assets/register(category=${c})}" th:text="${c}">Category</a>
+                </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/assets/register}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(assets.content)}, ${assets.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'assetNo', #{ast.assetNo}, ${sort}, ${dir})}">Number</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{common.name}, ${sort}, ${dir})}">Asset</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'category', #{ast.category}, ${sort}, ${dir})}">Category</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'acquisitionDate', #{ast.acquired}, ${sort}, ${dir})}">Acquired</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'acquisitionCost', #{ast.cost}, ${sort}, ${dir})}">Cost</th>
+                        <th class="num" th:text="#{ast.accumulated}">Depreciated</th>
+                        <th class="num" th:text="#{ast.netBookValue}">Net book value</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="a : ${assets.content}">
+                        <td class="mono">
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${a.id})}" th:text="${a.assetNo}">FA-0001</a>
+                        </td>
+                        <td>
+                            <span th:text="${a.name}">Asset</span>
+                            <span class="cell-secondary" th:if="${a.location != null}" th:text="${a.location}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${a.category != null ? a.category : '—'}">—</td>
+                        <td class="cell-secondary" th:text="${#temporals.format(a.acquisitionDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td class="num money"
+                            th:text="${#numbers.formatDecimal(a.acquisitionCost, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money"
+                            th:text="${#numbers.formatDecimal(a.accumulatedDepreciation, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" th:classappend="${a.fullyDepreciated} ? 'text-muted'"
+                            th:text="${#numbers.formatDecimal(a.netBookValue, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td th:with="st=${a.status.name()}">
+                            <span class="badge" th:classappend="${st == 'ACTIVE' ? 'badge-active' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/assets/register/{id}(id=${a.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:if="${a.editable}" th:href="@{/assets/register/{id}/edit(id=${a.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:if="${a.status.name() == 'DRAFT'}" th:action="@{/assets/register/{id}/activate(id=${a.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{ast.activate}">Put into service</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(assets.content)}">
+                        <td class="table-empty" colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-package"/></svg></div>
+                                <p class="text-secondary" th:text="#{ast.none}">Nothing in the register yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/assets/register/new}" th:text="#{ast.new}">New asset</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${assets.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(assets.content)}, ${assets.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${assets.number + 1}, ${assets.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{ast.ledgerHint}">The register does not post. Whatever bill or expense bought the asset already put it in the books, and depreciation reaches the ledger only when it is charged at Depreciation.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

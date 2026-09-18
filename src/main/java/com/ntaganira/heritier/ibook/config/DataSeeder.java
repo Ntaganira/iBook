@@ -383,6 +383,7 @@ SecuritySettingsRepository securitySettingsRepository,
         seq(repository, "Expenses", "EXPENSE", "EXP-", null, 4, 1, true);
         seq(repository, "Stock Transfers", "TRANSFER", "TRF-", null, 4, 1, true);
         seq(repository, "Stock Counts", "STOCK_COUNT", "SC-", null, 4, 1, true);
+        seq(repository, "Fixed Assets", "FIXED_ASSET", "FA-", null, 4, 1, false);
         seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }
 

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/register}" th:text="#{ast.title}">Asset Register</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.form.breadcrumb}">New asset</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.form.title}">New Asset</h1>
+            <p class="page-subtitle" th:utext="#{ast.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/assets/register}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="assetForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{ast.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="assetForm" name="activateNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{ast.saveActivate}">Save and put into service</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="assetForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/assets/register/{id}(id=${editingId})} : @{/assets/register}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.details}">What it is</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="aName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="aName" name="name" type="text"
+                                       th:value="${form.name}" th:placeholder="#{ast.namePlaceholder}" required>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aCategory" th:text="#{ast.category}">Category</label>
+                                <input class="form-control" id="aCategory" name="category" type="text"
+                                       th:value="${form.category}" list="assetCategories"
+                                       th:placeholder="#{ast.categoryPlaceholder}">
+                                <datalist id="assetCategories">
+                                    <option th:each="c : ${categories}" th:value="${c}"></option>
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aLocation" th:text="#{ast.location}">Where it is</label>
+                                <input class="form-control" id="aLocation" name="location" type="text"
+                                       th:value="${form.location}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aSerial" th:text="#{ast.serialNumber}">Serial number</label>
+                                <input class="form-control" id="aSerial" name="serialNumber" type="text"
+                                       th:value="${form.serialNumber}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aTag" th:text="#{ast.tagNumber}">Tag number</label>
+                                <input class="form-control" id="aTag" name="tagNumber" type="text"
+                                       th:value="${form.tagNumber}">
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="aDesc" th:text="#{common.description}">Description</label>
+                                <input class="form-control" id="aDesc" name="description" type="text"
+                                       th:value="${form.description}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.acquisition}">How it was bought</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="aDate"><span th:text="#{ast.acquired}">Acquired on</span> <span class="required">*</span></label>
+                                <input class="form-control" id="aDate" name="acquisitionDate" type="date"
+                                       th:value="${form.acquisitionDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('acquisitionDate')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aCost"><span th:text="#{ast.cost}">Cost</span> <span class="required">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                                    <input class="form-control amount-control" id="aCost" name="acquisitionCost"
+                                           type="number" step="0.01" min="0" th:value="${form.acquisitionCost}" required>
+                                </div>
+                                <div th:replace="~{layout/common :: fieldError('acquisitionCost')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aVendor" th:text="#{ast.vendor}">Bought from</label>
+                                <select class="form-control" id="aVendor" name="vendorId">
+                                    <option value="" th:text="#{ast.noVendor}">Not recorded</option>
+                                    <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"
+                                            th:selected="${form.vendorId != null and form.vendorId == v.id}">Supplier</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aRef" th:text="#{ast.purchaseReference}">Bill or expense reference</label>
+                                <input class="form-control" id="aRef" name="purchaseReference" type="text"
+                                       th:value="${form.purchaseReference}" th:placeholder="#{ast.purchaseRefPlaceholder}">
+                                <div class="form-hint" th:text="#{ast.purchaseRefHint}">The register does not post — this is a pointer to the document that did.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.depreciation}">How it is written down</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="aMethod" th:text="#{ast.method}">Method</label>
+                                <select class="form-control" id="aMethod" name="depreciationMethod">
+                                    <option th:each="e : ${methodLabels}" th:value="${e.key}" th:text="${e.value}"
+                                            th:selected="${form.depreciationMethod == e.key}">Straight line</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aLife" th:text="#{ast.usefulLife}">Useful life (years)</label>
+                                <input class="form-control amount-control" id="aLife" name="usefulLifeYears"
+                                       type="number" step="1" min="0" th:value="${form.usefulLifeYears}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aRate" th:text="#{ast.decliningRate}">Reducing balance rate %</label>
+                                <input class="form-control amount-control" id="aRate" name="decliningRate"
+                                       type="number" step="0.01" min="0" max="100" th:value="${form.decliningRate}">
+                                <div class="form-hint" th:text="#{ast.decliningRateHint}">Used by reducing balance only.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aResidual" th:text="#{ast.residualValue}">Residual value</label>
+                                <div class="input-group">
+                                    <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                                    <input class="form-control amount-control" id="aResidual" name="residualValue"
+                                           type="number" step="0.01" min="0" th:value="${form.residualValue}">
+                                </div>
+                                <div class="form-hint" th:text="#{ast.residualHint}">Never written down below this.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aStart" th:text="#{ast.depreciationStart}">Depreciation starts</label>
+                                <input class="form-control" id="aStart" name="depreciationStart" type="date"
+                                       th:value="${form.depreciationStart}">
+                                <div th:replace="~{layout/common :: fieldError('depreciationStart')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aOpening" th:text="#{ast.openingAccumulated}">Already depreciated</label>
+                                <div class="input-group">
+                                    <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                                    <input class="form-control amount-control" id="aOpening" name="openingAccumulated"
+                                           type="number" step="0.01" min="0" th:value="${form.openingAccumulated}">
+                                </div>
+                                <div class="form-hint" th:text="#{ast.openingHint}">For an asset that was already part-written-down when it was entered here.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.accounts}">Accounts</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="aAssetAcct" th:text="#{ast.assetAccount}">Asset sits in</label>
+                            <select class="form-control" id="aAssetAcct" name="assetAccountId">
+                                <option value="" th:text="#{ast.accountDefault}">Use the default</option>
+                                <option th:each="a : ${assetAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}"
+                                        th:selected="${form.assetAccountId != null and form.assetAccountId == a.id}">1501</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="aAccAcct" th:text="#{ast.accumulatedAccount}">Accumulated depreciation</label>
+                            <select class="form-control" id="aAccAcct" name="accumulatedAccountId">
+                                <option value="" th:text="#{ast.accountDefault}">Use the default</option>
+                                <option th:each="a : ${assetAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}"
+                                        th:selected="${form.accumulatedAccountId != null and form.accumulatedAccountId == a.id}">1509</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="aExpAcct" th:text="#{ast.expenseAccount}">Depreciation expense</label>
+                            <select class="form-control" id="aExpAcct" name="expenseAccountId">
+                                <option value="" th:text="#{ast.accountDefault}">Use the default</option>
+                                <option th:each="a : ${expenseAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}"
+                                        th:selected="${form.expenseAccountId != null and form.expenseAccountId == a.id}">5006</option>
+                            </select>
+                        </div>
+                        <div class="form-hint" th:text="#{ast.accountsHint}">These are remembered for when depreciation is charged. Nothing is posted from here.</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.notes}">Notes</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <textarea class="form-control" name="notes" rows="3"
+                                      th:text="${form.notes}" th:placeholder="#{ast.notesPlaceholder}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

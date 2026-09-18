@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**67 / 115 mapped · 48 remaining**
+**68 / 115 mapped · 47 remaining**
 
 How to check progress yourself:
 
@@ -112,7 +112,15 @@ Reads tables that already exist. All seven done.
 ### Fixed assets (6)
 `FixedAsset`, `DepreciationEntry`. Depreciation posts to the GL — mirrors the invoice posting pattern.
 
-- [ ] `/assets/register` · `/assets/categories` · `/assets/locations`
+- [x] `/assets/register` — draft/in-service, straight-line and reducing-balance schedules, residual
+      value, opening accumulated depreciation for assets entered part-way through their life, and
+      per-asset account choices (defaults 1501 / 1509 / 5006). **Non-posting**: the bill or expense
+      that bought the asset already put it in the books, so registering it again would double-count.
+      The schedule and the "due but not yet posted" figure are worked out for `/assets/depreciation`
+      to charge.
+- [ ] `/assets/categories` · `/assets/locations` — both free text on `FixedAsset` today; promote the
+      way brands were promoted
+  
 - [ ] `/assets/depreciation` · `/assets/disposals` · `/assets/transfers`
 
 ### Projects (7)
@@ -240,6 +248,18 @@ Building these without the external piece produces a page that cannot work.
       sold as overwrites that product's cost price with the roll-up, which is wrong if the product
       was already stocked and priced in its own right. Pick a product that exists only to be the
       bundle.
+- [ ] **Nothing reconciles the asset register against the ledger.** The register is deliberately
+      non-posting, so an asset can sit in it at a cost that no longer matches account 1501, or be
+      missing entirely while 1501 carries its value. `openingAccumulated` is likewise typed in by
+      hand and never checked against 1509 — the seeded chart already carries −110,000 on 1509 that
+      belongs to no registered asset. A reconciliation screen comparing the register's totals to
+      1501/1509 is worth building before the register is trusted for a balance sheet.
+- [ ] **Asset depreciation is worked out but never charged.** `/assets/register` computes the
+      schedule and the "due but not yet posted" figure; only `/assets/depreciation` will write
+      `Dr 5006 / Cr 1509`. Until that route exists, `postedAccumulated` stays at zero for every asset
+      and net book value on the register equals cost less whatever opening balance was typed in.
+      Straight line and reducing balance both prorate by **whole months** within a year, so an asset
+      acquired mid-month earns nothing for the part month.
 - [ ] **Selling a bundle does not explode it into components.** A bundle has to be assembled before
       it can be sold; invoicing the bundle product without assembling drives its stock negative
       rather than depleting the parts. Making a sale explode the recipe would mean teaching
@@ -265,10 +285,10 @@ Building these without the external piece produces a page that cannot work.
       means one sheet per location, and stock that arrived without a location sits at the default
       warehouse (see below), which is where its variance will be posted.
 - [ ] **No `STOCK_COUNT` or `TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now
-      adds `TRF-` and `SC-`, but it returns early when any sequence exists, so databases predating
-      them get random fallbacks like `TRF-2026-11501` and `SC-2026-53104`. Add both rows at
-      `/settings/numbering` — same class of drift as the missing `ESTIMATE` sequence and the missing
-      1402 and 5200 accounts.
+      adds `TRF-`, `SC-` and `FA-`, but it returns early when any sequence exists, so databases
+      predating them get random fallbacks — observed live: `TRF-2026-53659`, `SC-2026-29322` and
+      `FA-2026-00948`. Add all three rows at `/settings/numbering` — same class of drift as the
+      missing `ESTIMATE` sequence and the missing 1402 and 5200 accounts.
 - [ ] **A transfer is a single step, and stock in transit is nobody's.** There is no shipped-but-not-
       yet-received state: completing a transfer writes both movements at once. Modelling goods in
       transit properly needs a goods-in-transit account (there is no `1302`), which is a chart-of-
@@ -329,7 +349,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,827 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,916 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

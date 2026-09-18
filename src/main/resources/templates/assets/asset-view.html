@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${asset.assetNo}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/register}" th:text="#{ast.title}">Asset Register</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${asset.assetNo}">FA-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${asset.name}">Asset</h1>
+            <p class="page-subtitle">
+                <span class="mono" th:text="${asset.assetNo}">FA-0001</span>
+                <span th:if="${asset.category != null}" th:text="' · ' + ${asset.category}"></span>
+                <span th:if="${asset.location != null}" th:text="' · ' + ${asset.location}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="st=${asset.status.name()}">
+            <span class="badge"
+                  th:classappend="${st == 'ACTIVE' ? 'badge-active' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning')}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+            </span>
+            <a class="btn btn-secondary" th:if="${asset.editable}"
+               th:href="@{/assets/register/{id}/edit(id=${asset.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{ast.view.edit}">Edit asset</span>
+            </a>
+            <form th:if="${st == 'DRAFT'}" th:action="@{/assets/register/{id}/activate(id=${asset.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{ast.activate}">Put into service</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${position.isBehind()}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.behindTitle}">Depreciation not yet charged</div>
+            <span th:text="#{ast.behindHint(${baseCurrency + ' ' + #numbers.formatDecimal(position.notYetPosted, 1, 'COMMA', 2, 'POINT')})}">RWF 0.00 is due but has not been posted.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${asset.fullyDepreciated}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.fullyTitle}">Fully written down</div>
+            <span th:text="#{ast.fullyHint}">Nothing further will be charged. It stays in the register until it is disposed of.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.cost}">Cost</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(asset.acquisitionCost, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary" th:text="${#temporals.format(asset.acquisitionDate, 'dd MMM yyyy')}">01 Jan 2026</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.accumulated}">Written down so far</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(position.charged, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary" th:text="#{ast.dueToDate(${baseCurrency + ' ' + #numbers.formatDecimal(position.dueToDate, 1, 'COMMA', 0, 'POINT')})}">RWF 0 due</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.netBookValue}">Net book value</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(position.netBookValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.method}">Method</div>
+            <div class="stat-tile-value" th:text="${methodLabels.get(asset.depreciationMethod.name())}">Straight line</div>
+            <div class="cell-secondary" th:if="${asset.usefulLifeYears > 0}"
+                 th:text="#{ast.overYears(${asset.usefulLifeYears})}">over 5 years</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{ast.schedule}">Depreciation schedule</h3>
+                    <span class="text-sm text-muted" th:text="#{ast.scheduleHint}">Worked out, not posted</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{ast.year}">Year</th>
+                                <th th:text="#{ast.period}">Period</th>
+                                <th class="num" th:text="#{ast.openingNbv}">Opening value</th>
+                                <th class="num" th:text="#{ast.charge}">Charge</th>
+                                <th class="num" th:text="#{ast.accumulated}">Accumulated</th>
+                                <th class="num" th:text="#{ast.closingNbv}">Closing value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${schedule}">
+                                <td th:text="${r.year}">1</td>
+                                <td class="cell-secondary"
+                                    th:text="${#temporals.format(r.periodStart, 'dd MMM yyyy') + ' — ' + #temporals.format(r.periodEnd, 'dd MMM yyyy')}">2026</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(r.openingNbv, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(r.charge, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(r.accumulated, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(r.closingNbv, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(schedule)}">
+                                <td class="table-empty" colspan="6">
+                                    <p class="text-secondary" th:text="#{ast.noSchedule}">This asset is not depreciated.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-body">
+                    <div class="form-hint" th:text="#{ast.ledgerHint}">The register does not post. Depreciation reaches the ledger only when it is charged at Depreciation.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{ast.details}">Details</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.residualValue}">Residual value</span>
+                        <span class="money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(asset.residualValue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.depreciationStart}">Depreciation starts</span>
+                        <span th:text="${#temporals.format(asset.depreciationStart, 'dd MMM yyyy')}">01 Jan 2026</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${asset.decliningRate.signum() > 0}">
+                        <span class="text-muted" th:text="#{ast.decliningRate}">Reducing balance rate</span>
+                        <span th:text="${#numbers.formatDecimal(asset.decliningRate, 1, 2)} + '%'">0.00%</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.vendor}">Bought from</span>
+                        <a class="cell-link" th:if="${asset.vendorId != null}"
+                           th:href="@{/vendors/{id}(id=${asset.vendorId})}" th:text="${asset.vendorName}">Supplier</a>
+                        <span th:if="${asset.vendorId == null}" th:text="#{ast.noVendor}">Not recorded</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.purchaseReference}">Purchase reference</span>
+                        <span th:text="${asset.purchaseReference != null ? asset.purchaseReference : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.serialNumber}">Serial number</span>
+                        <span th:text="${asset.serialNumber != null ? asset.serialNumber : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.tagNumber}">Tag number</span>
+                        <span th:text="${asset.tagNumber != null ? asset.tagNumber : '—'}">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{ast.accounts}">Accounts</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.assetAccount}">Asset sits in</span>
+                        <span class="mono" th:text="${asset.assetAccountCode != null ? asset.assetAccountCode : '—'}">1501</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.accumulatedAccount}">Accumulated depreciation</span>
+                        <span class="mono" th:text="${asset.accumulatedAccountCode != null ? asset.accumulatedAccountCode : '—'}">1509</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.expenseAccount}">Depreciation expense</span>
+                        <span class="mono" th:text="${asset.expenseAccountCode != null ? asset.expenseAccountCode : '—'}">5006</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${asset.notes != null}">
+                <div class="card-header"><h3 th:text="#{ast.notes}">Notes</h3></div>
+                <div class="card-body"><p class="text-sm" th:text="${asset.notes}"></p></div>
+            </div>
+
+            <div class="card" th:if="${asset.status.name() == 'DRAFT'}">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body">
+                    <form th:action="@{/assets/register/{id}/delete(id=${asset.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{common.delete}">Delete</span>
+                        </button>
+                    </form>
+                    <div class="form-hint mt-2" th:text="#{ast.deleteHint}">Only a draft asset can be deleted. Once it is in service, retire it through Disposals instead.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
