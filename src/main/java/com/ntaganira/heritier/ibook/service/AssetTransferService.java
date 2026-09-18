@@ -189,6 +189,8 @@ public class AssetTransferService {
                 : accountRepository.findById(form.toAssetAccountId()).orElse(fromAsset);
         Account toAccumulated = form.toAccumulatedAccountId() == null ? fromAccumulated
                 : accountRepository.findById(form.toAccumulatedAccountId()).orElse(fromAccumulated);
+        requireAssetAccount(toAsset);
+        requireAssetAccount(toAccumulated);
 
         transfer.setFromAssetAccountId(fromAsset == null ? null : fromAsset.getId());
         transfer.setFromAssetAccountCode(fromAsset == null ? null : fromAsset.getCode());
@@ -217,6 +219,17 @@ public class AssetTransferService {
             }
         }
         return accountRepository.findByCodeIgnoreCase(fallbackCode).orElse(null);
+    }
+
+    /**
+     * The picker only offers asset accounts, but a hand-made request could name any of them, and
+     * moving an asset's cost into revenue posts a nonsense entry rather than failing.
+     */
+    private static void requireAssetAccount(Account account) {
+        if (account != null && account.getType() != AccountType.ASSET) {
+            throw new IllegalArgumentException(account.getCode() + " " + account.getName()
+                    + " is not an asset account");
+        }
     }
 
     // ----- Lifecycle -----
