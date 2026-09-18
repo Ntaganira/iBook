@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.dis.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/register}" th:text="#{ast.title}">Asset Register</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.dis.title}">Disposals</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.dis.title}">Asset Disposals</h1>
+            <p class="page-subtitle" th:text="#{ast.dis.subtitle}">Take an asset off the register and off the balance sheet.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/assets/disposals/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{ast.dis.new}">New disposal</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${accountsMissing}">
+        <svg class="ebook-icon"><use href="#icon-alert-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.dis.accountsMissingTitle}">No disposal gain or loss account</div>
+            <span th:text="#{ast.dis.accountsMissingHint}">4004 and 5007 are not in the chart of accounts, so a gain or loss has to be pointed at an account by hand on each disposal.</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/assets/disposals}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{ast.dis.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/disposals(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{ast.dis.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/disposals(status='POSTED')}" th:classappend="${status == 'POSTED'} ? 'active'">
+            <span th:text="#{ast.dis.status.posted}">Posted</span> <span class="tab-count" th:text="${summary.posted}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/disposals(status='VOID')}" th:classappend="${status == 'VOID'} ? 'active'">
+            <span th:text="#{ast.dis.status.void}">Voided</span> <span class="tab-count" th:text="${summary.voided}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dis.totalProceeds}">Proceeds</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalProceeds, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dis.netGainLoss}">Gain or loss</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${summary.totalGainOrLoss.signum() < 0} ? 'text-error' : 'text-positive'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalGainOrLoss, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary" th:text="#{ast.dis.netHint}">Posted disposals only</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dis.status.posted}">Posted</div>
+            <div class="stat-tile-value" th:text="${summary.posted}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.dis.status.draft}">Draft</div>
+            <div class="stat-tile-value" th:text="${summary.draft}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/assets/disposals}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{ast.dis.searchPlaceholder}">
+            </div>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/assets/disposals}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(disposals.content)}, ${disposals.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'disposalNo', #{ast.dis.disposal}, ${sort}, ${dir})}">Disposal</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'assetNo', #{ast.dis.asset}, ${sort}, ${dir})}">Asset</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'disposalDate', #{ast.dis.disposedOn}, ${sort}, ${dir})}">Disposed</th>
+                        <th th:text="#{ast.dis.method}">How</th>
+                        <th class="num" th:text="#{ast.dis.netBookValue}">Net book value</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'proceeds', #{ast.dis.proceeds}, ${sort}, ${dir})}">Proceeds</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'gainOrLoss', #{ast.dis.gainLoss}, ${sort}, ${dir})}">Gain / loss</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${disposals.content}">
+                        <td class="mono">
+                            <a class="cell-link" th:href="@{/assets/disposals/{id}(id=${d.id})}" th:text="${d.disposalNo}">DIS-0001</a>
+                        </td>
+                        <td>
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${d.assetId})}" th:text="${d.assetNo}">FA-0001</a>
+                            <span class="cell-secondary" th:text="${d.assetName}">Asset</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${#temporals.format(d.disposalDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td class="cell-secondary" th:text="${methodLabels.get(d.method.name())}">Sold</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.netBookValue, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.proceeds, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" th:classappend="${d.loss} ? 'text-error' : (${d.gain} ? 'text-positive' : '')"
+                            th:text="${#numbers.formatDecimal(d.gainOrLoss, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td th:with="st=${d.status.name()}">
+                            <span class="badge" th:classappend="${st == 'POSTED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : 'badge-muted')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/assets/disposals/{id}(id=${d.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <form th:if="${d.postable}" th:action="@{/assets/disposals/{id}/post(id=${d.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{ast.dis.post}">Post disposal</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(disposals.content)}">
+                        <td class="table-empty" colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-package"/></svg></div>
+                                <p class="text-secondary" th:text="#{ast.dis.none}">Nothing has been disposed of yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/assets/disposals/new}" th:text="#{ast.dis.new}">New disposal</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${disposals.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(disposals.content)}, ${disposals.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${disposals.number + 1}, ${disposals.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{ast.dis.ledgerHint}">Posting a disposal charges any depreciation still owed at the disposal date, reverses the cost and the accumulated depreciation out of the balance sheet, brings in the proceeds, and recognises whatever is left over as a gain or a loss.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

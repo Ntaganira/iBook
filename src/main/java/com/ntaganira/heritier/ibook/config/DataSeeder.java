@@ -385,6 +385,7 @@ SecuritySettingsRepository securitySettingsRepository,
         seq(repository, "Stock Counts", "STOCK_COUNT", "SC-", null, 4, 1, true);
         seq(repository, "Fixed Assets", "FIXED_ASSET", "FA-", null, 4, 1, false);
         seq(repository, "Depreciation Runs", "DEPRECIATION", "DEP-", null, 4, 1, false);
+        seq(repository, "Asset Disposals", "DISPOSAL", "DIS-", null, 4, 1, false);
         seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }
 
@@ -511,6 +512,7 @@ SecuritySettingsRepository securitySettingsRepository,
         account(repository, "4001", "Consulting services", AccountType.REVENUE, null, "0", true);
         account(repository, "4002", "Product sales", AccountType.REVENUE, null, "0", true);
         account(repository, "4003", "Interest income", AccountType.REVENUE, null, "0", true);
+        account(repository, "4004", "Gain on asset disposal", AccountType.REVENUE, null, "0", true);
         account(repository, "5000", "Operating expenses", AccountType.EXPENSE, null, "0", true);
         account(repository, "5001", "Rent expense", AccountType.EXPENSE, null, "0", true);
         account(repository, "5002", "Salaries & wages", AccountType.EXPENSE, null, "0", true);
@@ -518,6 +520,7 @@ SecuritySettingsRepository securitySettingsRepository,
         account(repository, "5004", "Travel & transport", AccountType.EXPENSE, null, "0", true);
         account(repository, "5005", "Office supplies", AccountType.EXPENSE, null, "0", true);
         account(repository, "5006", "Depreciation expense", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5007", "Loss on asset disposal", AccountType.EXPENSE, null, "0", true);
         account(repository, "5200", "Cost of goods sold", AccountType.EXPENSE, null, "0", true);
         account(repository, "5101", "Bank charges", AccountType.EXPENSE, null, "0", true);
     }

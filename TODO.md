@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**69 / 115 mapped · 46 remaining**
+**70 / 115 mapped · 45 remaining**
 
 How to check progress yourself:
 
@@ -126,7 +126,13 @@ Reads tables that already exist. All seven done.
       by account pair rather than one entry per asset, with rounding drift on the last line. Each
       asset's share is recomputed **at posting time**, so two drafts over the same period cannot both
       charge it. Voiding writes a reversing entry and takes the charge back off each asset.
-- [ ] `/assets/disposals` · `/assets/transfers`
+- [x] `/assets/disposals` — sold, traded in, scrapped, given away or lost. Posting charges any
+      depreciation still owed **at the disposal date** so the net book value is the one the asset
+      really has when it leaves, then reverses cost and accumulated depreciation out, brings in the
+      proceeds and recognises the balance as a gain or a loss. Voiding puts the asset back into
+      service and reverses the lot. `DataSeeder` now adds `4004 Gain on asset disposal` and
+      `5007 Loss on asset disposal`.
+- [ ] `/assets/transfers`
 
 ### Projects (7)
 `Project`, `TimeEntry`. Job costing tags existing journal lines to a project.
@@ -259,6 +265,19 @@ Building these without the external piece produces a page that cannot work.
       hand and never checked against 1509 — the seeded chart already carries −110,000 on 1509 that
       belongs to no registered asset. A reconciliation screen comparing the register's totals to
       1501/1509 is worth building before the register is trusted for a balance sheet.
+- [ ] **`4004` and `5007` are missing on existing databases.** `DataSeeder` now adds
+      `4004 Gain on asset disposal` and `5007 Loss on asset disposal`, but `seedAccounts` returns
+      early when any account exists, so a database that predates them has neither. `/assets/disposals`
+      detects this and says so rather than falling back to something semantically wrong like
+      `4003 Interest income` — but until the accounts are added by hand at Chart of Accounts, every
+      disposal has to be pointed at a gain and loss account manually. Same class of drift as the
+      missing 1402 and 5200.
+- [ ] **The depreciation page understates what has actually been charged.** `Charged to date` on
+      `/assets/depreciation` sums `DepreciationRun.totalCharge`, so it misses the catch-up
+      depreciation a **disposal** charges on its way past — that goes straight to the asset's
+      `postedAccumulated` and into the ledger without a run to sum. The asset register and the ledger
+      are right; only that one tile is short. Posting a disposal also has no fiscal-period check, the
+      same gap as a depreciation run.
 - [ ] **A depreciation run has no period lock and no fiscal-period check.** It charges up to any date
       the user picks, including one inside a closed fiscal period, and nothing stops a run dated
       before an earlier run's period end. The protection against double-charging is arithmetic — the
@@ -366,7 +385,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,977 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 3,055 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

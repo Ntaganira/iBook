@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.dis.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/disposals}" th:text="#{ast.dis.title}">Disposals</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.dis.form.breadcrumb}">New disposal</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.dis.form.title}">New Disposal</h1>
+            <p class="page-subtitle" th:utext="#{ast.dis.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/assets/disposals}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="disposalForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{ast.dis.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="disposalForm" name="postNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{ast.dis.savePost}">Save and post</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="disposalForm" method="post" novalidate th:object="${form}" th:action="@{/assets/disposals}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="alert alert--warning mb-4" th:if="${accountsMissing}">
+            <svg class="ebook-icon"><use href="#icon-alert-circle"/></svg>
+            <div class="alert-body">
+                <div class="alert-title" th:text="#{ast.dis.accountsMissingTitle}">No disposal gain or loss account</div>
+                <span th:text="#{ast.dis.accountsMissingHint}">4004 and 5007 are not in the chart of accounts, so choose where a gain or loss should go below.</span>
+            </div>
+        </div>
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.dis.details}">What is leaving</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="dAsset"><span th:text="#{ast.dis.asset}">Asset</span> <span class="required">*</span></label>
+                                <select class="form-control" id="dAsset" name="assetId" required>
+                                    <option value="" th:text="#{ast.dis.selectAsset}">Choose an asset in service…</option>
+                                    <option th:each="a : ${assets}" th:value="${a.id}"
+                                            th:text="${a.assetNo + ' — ' + a.name}"
+                                            th:selected="${form.assetId != null and form.assetId == a.id}">FA-0001</option>
+                                </select>
+                                <div class="form-hint" th:text="#{ast.dis.assetHint}">Only assets in service that are not already on a disposal appear here.</div>
+                                <div th:replace="~{layout/common :: fieldError('assetId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dDate"><span th:text="#{ast.dis.disposedOn}">Disposed on</span> <span class="required">*</span></label>
+                                <input class="form-control" id="dDate" name="disposalDate" type="date"
+                                       th:value="${form.disposalDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('disposalDate')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dMethod" th:text="#{ast.dis.method}">How</label>
+                                <select class="form-control" id="dMethod" name="method">
+                                    <option th:each="e : ${methodLabels}" th:value="${e.key}" th:text="${e.value}"
+                                            th:selected="${form.method == e.key}">Sold</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dBuyer" th:text="#{ast.dis.buyer}">Buyer or recipient</label>
+                                <input class="form-control" id="dBuyer" name="buyer" type="text" th:value="${form.buyer}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dRef" th:text="#{common.reference}">Reference</label>
+                                <input class="form-control" id="dRef" name="reference" type="text" th:value="${form.reference}">
+                            </div>
+                        </div>
+                        <div class="form-hint mt-2">
+                            <a th:href="@{/assets/disposals/new(asset=${form.assetId}, disposalDate=${form.disposalDate}, proceeds=${form.proceeds})}"
+                               th:text="#{ast.dis.refreshPreview}">Work out the figures for these details</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.dis.money}">What comes in</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="dProceeds" th:text="#{ast.dis.proceeds}">Proceeds</label>
+                                <div class="input-group">
+                                    <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                                    <input class="form-control amount-control" id="dProceeds" name="proceeds"
+                                           type="number" step="0.01" min="0" th:value="${form.proceeds}">
+                                </div>
+                                <div class="form-hint" th:text="#{ast.dis.proceedsHint}">Leave at zero for something scrapped, given away or lost.</div>
+                                <div th:replace="~{layout/common :: fieldError('proceeds')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dProceedsAcct" th:text="#{ast.dis.proceedsAccount}">Received into</label>
+                                <select class="form-control" id="dProceedsAcct" name="proceedsAccountId">
+                                    <option value="" th:text="#{ast.dis.selectAccount}">Choose an account…</option>
+                                    <option th:each="a : ${cashAccounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${form.proceedsAccountId != null and form.proceedsAccountId == a.id}">1101</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('proceedsAccountId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dGainAcct" th:text="#{ast.dis.gainAccount}">A gain goes to</label>
+                                <select class="form-control" id="dGainAcct" name="gainAccountId">
+                                    <option value="" th:text="#{ast.dis.accountDefault}">Use the default</option>
+                                    <option th:each="a : ${revenueAccounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${form.gainAccountId != null and form.gainAccountId == a.id}">4004</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="dLossAcct" th:text="#{ast.dis.lossAccount}">A loss goes to</label>
+                                <select class="form-control" id="dLossAcct" name="lossAccountId">
+                                    <option value="" th:text="#{ast.dis.accountDefault}">Use the default</option>
+                                    <option th:each="a : ${expenseAccounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${form.lossAccountId != null and form.lossAccountId == a.id}">5007</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="dNotes" th:text="#{ast.dis.notes}">Notes</label>
+                                <input class="form-control" id="dNotes" name="notes" type="text" th:value="${form.notes}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.dis.preview}">What this comes to</h3></div>
+                    <div class="card-body" th:if="${preview == null}">
+                        <p class="text-secondary" th:text="#{ast.dis.noPreview}">Choose an asset and work out the figures to see the gain or loss.</p>
+                    </div>
+                    <div class="card-body" th:if="${preview != null}">
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.cost}">Cost</span>
+                            <span class="money" th:text="${#numbers.formatDecimal(preview.cost, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.dis.accumulatedBefore}">Already depreciated</span>
+                            <span class="money" th:text="${#numbers.formatDecimal(preview.accumulatedBefore, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2" th:if="${preview.catchUp.signum() > 0}">
+                            <span class="text-warning" th:text="#{ast.dis.catchUp}">Charged by this disposal</span>
+                            <span class="money text-warning" th:text="${#numbers.formatDecimal(preview.catchUp, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2 pt-2" style="border-top:1px solid var(--border)">
+                            <span class="text-muted" th:text="#{ast.dis.netBookValue}">Net book value</span>
+                            <span class="money" th:text="${#numbers.formatDecimal(preview.netBookValue, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.dis.proceeds}">Proceeds</span>
+                            <span class="money" th:text="${#numbers.formatDecimal(preview.proceeds, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
+                            <span th:text="${preview.isLoss()} ? #{ast.dis.loss} : #{ast.dis.gain}">Gain</span>
+                            <span class="money" th:classappend="${preview.isLoss()} ? 'text-error' : 'text-positive'"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(preview.gainOrLoss, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</span>
+                        </div>
+                        <div class="form-hint mt-3" th:text="#{ast.dis.catchUpHint}">Depreciation still owed at the disposal date is charged by the disposal itself, so the net book value it is measured against is the one the asset really has on the day it leaves.</div>
+                    </div>
+                </div>
+
+                <div class="card" th:if="${chosenAsset != null}">
+                    <div class="card-header"><h3 th:text="#{ast.dis.assetDetails}">The asset</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.assetNo}">Number</span>
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${chosenAsset.id})}"
+                               th:text="${chosenAsset.assetNo}">FA-0001</a>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.category}">Category</span>
+                            <span th:text="${chosenAsset.category != null ? chosenAsset.category : '—'}">—</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.acquired}">Acquired</span>
+                            <span th:text="${#temporals.format(chosenAsset.acquisitionDate, 'dd MMM yyyy')}">01 Jan 2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>
