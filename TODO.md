@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**61 / 115 mapped · 54 remaining**
+**62 / 115 mapped · 53 remaining**
 
 How to check progress yourself:
 
@@ -81,7 +81,9 @@ Reads tables that already exist. All seven done.
 - [x] `/purchases/expenses` — direct spend paid from cash or bank, posts in one entry (expense
       accounts + input VAT debited, payment account credited), void writes a reversing entry.
       Never touches accounts payable.
-- [ ] `/purchases/contractors` — `Contractor`
+- [x] `/purchases/contractors` — register of engaged people and firms: contract period with
+      expiry flagging, agreed rate, bank details, optional link to a supplier record that surfaces
+      the bills and expenses actually paid to them. Non-posting; withholding is reference only.
 
 ### Payroll (7)
 `Employee`, `PayrollRun`, `Payslip`. Needs current RRA PAYE bands plus RSSB and maternity rates.
@@ -160,10 +162,31 @@ Building these without the external piece produces a page that cannot work.
       order, with no partial or repeat conversion, and no goods-received step records a delivery
       against a purchase order. Sales orders also cannot be raised from an accepted estimate —
       `EstimateService` still converts straight to an invoice.
+- [ ] **Record forms with a primitive `boolean` break when the checkbox is unchecked.** An unchecked
+      checkbox submits nothing, and a record's canonical constructor cannot take `null` for a
+      primitive `boolean`, so Spring leaves the model attribute null and the re-render dies on
+      `form.<field>`. **Confirmed on `/vendors`**: posting the vendor form without `active` returned
+      500 with `EL1007E: Property or field 'name' cannot be found on null` at `vendors/form` line 51,
+      and in another attempt silently re-rendered the empty form without saving. Sixteen record
+      forms declare primitive booleans — `AccountForm`, `BranchForm`, `CategoryForm`,
+      `CreateUserForm`, `CurrencyForm`, `CustomerForm`, `EditUserForm`, `EmailTemplateForm`,
+      `InvoiceTemplateForm`, `NumberingForm`, `ProductForm`, `SecuritySettingsForm`, `TaxRateForm`,
+      `VendorForm`, `WarehouseForm`, `WorkflowForm` — so the rest are worth auditing, though only
+      `/vendors` has been reproduced. Note the guards already in the tree are inconsistent:
+      `accounts/form.html` puts `<input type="hidden" name="active" value="false">` *before* the
+      checkbox, which sends two values for one field, and the binder takes the first — that may
+      force `false` even when the box is ticked. `ContractorForm` avoids all of this by declaring
+      `Boolean active` and folding null to false.
 - [ ] **Expenses carry no receipt attachment and cannot be rebilled.** There is nowhere to attach a
       scanned receipt (waiting on the Documents storage decision) and no billable flag to recharge
       an expense to a customer or project. Stocked products are also out of scope by design — an
       expense is consumption, so nothing is capitalised to inventory (1301) the way a bill line is.
+- [ ] **Contractor withholding is recorded but never applied.** `Contractor.withholdingRate` and the
+      "would have been withheld" figure on the detail page are reference only — no bill or expense
+      posting deducts withholding, because that needs withholding fields on document lines
+      (`/taxes/withholding`, Tier 3). Contractors are also linked to spend only through an optional
+      supplier record, so an unlinked contractor shows no history, and a supplier shared by two
+      contractors would show the same bills under both.
 - [ ] **Unapplied credit cannot be spent.** A credit note with no linked invoice, or one larger than
       the invoice it credits, keeps the remainder as `unappliedAmount` and shows it on the list and
       view pages, but there is no screen to apply it to a later invoice or refund it.
@@ -205,7 +228,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,344 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,440 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

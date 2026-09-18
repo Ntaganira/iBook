@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${contractor.name}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/purchases/contractors}" th:text="#{con.title}">Contractors</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${contractor.name}">Contractor</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${contractor.name}">Contractor</h1>
+            <p class="page-subtitle">
+                <span th:text="${typeLabels.get(contractor.contractorType.name())}">Individual</span>
+                <span th:if="${contractor.trade != null}" th:text="' · ' + ${contractor.trade}"></span>
+                <span th:if="${contractor.taxId != null}" th:text="' · ' + #{con.taxId} + ' ' + ${contractor.taxId}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <span class="badge" th:classappend="${contractor.active} ? 'badge-active' : 'badge-muted'">
+                <span class="badge-dot"></span>
+                <span th:text="${contractor.active} ? #{con.statusActive} : #{con.statusInactive}">Active</span>
+            </span>
+            <a class="btn btn-secondary" th:href="@{/purchases/contractors/{id}/edit(id=${contractor.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{con.view.edit}">Edit contractor</span>
+            </a>
+            <form th:action="@{/purchases/contractors/{id}/toggle(id=${contractor.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                    <span th:text="${contractor.active} ? #{con.deactivate} : #{con.activate}">Deactivate</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${contractor.expired}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{con.expiredTitle}">Contract has ended</div>
+            <span th:text="#{con.endedOn} + ' ' + ${#temporals.format(contractor.contractEnd, 'dd MMM yyyy')}"></span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${contractor.expiringSoon}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{con.expiringTitle}">Contract ending soon</div>
+            <span th:text="#{con.daysLeft(${contractor.daysToExpiry})}">30 days left</span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${!contractor.linked}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{con.notLinkedTitle}">No supplier linked</div>
+            <span th:text="#{con.notLinkedHint}">Link a supplier record to track the bills and expenses paid to this contractor.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{con.totalSpend}">Total spend</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{con.billedTile}">On bills</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.billed, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{con.outstandingTile}">Still owed</div>
+            <div class="stat-tile-value money" th:classappend="${spend.outstanding.signum() > 0} ? 'text-warning'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{con.rateAmount}">Agreed rate</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(contractor.rateAmount, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="cell-secondary" th:text="${rateTypeLabels.get(contractor.rateType.name())}">Fixed</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{con.spendHistory}">Bills and expenses</h3>
+                    <span class="text-sm text-muted" th:if="${spend.lastActivity != null}"
+                          th:text="#{con.lastActivity} + ': ' + ${#temporals.format(spend.lastActivity, 'dd MMM yyyy')}"></span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{con.docDate}">Date</th>
+                                <th th:text="#{con.docType}">Type</th>
+                                <th th:text="#{con.docNo}">Document</th>
+                                <th th:text="#{con.docDescription}">Description</th>
+                                <th class="num" th:text="#{common.amount}">Amount</th>
+                                <th class="num" th:text="#{con.outstandingTile}">Still owed</th>
+                                <th th:text="#{common.status}">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${spend.rows}">
+                                <td class="cell-secondary" th:text="${#temporals.format(r.date, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td class="cell-secondary"
+                                    th:text="${r.type == 'BILL'} ? #{con.docBill} : #{con.docExpense}">Bill</td>
+                                <td>
+                                    <a class="cell-link" th:if="${r.type == 'BILL'}"
+                                       th:href="@{/bills/{id}(id=${r.documentId})}" th:text="${r.documentNo}">BILL-0001</a>
+                                    <a class="cell-link" th:if="${r.type == 'EXPENSE'}"
+                                       th:href="@{/purchases/expenses/{id}(id=${r.documentId})}" th:text="${r.documentNo}">EXP-0001</a>
+                                </td>
+                                <td class="cell-secondary" th:text="${r.description != null ? r.description : '—'}">—</td>
+                                <td class="num money"
+                                    th:text="${r.currencyCode + ' ' + #numbers.formatDecimal(r.amount, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num money"
+                                    th:text="${r.outstanding.signum() == 0 ? '—' : r.currencyCode + ' ' + #numbers.formatDecimal(r.outstanding, 1, 0, 'COMMA')}">—</td>
+                                <td class="cell-secondary" th:text="${r.status}">POSTED</td>
+                            </tr>
+                            <tr th:if="${spend.empty}">
+                                <td class="table-empty" colspan="7">
+                                    <p class="text-secondary" th:text="#{con.noSpend}">Nothing has been billed to this contractor yet.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{con.details}">Details</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.contractStart}">Contract start</span>
+                        <span th:text="${contractor.contractStart != null ? #temporals.format(contractor.contractStart, 'dd MMM yyyy') : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.contractEnd}">Contract end</span>
+                        <span th:if="${contractor.contractEnd != null}"
+                              th:text="${#temporals.format(contractor.contractEnd, 'dd MMM yyyy')}">31 Dec 2026</span>
+                        <span th:if="${contractor.contractEnd == null}" th:text="#{con.openEnded}">Open-ended</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.linkedVendor}">Supplier record</span>
+                        <a class="cell-link" th:if="${contractor.vendorId != null}"
+                           th:href="@{/vendors/{id}(id=${contractor.vendorId})}" th:text="${contractor.vendorName}">Supplier</a>
+                        <span th:if="${contractor.vendorId == null}" th:text="#{con.noVendor}">Not linked</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.bankName}">Bank</span>
+                        <span th:text="${contractor.bankName != null ? contractor.bankName : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.bankAccount}">Account number</span>
+                        <span th:text="${contractor.bankAccount != null ? contractor.bankAccount : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.mobileMoney}">Mobile Money</span>
+                        <span th:text="${contractor.mobileMoney != null ? contractor.mobileMoney : '—'}">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{con.withholdingRate}">Withholding</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{con.withholdingRate}">Withholding rate</span>
+                        <span th:text="${#numbers.formatDecimal(contractor.withholdingRate, 1, 2)} + '%'">0.00%</span>
+                    </div>
+                    <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
+                        <span th:text="#{con.estimatedWithholding}">Would have been withheld</span>
+                        <span class="money"
+                              th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.estimatedWithholding, 1, 2, 'COMMA')}">RWF 0.00</span>
+                    </div>
+                    <div class="alert alert--info mt-3">
+                        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                        <div class="alert-body" th:text="#{con.withholdingNotPosted}">This figure is a reference only. No withholding is deducted or posted when a bill or expense is recorded.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${contractor.notes != null}">
+                <div class="card-header"><h3 th:text="#{con.notes}">Notes</h3></div>
+                <div class="card-body">
+                    <p class="text-sm" th:text="${contractor.notes}"></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body">
+                    <form th:action="@{/purchases/contractors/{id}/delete(id=${contractor.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{common.delete}">Delete</span>
+                        </button>
+                    </form>
+                    <div class="form-hint mt-2" th:text="#{con.deleteHint}">Deleting a contractor leaves its bills and expenses untouched.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

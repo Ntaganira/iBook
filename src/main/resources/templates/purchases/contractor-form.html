@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{con.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/purchases/contractors}" th:text="#{con.title}">Contractors</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{con.form.editBreadcrumb}">Edit contractor</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{con.form.breadcrumb}">New contractor</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{con.form.editTitle}">Edit Contractor</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{con.form.title}">New Contractor</h1>
+            <p class="page-subtitle" th:text="#{con.form.subtitle}">Engagement details and the supplier the money runs through.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/purchases/contractors}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="contractorForm">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{con.save}">Save contractor</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="contractorForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/purchases/contractors/{id}(id=${editingId})} : @{/purchases/contractors}">
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{con.basicInfo}">Who they are</h3>
+                            <div class="card-subtitle" th:text="#{con.basicInfoHint}">Identity and contact details</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="conName"><span th:text="#{con.name}">Name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="conName" name="name" type="text"
+                                       th:value="${form.name}" th:placeholder="#{con.namePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conType" th:text="#{con.typeFilter}">Type</label>
+                                <select class="form-control" id="conType" name="contractorType">
+                                    <option th:each="entry : ${typeLabels}" th:value="${entry.key}" th:text="${entry.value}"
+                                            th:selected="${form.contractorType == entry.key}">Individual</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conTrade" th:text="#{con.trade}">Trade or service</label>
+                                <input class="form-control" id="conTrade" name="trade" type="text"
+                                       th:value="${form.trade}" th:placeholder="#{con.tradePlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conTaxId" th:text="#{con.taxId}">Tax ID (TIN)</label>
+                                <input class="form-control" id="conTaxId" name="taxId" type="text"
+                                       th:value="${form.taxId}" th:placeholder="#{con.tinPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conEmail" th:text="#{common.email}">Email</label>
+                                <input class="form-control" id="conEmail" name="email" type="email"
+                                       th:value="${form.email}" placeholder="name@example.com">
+                                <div th:replace="~{layout/common :: fieldError('email')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conPhone" th:text="#{common.phone}">Phone</label>
+                                <input class="form-control" id="conPhone" name="phone" type="tel"
+                                       th:value="${form.phone}" placeholder="+250 7XX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conMomo" th:text="#{con.mobileMoney}">Mobile Money</label>
+                                <input class="form-control" id="conMomo" name="mobileMoney" type="tel"
+                                       th:value="${form.mobileMoney}" placeholder="78X XXX XXX">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{con.engagement}">Engagement</h3>
+                            <div class="card-subtitle" th:text="#{con.engagementHint}">Contract period and agreed rate</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="conStart" th:text="#{con.contractStart}">Contract start</label>
+                                <input class="form-control" id="conStart" name="contractStart" type="date"
+                                       th:value="${form.contractStart}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conEnd" th:text="#{con.contractEnd}">Contract end</label>
+                                <input class="form-control" id="conEnd" name="contractEnd" type="date"
+                                       th:value="${form.contractEnd}">
+                                <div th:replace="~{layout/common :: fieldError('contractEnd')}"></div>
+                                <div class="form-hint" th:text="#{con.contractEndHint}">Leave blank for an open-ended engagement.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conRateType" th:text="#{con.rateType}">Rate basis</label>
+                                <select class="form-control" id="conRateType" name="rateType">
+                                    <option th:each="entry : ${rateTypeLabels}" th:value="${entry.key}" th:text="${entry.value}"
+                                            th:selected="${form.rateType == entry.key}">Fixed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conRate" th:text="#{con.rateAmount}">Agreed rate</label>
+                                <input class="form-control amount-control" id="conRate" name="rateAmount" type="number"
+                                       step="0.01" min="0" th:value="${form.rateAmount}" placeholder="0">
+                                <div th:replace="~{layout/common :: fieldError('rateAmount')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conWht" th:text="#{con.withholdingRate}">Withholding rate %</label>
+                                <input class="form-control amount-control" id="conWht" name="withholdingRate" type="number"
+                                       step="0.01" min="0" max="100" th:value="${form.withholdingRate}" placeholder="0">
+                                <div th:replace="~{layout/common :: fieldError('withholdingRate')}"></div>
+                                <div class="form-hint" th:text="#{con.withholdingHint}">Recorded for reference only — nothing is withheld when a bill or expense is posted.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{con.payment}">How they are paid</h3>
+                            <div class="card-subtitle" th:text="#{con.paymentHint}">Bank details and the supplier record used for bills</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="conVendor" th:text="#{con.linkedVendor}">Supplier record</label>
+                                <select class="form-control" id="conVendor" name="vendorId">
+                                    <option value="" th:text="#{con.noVendor}">Not linked</option>
+                                    <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"
+                                            th:selected="${form.vendorId != null and form.vendorId == v.id}">Supplier</option>
+                                </select>
+                                <div class="form-hint" th:text="#{con.linkedVendorHint}">Link a supplier to see the bills and expenses paid to this contractor.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conBank" th:text="#{con.bankName}">Bank</label>
+                                <input class="form-control" id="conBank" name="bankName" type="text"
+                                       th:value="${form.bankName}" th:placeholder="#{con.bankPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conAccount" th:text="#{con.bankAccount}">Account number</label>
+                                <input class="form-control" id="conAccount" name="bankAccount" type="text"
+                                       th:value="${form.bankAccount}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conStreet" th:text="#{con.street}">Street</label>
+                                <input class="form-control" id="conStreet" name="street" type="text"
+                                       th:value="${form.street}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conCity" th:text="#{con.city}">City</label>
+                                <input class="form-control" id="conCity" name="city" type="text"
+                                       th:value="${form.city}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="conCountry" th:text="#{con.country}">Country</label>
+                                <input class="form-control" id="conCountry" name="country" type="text"
+                                       th:value="${form.country}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-header">
+                        <div><h3 th:text="#{con.notes}">Notes</h3></div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <textarea class="form-control" name="notes" rows="3"
+                                      th:text="${form.notes}" th:placeholder="#{con.notesPlaceholder}"></textarea>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{con.isActive}">Contractor is active</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>
