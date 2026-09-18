@@ -44,6 +44,7 @@ public class InventoryService {
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
     private final WarehouseRepository warehouseRepository;
+    private final BrandRepository brandRepository;
     private final StockMovementRepository movementRepository;
     private final AccountRepository accountRepository;
     private final JournalEntryRepository journalEntryRepository;
@@ -53,6 +54,7 @@ public class InventoryService {
     public InventoryService(ProductRepository productRepository,
                             ProductCategoryRepository categoryRepository,
                             WarehouseRepository warehouseRepository,
+                            BrandRepository brandRepository,
                             StockMovementRepository movementRepository,
                             AccountRepository accountRepository,
                             JournalEntryRepository journalEntryRepository,
@@ -61,6 +63,7 @@ public class InventoryService {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.warehouseRepository = warehouseRepository;
+        this.brandRepository = brandRepository;
         this.movementRepository = movementRepository;
         this.accountRepository = accountRepository;
         this.journalEntryRepository = journalEntryRepository;
@@ -141,7 +144,11 @@ public class InventoryService {
         } else {
             product.setCategoryName(null);
         }
-        product.setBrand(trimToNull(form.brand()));
+        // Clearing the brand also clears the free text, so an unlinked leftover cannot linger.
+        Brand brand = form.brandId() == null ? null
+                : brandRepository.findById(form.brandId()).orElse(null);
+        product.setBrandId(brand == null ? null : brand.getId());
+        product.setBrand(brand == null ? null : brand.getName());
         product.setUnit(form.unit() == null || form.unit().isBlank() ? "each" : form.unit().trim());
         product.setCostPrice(zero(form.costPrice()));
         product.setSellingPrice(zero(form.sellingPrice()));

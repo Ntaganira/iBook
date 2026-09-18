@@ -21,7 +21,7 @@ public record ProductForm(
         @Size(max = 1000) String description,
         String type,
         Long categoryId,
-        @Size(max = 120) String brand,
+        Long brandId,
         @Size(max = 40) String unit,
         BigDecimal costPrice,
         BigDecimal sellingPrice,

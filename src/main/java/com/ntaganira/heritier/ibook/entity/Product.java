@@ -53,6 +53,10 @@ public class Product implements Serializable {
     @Column(name = "category_name")
     private String categoryName;
 
+    @Column(name = "brand_id")
+    private Long brandId;
+
+    /** Denormalised brand name; also holds free text typed before brands became their own records. */
     @Column(name = "brand")
     private String brand;
 

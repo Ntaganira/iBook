@@ -61,7 +61,14 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="pBrand" th:text="#{inv.prod.brand}">Brand</label>
-                        <input class="form-control" id="pBrand" name="brand" type="text" th:value="${form.brand}">
+                        <select class="form-control" id="pBrand" name="brandId">
+                            <option value="" th:text="#{inv.prod.noBrand}">No brand</option>
+                            <option th:each="b : ${brands}" th:value="${b.id}" th:text="${b.name}"
+                                    th:selected="${form.brandId != null and form.brandId == b.id}">Brand</option>
+                        </select>
+                        <div class="form-hint">
+                            <a th:href="@{/inventory/brands}" th:text="#{inv.prod.manageBrands}">Manage brands</a>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="pUnit" th:text="#{inv.prod.unit}">Unit</label>

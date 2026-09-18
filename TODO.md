@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**65 / 115 mapped · 50 remaining**
+**66 / 115 mapped · 49 remaining**
 
 How to check progress yourself:
 
@@ -59,7 +59,11 @@ Reads tables that already exist. All seven done.
 - [x] `/inventory/movements` — filterable movement log
 - [x] `/inventory/adjustments` — in/out with GL posting
 - [x] `/inventory/valuation` — at standard cost, as-of date
-- [ ] `/inventory/brands` — currently a free-text field on Product; needs its own entity
+- [x] `/inventory/brands` — CRUD with edit in place, activate/deactivate, delete blocked while in
+      use. `Product.brand` becomes a denormalised name alongside a new `brandId`, mirroring
+      `categoryId`/`categoryName`; the product form now picks from a list instead of free text. An
+      explicit **import** action folds brand names already typed on products into real brands and
+      links them — nothing is migrated silently.
 - [ ] `/inventory/bundles` — needs `ProductBundle` + components
 - [x] `/inventory/transfers` — draft/complete/cancel/void, paired `TRANSFER_OUT`/`TRANSFER_IN`
       movements at the two locations, per-location stock check before the stock moves. The move
@@ -220,6 +224,13 @@ Building these without the external piece produces a page that cannot work.
       per-location stock is only as good as that assumption, a site with no default warehouse set
       shows nothing anywhere, and the company-wide figure on `/inventory/valuation` is unaffected
       either way. The real fix is a location picker on bill and invoice lines.
+- [ ] **Free-text brands are only folded in when somebody presses the button.** `Product.brand` is
+      still the denormalised name and still accepts whatever was there before, so a database that
+      predates brands keeps its typed values until the import on `/inventory/brands` is run. Two
+      spellings of one name collapse case-insensitively into the first one seen, which is usually
+      right but is a guess — check the list before importing. Products imported this way get no code,
+      manufacturer or website. Deactivating a brand hides it from the product form but leaves it on
+      the products already carrying it, which is deliberate.
 - [ ] **A stock count is not a freeze, and it counts one location at a time.** Nothing stops stock
       moving while a sheet is open. Posting handles that by measuring the variance against on-hand at
       the moment of posting rather than the opening snapshot — the line is flagged as drifted when
@@ -293,7 +304,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,721 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,759 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

@@ -44,4 +44,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     long countByActiveTrue();
 
     long countByCategoryId(Long categoryId);
+
+    long countByBrandId(Long brandId);
+
+    List<Product> findByBrandId(Long brandId);
+
+    /** Products whose brand was typed as free text before brands became records of their own. */
+    @Query("select p from Product p where p.brandId is null "
+            + "and p.brand is not null and trim(p.brand) <> '' order by p.brand asc")
+    List<Product> findWithUnlinkedBrand();
 }
