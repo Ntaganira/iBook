@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**62 / 115 mapped · 53 remaining**
+**63 / 115 mapped · 52 remaining**
 
 How to check progress yourself:
 
@@ -73,7 +73,10 @@ Reads tables that already exist. All seven done.
 - [x] `/sales/orders` — draft/confirm/cancel/reopen, expected-delivery late flag, converts to a
       draft invoice via `InvoiceService`. Non-posting: nothing reaches the ledger until that
       invoice is posted.
-- [ ] `/sales/recurring` — `RecurringInvoice` + scheduler
+- [x] `/sales/recurring` — named schedules on a weekly to yearly cycle, optional end date and
+      occurrence cap, swept daily by `RecurringInvoiceScheduler`. Each occurrence is raised through
+      `InvoiceService` dated the day it was owed, as a draft unless the schedule opts into
+      auto-posting.
 
 ### Purchase documents (3) — variants of `Bill`
 - [x] `/purchases/orders` — draft/confirm/cancel/reopen, expected-delivery late flag, converts to a
@@ -187,6 +190,18 @@ Building these without the external piece produces a page that cannot work.
       (`/taxes/withholding`, Tier 3). Contractors are also linked to spend only through an optional
       supplier record, so an unlinked contractor shows no history, and a supplier shared by two
       contractors would show the same bills under both.
+- [ ] **Recurring invoices repeat a fixed price, and auto-posting has no guard rail.** A schedule
+      stores its lines once; a price rise, a new VAT rate or a product cost change is picked up only
+      by editing the schedule, and editing it affects future invoices only — invoices already raised
+      keep the old figures. With `autoPost` on, the nightly sweep posts to the ledger and the VAT
+      return with nobody in the loop, and the only brake is the 24-occurrence catch-up cap in
+      `RecurringInvoiceService`. There is also no email step: a generated invoice is never sent, so
+      somebody still has to deliver it. Stock is not checked either — a schedule billing a stocked
+      product will happily drive quantity on hand negative.
+- [ ] **A recurring schedule's invoices are not unwound when it is stopped.** Stopping or deleting a
+      schedule leaves every invoice it raised in place, posted ones included, which is the intended
+      accounting treatment but means a schedule that ran wrong must be corrected invoice by invoice
+      (void each, which writes its own reversing entry).
 - [ ] **Unapplied credit cannot be spent.** A credit note with no linked invoice, or one larger than
       the invoice it credits, keeps the remainder as `unappliedAmount` and shows it on the list and
       view pages, but there is no screen to apply it to a later invoice or refund it.
@@ -228,7 +243,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 2,440 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 2,562 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

@@ -107,6 +107,10 @@ public class Invoice implements Serializable {
     @Column(name = "journal_entry_id")
     private Long journalEntryId;
 
+    /** Set when the invoice was raised by a recurring schedule rather than by hand. */
+    @Column(name = "recurring_invoice_id")
+    private Long recurringInvoiceId;
+
     @Column(name = "ebm_reference")
     private String ebmReference;
 

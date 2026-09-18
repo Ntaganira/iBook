@@ -12,8 +12,10 @@ package com.ntaganira.heritier.ibook;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling
 public class IBookApplication {
 
     public static void main(String[] args) {

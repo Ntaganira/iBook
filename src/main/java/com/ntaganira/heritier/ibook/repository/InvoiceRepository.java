@@ -27,6 +27,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     Optional<Invoice> findByInvoiceNo(String invoiceNo);
 
+    List<Invoice> findByRecurringInvoiceIdOrderByIssueDateDescIdDesc(Long recurringInvoiceId);
+
     @Query("select i from Invoice i where (:q is null or :q = '' "
             + "   or lower(i.invoiceNo) like lower(concat('%', :q, '%')) "
             + "   or lower(i.customerName) like lower(concat('%', :q, '%')) "
