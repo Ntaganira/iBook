@@ -163,7 +163,7 @@ public class FixedAssetController {
         addFormContext(model, "edit", id);
         model.addAttribute("form", new FixedAssetForm(
                 asset.getName(), asset.getDescription(), asset.getCategory(), asset.getLocation(),
-                asset.getSerialNumber(), asset.getTagNumber(), asset.getVendorId(),
+                asset.getCustodian(), asset.getSerialNumber(), asset.getTagNumber(), asset.getVendorId(),
                 asset.getPurchaseReference(), asset.getAcquisitionDate(), asset.getAcquisitionCost(),
                 asset.getResidualValue(), asset.getDepreciationMethod().name(),
                 asset.getUsefulLifeYears(), asset.getDecliningRate(), asset.getDepreciationStart(),

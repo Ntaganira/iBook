@@ -385,6 +385,7 @@ SecuritySettingsRepository securitySettingsRepository,
         seq(repository, "Stock Counts", "STOCK_COUNT", "SC-", null, 4, 1, true);
         seq(repository, "Fixed Assets", "FIXED_ASSET", "FA-", null, 4, 1, false);
         seq(repository, "Depreciation Runs", "DEPRECIATION", "DEP-", null, 4, 1, false);
+        seq(repository, "Asset Transfers", "ASSET_TRANSFER", "ATR-", null, 4, 1, false);
         seq(repository, "Asset Disposals", "DISPOSAL", "DIS-", null, 4, 1, false);
         seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }

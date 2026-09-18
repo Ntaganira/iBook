@@ -27,6 +27,11 @@
                   th:classappend="${st == 'ACTIVE' ? 'badge-active' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning')}">
                 <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
             </span>
+            <a class="btn btn-ghost" th:if="${asset.inService}"
+               th:href="@{/assets/transfers/new(asset=${asset.id})}">
+                <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                <span th:text="#{ast.moveAsset}">Move this asset</span>
+            </a>
             <a class="btn btn-secondary" th:if="${asset.editable}"
                th:href="@{/assets/register/{id}/edit(id=${asset.id})}">
                 <svg class="ebook-icon"><use href="#icon-edit"/></svg>
@@ -151,6 +156,14 @@
                     <div class="d-flex justify-between mb-2">
                         <span class="text-muted" th:text="#{ast.purchaseReference}">Purchase reference</span>
                         <span th:text="${asset.purchaseReference != null ? asset.purchaseReference : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.location}">Where it is</span>
+                        <span th:text="${asset.location != null ? asset.location : '—'}">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{ast.custodian}">Held by</span>
+                        <span th:text="${asset.custodian != null ? asset.custodian : '—'}">—</span>
                     </div>
                     <div class="d-flex justify-between mb-2">
                         <span class="text-muted" th:text="#{ast.serialNumber}">Serial number</span>

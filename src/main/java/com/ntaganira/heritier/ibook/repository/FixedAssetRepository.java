@@ -31,6 +31,7 @@ public interface FixedAssetRepository extends JpaRepository<FixedAsset, Long> {
             + "   or lower(a.name) like lower(concat('%', :q, '%')) "
             + "   or lower(a.category) like lower(concat('%', :q, '%')) "
             + "   or lower(a.location) like lower(concat('%', :q, '%')) "
+            + "   or lower(a.custodian) like lower(concat('%', :q, '%')) "
             + "   or lower(a.serialNumber) like lower(concat('%', :q, '%')) "
             + "   or lower(a.tagNumber) like lower(concat('%', :q, '%'))) "
             + "   and (:status is null or a.status = :status) "
@@ -52,6 +53,10 @@ public interface FixedAssetRepository extends JpaRepository<FixedAsset, Long> {
     @Query("select distinct a.category from FixedAsset a "
             + "where a.category is not null and trim(a.category) <> '' order by a.category asc")
     List<String> distinctCategories();
+
+    @Query("select distinct a.location from FixedAsset a "
+            + "where a.location is not null and trim(a.location) <> '' order by a.location asc")
+    List<String> distinctLocations();
 
     List<FixedAsset> findByStatusOrderByAssetNoAsc(AssetStatus status);
 }

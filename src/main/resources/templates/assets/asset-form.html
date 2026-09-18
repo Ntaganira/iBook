@@ -67,6 +67,12 @@
                                        th:value="${form.location}">
                             </div>
                             <div class="form-group">
+                                <label class="form-label" for="aCustodian" th:text="#{ast.custodian}">Held by</label>
+                                <input class="form-control" id="aCustodian" name="custodian" type="text"
+                                       th:value="${form.custodian}" th:placeholder="#{ast.custodianPlaceholder}">
+                                <div class="form-hint" th:text="#{ast.custodianHint}">Once it is in service, move it at Asset Transfers so the change is on record.</div>
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label" for="aSerial" th:text="#{ast.serialNumber}">Serial number</label>
                                 <input class="form-control" id="aSerial" name="serialNumber" type="text"
                                        th:value="${form.serialNumber}">

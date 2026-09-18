@@ -20,6 +20,7 @@ public record FixedAssetForm(
         @Size(max = 1000) String description,
         @Size(max = 120) String category,
         @Size(max = 120) String location,
+        @Size(max = 120) String custodian,
         @Size(max = 80) String serialNumber,
         @Size(max = 80) String tagNumber,
         Long vendorId,
@@ -40,7 +41,7 @@ public record FixedAssetForm(
         Boolean activateNow) {
 
     public static FixedAssetForm empty() {
-        return new FixedAssetForm(null, null, null, null, null, null, null, null,
+        return new FixedAssetForm(null, null, null, null, null, null, null, null, null,
                 LocalDate.now(), BigDecimal.ZERO, BigDecimal.ZERO, "STRAIGHT_LINE", 5,
                 BigDecimal.ZERO, LocalDate.now(), BigDecimal.ZERO, null, null, null, null,
                 Boolean.FALSE);

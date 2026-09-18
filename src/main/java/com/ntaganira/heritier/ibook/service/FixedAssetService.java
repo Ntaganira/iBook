@@ -247,6 +247,7 @@ public class FixedAssetService {
         asset.setDescription(trimToNull(form.description()));
         asset.setCategory(trimToNull(form.category()));
         asset.setLocation(trimToNull(form.location()));
+        asset.setCustodian(trimToNull(form.custodian()));
         asset.setSerialNumber(trimToNull(form.serialNumber()));
         asset.setTagNumber(trimToNull(form.tagNumber()));
         asset.setPurchaseReference(trimToNull(form.purchaseReference()));

@@ -51,6 +51,10 @@ public class FixedAsset implements Serializable {
     @Column(name = "location")
     private String location;
 
+    /** Who holds it. Moved by /assets/transfers rather than edited in passing. */
+    @Column(name = "custodian")
+    private String custodian;
+
     @Column(name = "serial_number")
     private String serialNumber;
 

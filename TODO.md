@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**70 / 115 mapped · 45 remaining**
+**71 / 115 mapped · 44 remaining**
 
 How to check progress yourself:
 
@@ -132,7 +132,15 @@ Reads tables that already exist. All seven done.
       proceeds and recognises the balance as a gain or a loss. Voiding puts the asset back into
       service and reverses the lot. `DataSeeder` now adds `4004 Gain on asset disposal` and
       `5007 Loss on asset disposal`.
-- [ ] `/assets/transfers`
+- [x] `/assets/transfers` — moves an asset to another location, another custodian, or another pair of
+      balance sheet accounts. Draft / complete / cancel / void. **A move of place or custody is
+      non-posting** — the same asset sits in the same account at the same cost, so nothing reaches
+      the ledger. Changing either account *is* a reclassification and posts one balanced entry that
+      carries both the cost and the accumulated depreciation across, leaving net book value
+      untouched. Where the asset is coming from is read again at completion, so a draft raised
+      before another move is not stale. Voiding puts it back and reverses the entry, and is refused
+      while a later completed move of the same asset exists. `FixedAsset` gains a `custodian` field
+      and `DataSeeder` an `ASSET_TRANSFER` / `ATR-` sequence.
 
 ### Projects (7)
 `Project`, `TimeEntry`. Job costing tags existing journal lines to a project.
@@ -278,6 +286,19 @@ Building these without the external piece produces a page that cannot work.
       `postedAccumulated` and into the ledger without a run to sum. The asset register and the ledger
       are right; only that one tile is short. Posting a disposal also has no fiscal-period check, the
       same gap as a depreciation run.
+- [ ] **An asset transfer is a single step, and nothing reconciles it to a physical count.** There is
+      no in-transit state: completing applies the move at once, and the transfer date is free text
+      with no fiscal-period check, so a reclassification can be posted into a closed period — the
+      same gap as depreciation runs and disposals. A transfer also cannot move an asset's
+      **depreciation expense** account, only the cost and accumulated pair, so an asset reclassified
+      from office equipment to motor vehicles still charges its old expense account until someone
+      edits the register by hand. An accounts-only move shows an identical location pair on the list
+      (`Huye branch → Huye branch`) with the account change on the line below it, which reads oddly
+      but is accurate.
+- [ ] **No `ASSET_TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering`
+      now adds `ATR-`, but it returns early when any sequence exists — observed live:
+      `ATR-2026-10092`, `ATR-2026-22296`, `ATR-2026-30678`. Add the row at `/settings/numbering`,
+      same class of drift as `TRF-`, `SC-`, `FA-`, `DEP-` and `DIS-`.
 - [ ] **A depreciation run has no period lock and no fiscal-period check.** It charges up to any date
       the user picks, including one inside a closed fiscal period, and nothing stops a run dated
       before an earlier run's period end. The protection against double-charging is arithmetic — the
@@ -385,7 +406,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 3,055 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 3,148 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

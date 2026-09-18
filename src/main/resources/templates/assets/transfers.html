@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.trf.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/register}" th:text="#{ast.title}">Asset Register</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.trf.title}">Asset Transfers</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.trf.title}">Asset Transfers</h1>
+            <p class="page-subtitle" th:text="#{ast.trf.subtitle}">Move an asset to another place, another custodian, or another account.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/assets/transfers/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{ast.trf.new}">New transfer</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/assets/transfers}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{ast.trf.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/transfers(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{ast.trf.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/transfers(status='COMPLETED')}" th:classappend="${status == 'COMPLETED'} ? 'active'">
+            <span th:text="#{ast.trf.status.completed}">Completed</span> <span class="tab-count" th:text="${summary.completed}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/transfers(status='CANCELLED')}" th:classappend="${status == 'CANCELLED'} ? 'active'">
+            <span th:text="#{ast.trf.status.cancelled}">Cancelled</span> <span class="tab-count" th:text="${summary.cancelled}">0</span>
+        </a>
+        <a class="tab" th:href="@{/assets/transfers(status='VOID')}" th:classappend="${status == 'VOID'} ? 'active'">
+            <span th:text="#{ast.trf.status.void}">Voided</span> <span class="tab-count" th:text="${summary.voided}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.trf.status.completed}">Completed</div>
+            <div class="stat-tile-value" th:text="${summary.completed}">0</div>
+            <div class="cell-secondary" th:text="#{ast.trf.completedHint}">Assets that have moved</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.trf.status.draft}">Draft</div>
+            <div class="stat-tile-value" th:text="${summary.draft}">0</div>
+            <div class="cell-secondary" th:text="#{ast.trf.draftHintShort}">Not applied yet</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.trf.reclassifications}">Reclassifications</div>
+            <div class="stat-tile-value" th:text="${summary.reclassifications}">0</div>
+            <div class="cell-secondary" th:text="#{ast.trf.reclassHint}">The only ones that reached the ledger</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.trf.status.void}">Voided</div>
+            <div class="stat-tile-value" th:text="${summary.voided}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/assets/transfers}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{ast.trf.searchPlaceholder}">
+            </div>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/assets/transfers}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(transfers.content)}, ${transfers.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'transferNo', #{ast.trf.transfer}, ${sort}, ${dir})}">Transfer</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'assetNo', #{ast.trf.asset}, ${sort}, ${dir})}">Asset</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'transferDate', #{ast.trf.movedOn}, ${sort}, ${dir})}">Moved</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'toLocation', #{ast.trf.move}, ${sort}, ${dir})}">Move</th>
+                        <th th:text="#{ast.trf.custodian}">Custodian</th>
+                        <th class="num" th:text="#{ast.netBookValue}">Net book value</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="t : ${transfers.content}">
+                        <td class="mono">
+                            <a class="cell-link" th:href="@{/assets/transfers/{id}(id=${t.id})}" th:text="${t.transferNo}">ATR-0001</a>
+                            <span class="cell-secondary" th:if="${t.reclassified}" th:text="#{ast.trf.reclassified}">Reclassified</span>
+                        </td>
+                        <td>
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${t.assetId})}" th:text="${t.assetNo}">FA-0001</a>
+                            <span class="cell-secondary" th:text="${t.assetName}">Asset</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${#temporals.format(t.transferDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td>
+                            <span th:text="${(t.fromLocation != null ? t.fromLocation : '—') + ' → ' + (t.toLocation != null ? t.toLocation : '—')}">A → B</span>
+                            <span class="cell-secondary" th:if="${t.movingAccounts}"
+                                  th:text="${(t.fromAssetAccountCode != null ? t.fromAssetAccountCode : '—') + ' → ' + (t.toAssetAccountCode != null ? t.toAssetAccountCode : '—')}">1501 → 1502</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${t.toCustodian != null ? t.toCustodian : '—'}">—</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(t.netBookValue, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td th:with="st=${t.status.name()}">
+                            <span class="badge" th:classappend="${st == 'COMPLETED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : (st == 'CANCELLED' ? 'badge-warning' : 'badge-muted'))}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/assets/transfers/{id}(id=${t.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <form th:if="${t.completable}" th:action="@{/assets/transfers/{id}/complete(id=${t.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{ast.trf.complete}">Complete transfer</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transfers.content)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-package"/></svg></div>
+                                <p class="text-secondary" th:text="#{ast.trf.none}">Nothing has been moved yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/assets/transfers/new}" th:text="#{ast.trf.new}">New transfer</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${transfers.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(transfers.content)}, ${transfers.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${transfers.number + 1}, ${transfers.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{ast.trf.ledgerHint}">Moving an asset to another place or another custodian changes nothing on the balance sheet, so nothing is posted. Moving it to another account does: the cost and the depreciation collected against it are both carried across in one entry.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

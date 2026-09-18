@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.trf.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/transfers}" th:text="#{ast.trf.title}">Asset Transfers</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.trf.form.breadcrumb}">New transfer</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.trf.form.title}">New Transfer</h1>
+            <p class="page-subtitle" th:utext="#{ast.trf.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/assets/transfers}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="transferForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{ast.trf.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="transferForm" name="completeNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{ast.trf.saveComplete}">Save and move</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="transferForm" method="post" novalidate th:object="${form}" th:action="@{/assets/transfers}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.trf.whatMoves}">What is moving</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="tAsset"><span th:text="#{ast.trf.asset}">Asset</span> <span class="required">*</span></label>
+                                <select class="form-control" id="tAsset" name="assetId" required>
+                                    <option value="" th:text="#{ast.trf.selectAsset}">Choose an asset in service…</option>
+                                    <option th:each="a : ${assets}" th:value="${a.id}"
+                                            th:text="${a.assetNo + ' — ' + a.name}"
+                                            th:selected="${form.assetId != null and form.assetId == a.id}">FA-0001</option>
+                                </select>
+                                <div class="form-hint" th:text="#{ast.trf.assetHint}">Only assets in service that are not already waiting on a draft transfer appear here.</div>
+                                <div th:replace="~{layout/common :: fieldError('assetId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="tDate"><span th:text="#{ast.trf.movedOn}">Moved on</span> <span class="required">*</span></label>
+                                <input class="form-control" id="tDate" name="transferDate" type="date"
+                                       th:value="${form.transferDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('transferDate')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="tRef" th:text="#{common.reference}">Reference</label>
+                                <input class="form-control" id="tRef" name="reference" type="text" th:value="${form.reference}">
+                            </div>
+                        </div>
+                        <div class="form-hint mt-2">
+                            <a th:href="@{/assets/transfers/new(asset=${form.assetId})}"
+                               th:text="#{ast.trf.loadAsset}">Show where this asset is now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.trf.whereTo}">Where it is going</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="tLocation" th:text="#{ast.trf.toLocation}">New location</label>
+                                <input class="form-control" id="tLocation" name="toLocation" type="text"
+                                       list="knownLocations" th:value="${form.toLocation}"
+                                       th:placeholder="#{ast.trf.locationPlaceholder}">
+                                <datalist id="knownLocations">
+                                    <option th:each="l : ${locations}" th:value="${l}"></option>
+                                </datalist>
+                                <div class="form-hint" th:text="#{ast.trf.blankHint}">Leave a box empty to keep what the asset already has.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="tCustodian" th:text="#{ast.trf.toCustodian}">New custodian</label>
+                                <input class="form-control" id="tCustodian" name="toCustodian" type="text"
+                                       th:value="${form.toCustodian}" th:placeholder="#{ast.trf.custodianPlaceholder}">
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="tReason" th:text="#{ast.trf.reason}">Why it moved</label>
+                                <input class="form-control" id="tReason" name="reason" type="text"
+                                       th:value="${form.reason}" th:placeholder="#{ast.trf.reasonPlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.trf.accounts}">Which accounts it sits in</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="tAssetAcct" th:text="#{ast.assetAccount}">Asset sits in</label>
+                                <select class="form-control" id="tAssetAcct" name="toAssetAccountId">
+                                    <option value="" th:text="#{ast.trf.accountUnchanged}">Leave it where it is</option>
+                                    <option th:each="a : ${assetAccounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${form.toAssetAccountId != null and form.toAssetAccountId == a.id}">1501</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="tAccumAcct" th:text="#{ast.accumulatedAccount}">Accumulated depreciation</label>
+                                <select class="form-control" id="tAccumAcct" name="toAccumulatedAccountId">
+                                    <option value="" th:text="#{ast.trf.accountUnchanged}">Leave it where it is</option>
+                                    <option th:each="a : ${assetAccounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${form.toAccumulatedAccountId != null and form.toAccumulatedAccountId == a.id}">1509</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="tNotes" th:text="#{ast.trf.notes}">Notes</label>
+                                <input class="form-control" id="tNotes" name="notes" type="text" th:value="${form.notes}">
+                            </div>
+                        </div>
+                        <div class="form-hint mt-2" th:text="#{ast.trf.accountsHint}">Changing either account is a reclassification: the cost and the depreciation collected against the asset are both carried across in one balanced entry. Leave both alone and the move never reaches the ledger.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{ast.trf.whereNow}">Where it is now</h3></div>
+                    <div class="card-body" th:if="${chosenAsset == null}">
+                        <p class="text-secondary" th:text="#{ast.trf.noAsset}">Choose an asset to see where it is and what it is worth.</p>
+                    </div>
+                    <div class="card-body" th:if="${chosenAsset != null}">
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.assetNo}">Number</span>
+                            <a class="cell-link" th:href="@{/assets/register/{id}(id=${chosenAsset.id})}"
+                               th:text="${chosenAsset.assetNo}">FA-0001</a>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.location}">Where it is</span>
+                            <span th:text="${chosenAsset.location != null ? chosenAsset.location : '—'}">—</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.custodian}">Held by</span>
+                            <span th:text="${chosenAsset.custodian != null ? chosenAsset.custodian : '—'}">—</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2 pt-2" style="border-top:1px solid var(--border)">
+                            <span class="text-muted" th:text="#{ast.cost}">Cost</span>
+                            <span class="money" th:text="${#numbers.formatDecimal(chosenAsset.acquisitionCost, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span class="text-muted" th:text="#{ast.accumulated}">Written down so far</span>
+                            <span class="money" th:text="${#numbers.formatDecimal(chosenAsset.accumulatedDepreciation, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </div>
+                        <div class="d-flex justify-between font-bold pt-2" style="border-top:1px solid var(--border)">
+                            <span th:text="#{ast.netBookValue}">Net book value</span>
+                            <span class="money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(chosenAsset.netBookValue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</span>
+                        </div>
+                        <div class="d-flex justify-between mb-2 mt-3 pt-2" style="border-top:1px solid var(--border)">
+                            <span class="text-muted" th:text="#{ast.assetAccount}">Asset sits in</span>
+                            <span class="mono" th:text="${chosenAsset.assetAccountCode != null ? chosenAsset.assetAccountCode : '—'}">1501</span>
+                        </div>
+                        <div class="d-flex justify-between">
+                            <span class="text-muted" th:text="#{ast.accumulatedAccount}">Accumulated depreciation</span>
+                            <span class="mono" th:text="${chosenAsset.accumulatedAccountCode != null ? chosenAsset.accumulatedAccountCode : '—'}">1509</span>
+                        </div>
+                        <div class="form-hint mt-3" th:text="#{ast.trf.nbvHint}">A reclassification carries this cost and this accumulated depreciation across. The net book value is unchanged by the move.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>
