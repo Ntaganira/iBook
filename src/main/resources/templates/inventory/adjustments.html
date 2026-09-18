@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.adj.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.adj.title}">Stock Adjustments</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.adj.title}">Stock Adjustments</h1>
+            <p class="page-subtitle" th:text="#{inv.adj.subtitle}">Correct stock on hand and post the value to the ledger.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/inventory/movements}" th:text="#{inv.mv.title}">All movements</a>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.adj.new}">Record an adjustment</h3></div>
+                <form method="post" th:action="@{/inventory/adjustments}">
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="aProduct"><span th:text="#{inv.prod.title}">Product</span> <span class="required">*</span></label>
+                                <select class="form-control" id="aProduct" name="productId" required>
+                                    <option value="" th:text="#{inv.adj.selectProduct}">Select a product…</option>
+                                    <option th:each="p : ${products}" th:value="${p.id}"
+                                            th:text="${p.sku + ' — ' + p.name + '  (' + #numbers.formatDecimal(onHand.containsKey(p.id) ? onHand.get(p.id) : 0, 1, 2) + ' ' + p.unit + ')'}">SKU</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aDir" th:text="#{inv.adj.direction}">Direction</label>
+                                <select class="form-control" id="aDir" name="direction">
+                                    <option value="IN" th:text="#{inv.adj.increase}">Increase stock</option>
+                                    <option value="OUT" th:text="#{inv.adj.decrease}">Decrease stock</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aQty"><span th:text="#{inv.mv.quantity}">Quantity</span> <span class="required">*</span></label>
+                                <input class="form-control amount-control" id="aQty" name="quantity" type="number"
+                                       step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aCost" th:text="#{inv.mv.unitCost}">Unit cost</label>
+                                <div class="input-group">
+                                    <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                                    <input class="form-control amount-control" id="aCost" name="unitCost" type="number" step="0.01" min="0">
+                                </div>
+                                <div class="form-hint" th:text="#{inv.adj.costHint}">Leave blank to use the product's cost price.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aWh" th:text="#{inv.wh.title}">Location</label>
+                                <select class="form-control" id="aWh" name="warehouseId">
+                                    <option value="" th:text="#{inv.adj.defaultLocation}">Default location</option>
+                                    <option th:each="w : ${warehouses}" th:value="${w.id}" th:text="${w.name}">Warehouse</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aDate" th:text="#{common.date}">Date</label>
+                                <input class="form-control" id="aDate" name="movementDate" type="date" th:value="${today}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="aRef" th:text="#{common.reference}">Reference</label>
+                                <input class="form-control" id="aRef" name="reference" type="text">
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="aNotes" th:text="#{inv.adj.reason}">Reason</label>
+                                <input class="form-control" id="aNotes" name="notes" type="text"
+                                       th:placeholder="#{inv.adj.reasonPlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" type="submit">
+                            <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                            <span th:text="#{inv.adj.record}">Record adjustment</span>
+                        </button>
+                        <div class="form-hint mt-2" th:text="#{inv.adj.posting}">An increase debits inventory and credits the adjustment account; a decrease does the reverse.</div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.adj.recent}">Recent movements</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{common.date}">Date</th>
+                                <th th:text="#{inv.prod.title}">Product</th>
+                                <th th:text="#{inv.mv.type}">Type</th>
+                                <th class="num" th:text="#{inv.mv.quantity}">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="m : ${recent.content}">
+                                <td class="cell-secondary" th:text="${#temporals.format(m.movementDate, 'dd MMM')}">01 Jan</td>
+                                <td th:text="${m.productName}">Product</td>
+                                <td class="cell-secondary" th:text="${movementLabels.get(m.movementType.name())}">Adjustment in</td>
+                                <td class="num" th:classappend="${m.movementType.inbound} ? 'text-positive' : 'text-error'"
+                                    th:text="${(m.movementType.inbound ? '+' : '−') + #numbers.formatDecimal(m.quantity, 1, 2)}">+0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recent.content)}">
+                                <td class="table-empty" colspan="4">
+                                    <p class="text-secondary" th:text="#{inv.mv.none}">No stock movements recorded.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.prod.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{inv.prod.edit}">Edit product</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{inv.prod.new}">New product</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{inv.prod.edit}">Edit product</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{inv.prod.new}">New product</h1>
+            <p class="page-subtitle" th:if="${onHandQty != null}"
+               th:text="#{inv.prod.onHand} + ': ' + ${#numbers.formatDecimal(onHandQty, 1, 2)}"></p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/inventory/products}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="productForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{inv.prod.save}">Save product</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="productForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/inventory/products/{id}(id=${editingId})} : @{/inventory/products}">
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{inv.prod.details}">Item details</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="pSku"><span th:text="#{inv.prod.sku}">SKU</span> <span class="required">*</span></label>
+                        <input class="form-control" id="pSku" name="sku" type="text" th:value="${form.sku}" required autofocus>
+                        <div th:replace="~{layout/common :: fieldError('sku')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="pName" name="name" type="text" th:value="${form.name}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pType" th:text="#{inv.prod.type}">Type</label>
+                        <select class="form-control" id="pType" name="type">
+                            <option th:each="t : ${typeLabels}" th:value="${t.key}" th:text="${t.value}"
+                                    th:selected="${form.type == t.key}">Good</option>
+                        </select>
+                        <div class="form-hint" th:text="#{inv.prod.typeHint}">Services never carry stock.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCat" th:text="#{inv.cat.title}">Category</label>
+                        <select class="form-control" id="pCat" name="categoryId">
+                            <option value="" th:text="#{inv.prod.noCategory}">No category</option>
+                            <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                                    th:selected="${form.categoryId != null and form.categoryId == c.id}">Category</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pBrand" th:text="#{inv.prod.brand}">Brand</label>
+                        <input class="form-control" id="pBrand" name="brand" type="text" th:value="${form.brand}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pUnit" th:text="#{inv.prod.unit}">Unit</label>
+                        <input class="form-control" id="pUnit" name="unit" type="text" th:value="${form.unit}" placeholder="each">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pDesc" th:text="#{common.description}">Description</label>
+                        <textarea class="form-control" id="pDesc" name="description" rows="2" th:text="${form.description}"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{inv.prod.pricing}">Pricing &amp; stock</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="pCost" th:text="#{inv.prod.cost}">Cost price</label>
+                        <div class="input-group">
+                            <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                            <input class="form-control amount-control" id="pCost" name="costPrice" type="number"
+                                   step="0.01" min="0" th:value="${form.costPrice}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pPrice" th:text="#{inv.prod.price}">Selling price</label>
+                        <div class="input-group">
+                            <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                            <input class="form-control amount-control" id="pPrice" name="sellingPrice" type="number"
+                                   step="0.01" min="0" th:value="${form.sellingPrice}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pTax" th:text="#{inv.prod.defaultTax}">Default tax rate</label>
+                        <select class="form-control" id="pTax" name="taxRateId">
+                            <option value="" th:text="#{tax.cfg.noTax}">No tax</option>
+                            <option th:each="tr : ${taxRates}" th:value="${tr.id}" th:text="${tr.label}"
+                                    th:selected="${form.taxRateId != null and form.taxRateId == tr.id}">Standard VAT (18%)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pReorder" th:text="#{inv.prod.reorder}">Reorder level</label>
+                        <input class="form-control amount-control" id="pReorder" name="reorderLevel" type="number"
+                               step="0.01" min="0" th:value="${form.reorderLevel}">
+                        <div class="form-hint" th:text="#{inv.prod.reorderHint}">Flag the item when stock falls to this level.</div>
+                    </div>
+                </div>
+
+                <label class="switch mt-3">
+                    <input type="checkbox" name="trackStock" value="true" th:checked="${form.trackStock}">
+                    <span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{inv.prod.trackStock}">Track stock for this item</span>
+                </label>
+                <label class="switch mt-2">
+                    <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                    <span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{inv.prod.isActive}">Item is active</span>
+                </label>
+            </div>
+        </div>
+    </form>
+</main>
+</body>
+</html>

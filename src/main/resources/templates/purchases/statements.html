@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{stmt.ap.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/bills}" th:text="#{bill.title}">Invoices</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{stmt.ap.title}">Vendor Statements</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{stmt.ap.title}">Vendor Statements</h1>
+            <p class="page-subtitle">
+                <span th:if="${company != null}" th:text="${company.name} + ' · '"></span>
+                <span th:text="${#temporals.format(from, 'dd MMM yyyy')} + ' — ' + ${#temporals.format(to, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/purchases/statements}">
+                <select class="form-control form-control--sm" name="vendor">
+                    <option value="" th:text="#{stmt.selectVendor}">Select a customer…</option>
+                    <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"
+                            th:selected="${selectedVendor != null and selectedVendor == v.id}">Vendor</option>
+                </select>
+                <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{stmt.generate}">Generate</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" th:if="${statement == null}">
+        <div class="table-empty">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-text"/></svg></div>
+                <p class="text-secondary" th:text="#{stmt.pickPromptVendor}">Choose a customer above to generate a statement.</p>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${statement != null}">
+        <div class="stat-grid mb-5">
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{stmt.opening}">Balance brought forward</div>
+                <div class="stat-tile-value money"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.openingBalance, 1, 0, 'COMMA')}">RWF 0</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{stmt.chargesAp}">Invoiced in period</div>
+                <div class="stat-tile-value money"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.totalCharges, 1, 0, 'COMMA')}">RWF 0</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{stmt.paymentsAp}">Paid in period</div>
+                <div class="stat-tile-value money"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.totalPayments, 1, 0, 'COMMA')}">RWF 0</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{stmt.closing}">Balance due</div>
+                <div class="stat-tile-value money"
+                     th:classappend="${statement.closingBalance.signum() > 0} ? 'text-error' : 'text-positive'"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.closingBalance, 1, 0, 'COMMA')}">RWF 0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 th:text="${statement.partyName != null ? statement.partyName : '—'}">Vendor</h3>
+                    <p class="text-sm text-muted" th:text="#{stmt.statementOf}">Statement of account</p>
+                </div>
+                <a class="btn btn-secondary btn-sm" th:if="${statement.partyId != null}"
+                   th:href="@{/vendors/{id}(id=${statement.partyId})}" th:text="#{stmt.viewVendor}">View customer</a>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{common.date}">Date</th>
+                            <th th:text="#{stmt.transaction}">Transaction</th>
+                            <th th:text="#{common.reference}">Reference</th>
+                            <th class="num" th:text="#{stmt.charge}">Charge</th>
+                            <th class="num" th:text="#{stmt.payment}">Payment</th>
+                            <th class="num" th:text="#{common.balance}">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="cell-secondary" th:text="${#temporals.format(from, 'dd MMM yyyy')}">01 Jan 2026</td>
+                            <td class="font-semibold" th:text="#{stmt.opening}">Balance brought forward</td>
+                            <td></td>
+                            <td class="num money">—</td>
+                            <td class="num money">—</td>
+                            <td class="num money font-semibold"
+                                th:text="${#numbers.formatDecimal(statement.openingBalance, 1, 2, 'COMMA')}">0.00</td>
+                        </tr>
+                        <tr th:each="l : ${statement.lines}">
+                            <td class="cell-secondary" th:text="${#temporals.format(l.date, 'dd MMM yyyy')}">01 Jan 2026</td>
+                            <td>
+                                <a class="cell-link" th:if="${l.documentId != null}"
+                                   th:href="@{/bills/{id}(id=${l.documentId})}" th:text="${l.documentNo}">BILL-0001</a>
+                                <span th:unless="${l.documentId != null}" th:text="#{stmt.paymentMade}">Payment received</span>
+                            </td>
+                            <td class="cell-secondary" th:text="${l.reference != null ? l.reference : '—'}">—</td>
+                            <td class="num money" th:text="${l.charge.signum() == 0 ? '—' : #numbers.formatDecimal(l.charge, 1, 2, 'COMMA')}">—</td>
+                            <td class="num money" th:text="${l.payment.signum() == 0 ? '—' : #numbers.formatDecimal(l.payment, 1, 2, 'COMMA')}">—</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(l.balance, 1, 2, 'COMMA')}">0.00</td>
+                        </tr>
+                        <tr th:if="${statement.empty}">
+                            <td class="table-empty" colspan="6">
+                                <p class="text-secondary" th:text="#{stmt.noActivity}">No activity in this period.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right font-bold" th:text="#{stmt.closing}">Balance due</td>
+                            <td class="num money font-semibold" th:text="${#numbers.formatDecimal(statement.totalCharges, 1, 2, 'COMMA')}">0.00</td>
+                            <td class="num money font-semibold" th:text="${#numbers.formatDecimal(statement.totalPayments, 1, 2, 'COMMA')}">0.00</td>
+                            <td class="num money font-bold"
+                                th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.closingBalance, 1, 2, 'COMMA')}">RWF 0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{stmt.basisAp}">Posted invoices and recorded payments only. Drafts and voided documents are excluded.</div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

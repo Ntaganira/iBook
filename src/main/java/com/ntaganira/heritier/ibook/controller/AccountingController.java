@@ -12,6 +12,7 @@ package com.ntaganira.heritier.ibook.controller;
 
 import com.ntaganira.heritier.ibook.dto.AccountForm;
 import com.ntaganira.heritier.ibook.dto.JournalEntryForm;
+import com.ntaganira.heritier.ibook.dto.OpeningBalanceForm;
 import com.ntaganira.heritier.ibook.entity.*;
 import com.ntaganira.heritier.ibook.enums.AccountType;
 import com.ntaganira.heritier.ibook.service.AccountingService;
@@ -175,6 +176,27 @@ public class AccountingController {
     public String toggleAccount(@PathVariable Long id) {
         accountingService.toggleAccount(id);
         return "redirect:/accounts";
+    }
+
+    // ----- Opening balances -----
+
+    @GetMapping("/accounting/opening-balances")
+    public String openingBalances(Model model) {
+        List<Account> accounts = accountingService.listAccounts();
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("typeLabels", typeLabels());
+        model.addAttribute("check", accountingService.openingBalanceCheck());
+        model.addAttribute("baseCurrency", baseCurrency());
+        return "accounting/opening-balances";
+    }
+
+    @PostMapping("/accounting/opening-balances")
+    public String saveOpeningBalances(@ModelAttribute("form") OpeningBalanceForm form,
+                                      RedirectAttributes redirectAttributes) {
+        int changed = accountingService.saveOpeningBalances(form.getBalances());
+        redirectAttributes.addFlashAttribute("flashMessage",
+                flash("coa.openingSaved", String.valueOf(changed)));
+        return "redirect:/accounting/opening-balances";
     }
 
     // ----- Journal entries -----

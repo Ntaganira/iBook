@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.mv.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.mv.title}">Stock Movements</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.mv.title}">Stock Movements</h1>
+            <p class="page-subtitle" th:text="#{inv.mv.subtitle}">Every recorded change in stock on hand.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/inventory/adjustments}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{inv.adj.title}">Adjust stock</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/inventory/movements}">
+            <select class="form-control form-control--sm" name="product">
+                <option value="" th:text="#{inv.mv.allProducts}">All products</option>
+                <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.sku + ' — ' + p.name}"
+                        th:selected="${selectedProduct != null and selectedProduct == p.id}">SKU</option>
+            </select>
+            <select class="form-control form-control--sm" name="type">
+                <option value="" th:text="#{inv.mv.allTypes}">All types</option>
+                <option th:each="t : ${movementLabels}" th:value="${t.key}" th:text="${t.value}"
+                        th:selected="${type == t.key}">Adjustment in</option>
+            </select>
+            <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+            <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{inv.prod.title}">Product</th>
+                        <th th:text="#{inv.mv.type}">Type</th>
+                        <th th:text="#{inv.wh.title}">Location</th>
+                        <th class="num" th:text="#{inv.mv.quantity}">Quantity</th>
+                        <th class="num" th:text="#{inv.mv.unitCost}">Unit cost</th>
+                        <th class="num" th:text="#{inv.mv.value}">Value</th>
+                        <th th:text="#{common.reference}">Reference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="m : ${movements.content}">
+                        <td class="cell-secondary" th:text="${#temporals.format(m.movementDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td>
+                            <a class="cell-link" th:href="@{/inventory/products/{id}/edit(id=${m.productId})}" th:text="${m.productName}">Product</a>
+                            <span class="cell-secondary" th:text="${m.productSku}">SKU</span>
+                        </td>
+                        <td>
+                            <span class="badge" th:classappend="${m.movementType.inbound} ? 'badge-active' : 'badge-warning'">
+                                <span th:text="${movementLabels.get(m.movementType.name())}">Adjustment in</span>
+                            </span>
+                        </td>
+                        <td class="cell-secondary" th:text="${m.warehouseName != null ? m.warehouseName : '—'}">—</td>
+                        <td class="num" th:classappend="${m.movementType.inbound} ? 'text-positive' : 'text-error'"
+                            th:text="${(m.movementType.inbound ? '+' : '−') + #numbers.formatDecimal(m.quantity, 1, 2)}">+0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.unitCost, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.value, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="cell-secondary" th:text="${m.reference != null ? m.reference : '—'}">—</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(movements.content)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-layers"/></svg></div>
+                                <p class="text-secondary" th:text="#{inv.mv.none}">No stock movements recorded.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="table-footer">
+            <span class="text-sm text-muted" th:text="#{common.showing(${#lists.size(movements.content)}, ${movements.totalElements})}">Showing 0 of 0</span>
+        </div>
+    </div>
+</main>
+</body>
+</html>

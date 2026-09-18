@@ -38,23 +38,25 @@
     <div class="stat-grid mb-5">
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cust.total}">Total customers</div>
-            <div class="stat-tile-value" th:text="${customers.totalElements}">248</div>
-            <div class="stat-tile-sub" th:text="#{cust.valueOf('+25')}">+25 total</div>
+            <div class="stat-tile-value" th:text="${summary.total}">248</div>
+            <div class="stat-tile-sub" th:text="#{cust.activeCount(${summary.active})}">0 active</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cust.outstanding}">Outstanding balance</div>
-            <div class="stat-tile-value money">RWF 25,400,000</div>
-            <div class="stat-tile-sub text-info" th:text="#{dash.overdue('RWF 4,200,000')}">RWF 4,200,000 overdue</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub text-info" th:if="${summary.overdue.signum() > 0}"
+                 th:text="#{dash.overdue(${baseCurrency + ' ' + #numbers.formatDecimal(summary.overdue, 1, 0, 'COMMA')})}">overdue</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cust.invoicedMonth}">Invoiced this month</div>
-            <div class="stat-tile-value money">RWF 19,840,000</div>
-            <div class="stat-tile-sub" th:text="#{cust.vsLastMonth('+8.1%')}">+8.1% vs last month</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.invoicedThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cust.paymentsReceived}">Payments received</div>
-            <div class="stat-tile-value money">RWF 15,275,000</div>
-            <div class="stat-tile-sub" th:text="#{cust.transactionCount('234')}">234 transactions</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.collectedThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
         </div>
     </div>
 
@@ -168,7 +170,13 @@
                                     <a class="dropdown-item" th:href="@{/invoices/new(customer=${c.id})}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{cust.createInvoice}">Create invoice</span></a>
                                     <a class="dropdown-item" th:href="@{/sales/statements(customer=${c.id})}"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{cust.statement}">Statement</span></a>
                                     <div class="dropdown-divider"></div>
-                                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                    <form th:action="@{/customers/{id}/toggle(id=${c.id})}" method="post">
+                                        <button class="dropdown-item" type="submit">
+                                            <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                                            <span th:if="${c.active}" th:text="#{cust.deactivate}">Deactivate</span>
+                                            <span th:unless="${c.active}" th:text="#{cust.activate}">Activate</span>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </td>
@@ -190,32 +198,6 @@
             <span th:text="#{common.showing(${#lists.size(customers.content)}, ${customers.totalElements})}">Showing 1–25 of 248 records</span>
             <div th:replace="~{layout/pagination :: pagination(${customers.number + 1}, ${customers.totalPages},
                  ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
-        </div>
-    </div>
-
-    <!-- Delete confirmation modal -->
-    <div class="modal-backdrop" id="deleteCustomerModal">
-        <div class="modal modal--sm">
-            <div class="modal-header">
-                <h3 th:text="#{cust.deleteTitle}">Delete customer</h3>
-                <button class="modal-close" type="button" data-close-modal th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
-            </div>
-            <div class="modal-body">
-                <div class="d-flex gap-3">
-                    <span class="notification-icon notification-icon--warning"><svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg></span>
-                    <div>
-                        <p class="text-md" th:text="#{cust.deleteConfirm('ABC Construction Ltd')}">Are you sure you want to delete <strong>ABC Construction Ltd</strong>?</p>
-                        <p class="text-sm text-secondary mt-1" th:text="#{cust.deleteWarn('RWF 4,850,000')}">This customer has an outstanding balance of <strong>RWF 4,850,000</strong>. Deletion cannot be undone. Consider deactivating instead.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" data-close-modal th:text="#{common.cancel}">Cancel</button>
-                <button class="btn btn-danger" type="button">
-                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
-                    <span th:text="#{cust.deleteBtn}">Delete customer</span>
-                </button>
-            </div>
         </div>
     </div>
 

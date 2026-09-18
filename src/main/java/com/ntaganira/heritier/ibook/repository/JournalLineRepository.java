@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface JournalLineRepository extends JpaRepository<JournalLine, Long> {
@@ -30,4 +31,19 @@ public interface JournalLineRepository extends JpaRepository<JournalLine, Long> 
     @Query("select l from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED " +
             "order by l.entry.entryDate asc, l.entry.id asc, l.sortOrder asc")
     List<JournalLine> postedLines();
+
+    @Query("select l.accountId, coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0) from JournalLine l " +
+            "where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED " +
+            "and l.entry.entryDate >= :from and l.entry.entryDate <= :to group by l.accountId")
+    List<Object[]> postedTotalsBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select l.accountId, coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0) from JournalLine l " +
+            "where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED " +
+            "and l.entry.entryDate <= :asOf group by l.accountId")
+    List<Object[]> postedTotalsUpTo(@Param("asOf") LocalDate asOf);
+
+    @Query("select l from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED " +
+            "and l.entry.entryDate >= :from and l.entry.entryDate <= :to " +
+            "order by l.accountId asc, l.entry.entryDate asc, l.entry.id asc, l.sortOrder asc")
+    List<JournalLine> postedLinesBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }

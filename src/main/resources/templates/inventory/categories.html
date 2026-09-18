@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.cat.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.cat.title}">Categories</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.cat.title}">Categories</h1>
+            <p class="page-subtitle" th:text="#{inv.cat.subtitle}">Group products for reporting and filtering.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{inv.cat.code}">Code</th>
+                                <th th:text="#{common.name}">Name</th>
+                                <th class="num" th:text="#{inv.cat.products}">Products</th>
+                                <th th:text="#{common.status}">Status</th>
+                                <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="c : ${categories}">
+                                <td class="mono" th:text="${c.code}">CAT</td>
+                                <td>
+                                    <span th:text="${c.name}">Category</span>
+                                    <span class="cell-secondary" th:if="${c.description != null}" th:text="${c.description}"></span>
+                                </td>
+                                <td class="num" th:text="${counts.containsKey(c.id) ? counts.get(c.id) : 0}">0</td>
+                                <td>
+                                    <span class="badge badge-active" th:if="${c.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                                    <span class="badge badge-muted" th:unless="${c.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                                </td>
+                                <td class="actions-cell">
+                                    <form th:action="@{/inventory/categories/{id}/delete(id=${c.id})}" method="post">
+                                        <button class="btn btn-ghost btn-sm" type="submit"
+                                                th:disabled="${counts.containsKey(c.id) and counts.get(c.id) > 0}">
+                                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(categories)}">
+                                <td class="table-empty" colspan="5">
+                                    <p class="text-secondary" th:text="#{inv.cat.none}">No categories yet.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.cat.new}">New category</h3></div>
+                <form method="post" novalidate th:object="${form}" th:action="@{/inventory/categories}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="cCode"><span th:text="#{inv.cat.code}">Code</span> <span class="required">*</span></label>
+                            <input class="form-control" id="cCode" name="code" type="text" th:value="${form.code}" required>
+                            <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                            <input class="form-control" id="cName" name="name" type="text" th:value="${form.name}" required>
+                            <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cDesc" th:text="#{common.description}">Description</label>
+                            <input class="form-control" id="cDesc" name="description" type="text" th:value="${form.description}">
+                        </div>
+                        <label class="switch mt-2">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{common.status.active}">Active</span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary w-full" type="submit" th:text="#{inv.cat.add}">Add category</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

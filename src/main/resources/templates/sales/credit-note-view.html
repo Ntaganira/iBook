@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${creditNote.creditNoteNo}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/sales/credit-notes}" th:text="#{cn.title}">Credit Notes</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${creditNote.creditNoteNo}">CN-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${creditNote.creditNoteNo}">CN-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="${creditNote.customerName}">Customer</span>
+                <span th:text="' · ' + ${#temporals.format(creditNote.creditDate, 'dd MMM yyyy')}"></span>
+                <span th:if="${creditNote.reason != null}" th:text="' · ' + ${creditNote.reason}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="st=${creditNote.status.name()}">
+            <span class="badge"
+                  th:classappend="${st == 'APPLIED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+            </span>
+
+            <a class="btn btn-secondary" th:if="${creditNote.editable}"
+               th:href="@{/sales/credit-notes/{id}/edit(id=${creditNote.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{cn.view.edit}">Edit credit note</span>
+            </a>
+
+            <form th:if="${creditNote.editable}"
+                  th:action="@{/sales/credit-notes/{id}/post(id=${creditNote.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{cn.postToLedger}">Post to ledger</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${invoice != null and creditNote.appliedAmount.signum() > 0}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{cn.appliedTitle}">Applied to an invoice</div>
+            <a class="cell-link" th:href="@{/invoices/{id}(id=${invoice.id})}"
+               th:text="${invoice.invoiceNo + ' — ' + creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.appliedAmount, 1, 2, 'COMMA')}">INV-0001</a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4"
+         th:if="${creditNote.posted and creditNote.unappliedAmount.signum() > 0}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{cn.unappliedTitle}">Unapplied credit</div>
+            <span th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.unappliedAmount, 1, 2, 'COMMA')} + ' · ' + #{cn.unappliedHint}">RWF 0.00</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.subtotal}">Subtotal</div>
+            <div class="stat-tile-value money"
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.discount}">Discount</div>
+            <div class="stat-tile-value money"
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.discountAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.tax}">Tax</div>
+            <div class="stat-tile-value money"
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.creditTotal}">Credit total</div>
+            <div class="stat-tile-value money"
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{cn.lineItems}">Line items</h3>
+                    <span class="text-sm text-muted" th:if="${creditNote.reference != null}"
+                          th:text="#{common.reference} + ': ' + ${creditNote.reference}"></span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{cn.itemDescription}">Item / description</th>
+                                <th th:text="#{cn.revenueAccount}">Revenue account</th>
+                                <th class="num" th:text="#{cn.qty}">Qty</th>
+                                <th class="num" th:text="#{cn.unitPrice}">Unit price</th>
+                                <th class="num" th:text="#{cn.vat}">VAT</th>
+                                <th class="num" th:text="#{cn.amount}">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="l : ${creditNote.lines}">
+                                <td>
+                                    <span th:text="${l.description}">Item</span>
+                                    <span class="cell-secondary" th:if="${l.productSku != null}" th:text="${l.productSku}"></span>
+                                </td>
+                                <td class="cell-secondary"
+                                    th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">—</td>
+                                <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(creditNote.lines)}">
+                                <td class="table-empty" colspan="6">
+                                    <p class="text-secondary" th:text="#{cn.emptyLines}">No line items.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" class="text-right font-bold" th:text="#{cn.creditTotal}">Credit total</td>
+                                <td class="num money font-bold"
+                                    th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-body" th:if="${creditNote.customerMessage != null}">
+                    <div class="cell-secondary" th:text="#{cn.customerMessage}">Message to customer</div>
+                    <p class="text-sm" th:text="${creditNote.customerMessage}"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{cn.ledgerEntry}">Ledger entry</h3></div>
+                <div class="card-body" th:if="${journal == null}">
+                    <div class="alert alert--info">
+                        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                        <div class="alert-body" th:text="#{cn.notPosted}">Not yet posted to the ledger</div>
+                    </div>
+                </div>
+                <div th:if="${journal != null}">
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{coa.account}">Account</th>
+                                    <th class="num" th:text="#{je.debit}">Debit</th>
+                                    <th class="num" th:text="#{je.credit}">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="l : ${journal.lines}">
+                                    <td>
+                                        <span th:text="${l.accountCode}">1201</span>
+                                        <span class="cell-secondary" th:text="${l.accountName}">Accounts receivable</span>
+                                    </td>
+                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 2, 'COMMA')}">0.00</td>
+                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 2, 'COMMA')}">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-body">
+                        <a class="btn btn-secondary btn-sm w-full" th:href="@{/journals/{id}(id=${journal.id})}">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-book"/></svg>
+                            <span th:text="#{cn.viewJournal} + ' (' + ${journal.entryNo} + ')'">View journal entry</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${creditNote.status.name() != 'VOID'}">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <form th:if="${creditNote.posted}"
+                          th:action="@{/sales/credit-notes/{id}/void(id=${creditNote.id})}" method="post">
+                        <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                               th:placeholder="#{cn.voidReason}">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-x-circle"/></svg>
+                            <span th:text="#{cn.voidCreditNote}">Void credit note</span>
+                        </button>
+                    </form>
+                    <form th:if="${creditNote.editable}"
+                          th:action="@{/sales/credit-notes/{id}/delete(id=${creditNote.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{cn.deleteDraft}">Delete draft</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{cn.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{cn.title}">Credit Notes</h1>
+            <p class="page-subtitle" th:text="#{cn.subtitle}">Credits issued against customer invoices.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                    <span th:text="#{common.export}">Export</span>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{common.exportCsv}">Export CSV</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{common.exportExcel}">Export Excel</span></button>
+                </div>
+            </div>
+            <a class="btn btn-primary" th:href="@{/sales/credit-notes/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{cn.new}">New credit note</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/sales/credit-notes}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{cn.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/credit-notes(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{cn.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/credit-notes(status='ISSUED')}" th:classappend="${status == 'ISSUED'} ? 'active'">
+            <span th:text="#{cn.status.issued}">Issued</span> <span class="tab-count" th:text="${summary.issued}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/credit-notes(status='APPLIED')}" th:classappend="${status == 'APPLIED'} ? 'active'">
+            <span th:text="#{cn.status.applied}">Applied</span> <span class="tab-count" th:text="${summary.applied}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/credit-notes(status='VOID')}" th:classappend="${status == 'VOID'} ? 'active'">
+            <span th:text="#{cn.status.void}">Void</span> <span class="tab-count" th:text="${summary.voided}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.totalCredited}">Total credited</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalCredited, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.creditedThisMonth}">Credited this month</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.creditedThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.unapplied}">Unapplied credit</div>
+            <div class="stat-tile-value money" th:classappend="${summary.unapplied.signum() > 0} ? 'text-warning'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.unapplied, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cn.status.draft}">Draft</div>
+            <div class="stat-tile-value" th:text="${summary.draft}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/sales/credit-notes}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{cn.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.status}">Status</span>
+                    <span class="filter-badge" th:if="${status != null and status != ''}"
+                          th:text="${statusLabels.get(status)}">Issued</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{cn.creditNoteStatus}">Credit note status</div>
+                    <a class="dropdown-item" th:href="@{/sales/credit-notes(q=${q})}"
+                       th:classappend="${status == null or status == ''} ? 'active'">
+                        <span th:text="#{cn.all}">All</span>
+                    </a>
+                    <a class="dropdown-item" th:each="entry : ${statusLabels}"
+                       th:href="@{/sales/credit-notes(q=${q}, status=${entry.key})}"
+                       th:classappend="${status == entry.key} ? 'active'">
+                        <svg class="ebook-icon" th:if="${status == entry.key}"><use href="#icon-check"/></svg>
+                        <span th:text="${entry.value}">Draft</span>
+                    </a>
+                </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/sales/credit-notes}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(creditNotes.content)}, ${creditNotes.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'creditNoteNo', #{cn.creditNote}, ${sort}, ${dir})}">Credit note</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'customerName', #{cn.customer}, ${sort}, ${dir})}">Customer</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'creditDate', #{cn.date}, ${sort}, ${dir})}">Date</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'invoiceNo', #{cn.invoice}, ${sort}, ${dir})}">Invoice</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'total', #{common.amount}, ${sort}, ${dir})}">Amount</th>
+                        <th class="num" th:text="#{cn.unappliedAmount}">Unapplied</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="note : ${creditNotes.content}">
+                        <td>
+                            <a class="cell-link" th:href="@{/sales/credit-notes/{id}(id=${note.id})}" th:text="${note.creditNoteNo}">CN-0001</a>
+                            <span class="cell-secondary" th:if="${note.reference != null}" th:text="${note.reference}">Ref</span>
+                        </td>
+                        <td>
+                            <a class="cell-link" th:href="@{/customers/{id}(id=${note.customerId})}" th:text="${note.customerName}">Customer</a>
+                        </td>
+                        <td class="cell-secondary" th:text="${#temporals.format(note.creditDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td>
+                            <a class="cell-link" th:if="${note.invoiceId != null}"
+                               th:href="@{/invoices/{id}(id=${note.invoiceId})}" th:text="${note.invoiceNo}">INV-0001</a>
+                            <span class="cell-secondary" th:if="${note.invoiceId == null}" th:text="#{cn.noInvoice}">Unallocated</span>
+                        </td>
+                        <td class="num money"
+                            th:text="${note.currencyCode + ' ' + #numbers.formatDecimal(note.total, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td class="num money"
+                            th:text="${note.currencyCode + ' ' + #numbers.formatDecimal(note.unappliedAmount, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td th:with="st=${note.status.name()}">
+                            <span class="badge" th:classappend="${st == 'APPLIED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Issued</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/sales/credit-notes/{id}(id=${note.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:if="${note.editable}" th:href="@{/sales/credit-notes/{id}/edit(id=${note.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:if="${note.editable}" th:action="@{/sales/credit-notes/{id}/post(id=${note.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{cn.postToLedger}">Post to ledger</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(creditNotes.content)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-receipt"/></svg></div>
+                                <p class="text-secondary" th:text="#{cn.none}">No credit notes found.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/sales/credit-notes/new}" th:text="#{cn.new}">New credit note</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${creditNotes.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(creditNotes.content)}, ${creditNotes.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${creditNotes.number + 1}, ${creditNotes.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rpt.balanceSheet}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/reports}" th:text="#{rpt.title}">Reports</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{rpt.balanceSheet}">Balance Sheet</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{rpt.balanceSheet}">Balance Sheet</h1>
+            <p class="page-subtitle">
+                <span th:if="${company != null}" th:text="${company.name} + ' · '"></span>
+                <span th:text="#{rpt.asOf} + ' ' + ${#temporals.format(report.asOf, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/reports/balance-sheet}">
+                <label class="form-label mb-0" th:text="#{rpt.asOf}">As of</label>
+                <input class="form-control form-control--sm" type="date" name="asOf" th:value="${asOf}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${report.balanced()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{rpt.outOfBalance}">Balance sheet does not balance</div>
+            <div th:text="#{rpt.outOfBalanceHint(${baseCurrency + ' ' + #numbers.formatDecimal(report.difference, 1, 2, 'COMMA')})}"></div>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.totalAssets}">Total assets</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalAssets, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.totalLiabilities}">Total liabilities</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalLiabilities, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.totalEquity}">Total equity</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.equityWithEarnings, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.currentEarnings}">Current year earnings</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${report.currentEarnings.signum() < 0} ? 'text-error' : 'text-positive'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.currentEarnings, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{rpt.assets}">Assets</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <tbody>
+                            <tr th:each="l : ${report.assets}">
+                                <td>
+                                    <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId})}"
+                                       th:text="${l.accountCode} + ' — ' + ${l.accountName}">1101 Bank</a>
+                                </td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(report.assets)}">
+                                <td class="cell-secondary" colspan="2" th:text="#{rpt.noBalances}">No balances to show.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="text-right font-bold" th:text="#{rpt.totalAssets}">Total assets</td>
+                                <td class="num money font-bold"
+                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalAssets, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{rpt.liabilitiesEquity}">Liabilities &amp; equity</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <tbody>
+                            <tr><td colspan="2" class="font-bold" th:text="#{rpt.liabilities}">Liabilities</td></tr>
+                            <tr th:each="l : ${report.liabilities}">
+                                <td>
+                                    <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId})}"
+                                       th:text="${l.accountCode} + ' — ' + ${l.accountName}">2001 Payables</a>
+                                </td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(report.liabilities)}">
+                                <td class="cell-secondary" colspan="2" th:text="#{rpt.noBalances}">No balances to show.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right font-semibold" th:text="#{rpt.totalLiabilities}">Total liabilities</td>
+                                <td class="num money font-semibold"
+                                    th:text="${#numbers.formatDecimal(report.totalLiabilities, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+
+                            <tr><td colspan="2" class="font-bold pt-4" th:text="#{rpt.equity}">Equity</td></tr>
+                            <tr th:each="l : ${report.equity}">
+                                <td>
+                                    <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId})}"
+                                       th:text="${l.accountCode} + ' — ' + ${l.accountName}">3001 Capital</a>
+                                </td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="cell-secondary" th:text="#{rpt.currentEarnings}">Current year earnings</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(report.currentEarnings, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right font-semibold" th:text="#{rpt.totalEquity}">Total equity</td>
+                                <td class="num money font-semibold"
+                                    th:text="${#numbers.formatDecimal(report.equityWithEarnings, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="text-right font-bold" th:text="#{rpt.totalLiabilitiesEquity}">Total liabilities &amp; equity</td>
+                                <td class="num money font-bold"
+                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalLiabilitiesAndEquity, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                            <tr th:unless="${report.balanced()}">
+                                <td class="text-right font-semibold text-error" th:text="#{rpt.difference}">Difference</td>
+                                <td class="num money font-semibold text-error"
+                                    th:text="${#numbers.formatDecimal(report.difference, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

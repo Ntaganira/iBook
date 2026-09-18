@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${vendor.name}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/vendors}" th:text="#{ven.title}">Vendors</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${vendor.name}">Vendors</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${vendor.name}">Vendors</h1>
+            <p class="page-subtitle">
+                <span th:if="${vendor.companyName != null}" th:text="${vendor.companyName}">Company</span>
+                <span th:if="${stats.lastBillDate != null}"
+                      th:text="' · ' + #{ven.view.lastBill} + ' ' + ${#temporals.format(stats.lastBillDate, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <span class="badge badge-active" th:if="${vendor.active}">
+                <span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span>
+            </span>
+            <span class="badge badge-muted" th:unless="${vendor.active}">
+                <span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span>
+            </span>
+            <a class="btn btn-secondary" th:href="@{/vendors/{id}/edit(id=${vendor.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{common.edit}">Edit</span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/bills/new(vendor=${vendor.id})}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{ven.createBill}">Create bill</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.view.totalBilled}">Total invoiced</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalBilled, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:text="#{ven.view.billCount(${stats.billCount})}">0 invoices</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.view.totalPaid}">Paid to date</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalPaid, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.outstanding}">Outstanding balance</div>
+            <div class="stat-tile-value money" th:classappend="${stats.outstanding.signum() > 0} ? 'text-error'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:if="${stats.openBills > 0}"
+                 th:text="#{ven.view.openBills(${stats.openBills})}">0 open</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.openingBalance}">Opening balance</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vendor.openingBalance != null ? vendor.openingBalance : 0, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{ven.view.billHistory}">Invoice history</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{bill.bill}">Bill</th>
+                                <th th:text="#{bill.billed}">Issued</th>
+                                <th th:text="#{bill.due}">Due</th>
+                                <th class="num" th:text="#{common.amount}">Amount</th>
+                                <th class="num" th:text="#{bill.openBalance}">Open balance</th>
+                                <th th:text="#{common.status}">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="b : ${bills}">
+                                <td>
+                                    <a class="cell-link" th:href="@{/bills/{id}(id=${b.id})}" th:text="${b.billNo}">BILL-0001</a>
+                                    <span class="cell-secondary" th:if="${b.reference != null}" th:text="${b.reference}"></span>
+                                </td>
+                                <td class="cell-secondary" th:text="${#temporals.format(b.billDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td class="cell-secondary">
+                                    <span th:text="${#temporals.format(b.dueDate, 'dd MMM yyyy')}">31 Jan 2026</span>
+                                    <span class="cell-secondary text-error" th:if="${b.daysOverdue > 0}"
+                                          th:text="#{bill.view.daysOverdue(${b.daysOverdue})}">0 days overdue</span>
+                                </td>
+                                <td class="num money"
+                                    th:text="${b.currencyCode + ' ' + #numbers.formatDecimal(b.total, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num money"
+                                    th:text="${b.currencyCode + ' ' + #numbers.formatDecimal(b.balanceDue, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td th:with="ds=${b.displayStatus.name()}">
+                                    <span class="badge" th:classappend="${ds == 'PAID' ? 'badge-active' : (ds == 'OVERDUE' ? 'badge-error' : (ds == 'DRAFT' or ds == 'VOID' ? 'badge-muted' : 'badge-warning'))}">
+                                        <span class="badge-dot"></span>
+                                        <span th:text="${statusLabels.get(ds)}">Open</span>
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(invoices)}">
+                                <td class="table-empty" colspan="6">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-receipt"/></svg></div>
+                                        <p class="text-secondary" th:text="#{ven.view.noBills}">No bills for this vendor yet.</p>
+                                        <a class="btn btn-primary btn-sm mt-3" th:href="@{/bills/new(vendor=${vendor.id})}"
+                                           th:text="#{ven.createBill}">Create bill</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" th:if="${vendor.notes != null}">
+                <div class="card-header"><h3 th:text="#{ven.notes}">Notes</h3></div>
+                <div class="card-body">
+                    <p class="text-sm text-secondary" th:text="${vendor.notes}"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{ven.view.contact}">Contact</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <div th:if="${vendor.email != null}">
+                        <div class="cell-secondary" th:text="#{common.email}">Email</div>
+                        <div th:text="${vendor.email}"></div>
+                    </div>
+                    <div th:if="${vendor.phone != null}">
+                        <div class="cell-secondary" th:text="#{common.phone}">Phone</div>
+                        <div th:text="${vendor.phone}"></div>
+                    </div>
+                    <div th:if="${vendor.mobileMoney != null}">
+                        <div class="cell-secondary" th:text="#{ven.mobileMoney}">Mobile Money</div>
+                        <div th:text="${vendor.mobileMoney}"></div>
+                    </div>
+                    <div th:if="${vendor.website != null}">
+                        <div class="cell-secondary" th:text="#{ven.website}">Website</div>
+                        <div th:text="${vendor.website}"></div>
+                    </div>
+                    <div th:if="${vendor.taxId != null}">
+                        <div class="cell-secondary" th:text="#{ven.taxId}">Tax ID (TIN)</div>
+                        <div th:text="${vendor.taxId}"></div>
+                    </div>
+                    <div th:if="${vendor.paymentTerms != null}">
+                        <div class="cell-secondary" th:text="#{ven.paymentTerms}">Payment terms</div>
+                        <div th:text="${vendor.paymentTerms}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${vendor.street != null or vendor.city != null or vendor.country != null}">
+                <div class="card-header"><h3 th:text="#{ven.billingAddress}">Billing address</h3></div>
+                <div class="card-body">
+                    <div th:if="${vendor.street != null}" th:text="${vendor.street}"></div>
+                    <div class="cell-secondary" th:if="${vendor.city != null}" th:text="${vendor.city}"></div>
+                    <div class="cell-secondary" th:if="${vendor.state != null}" th:text="${vendor.state}"></div>
+                    <div class="cell-secondary" th:if="${vendor.postalCode != null}" th:text="${vendor.postalCode}"></div>
+                    <div class="cell-secondary" th:if="${vendor.country != null}" th:text="${vendor.country}"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <form th:action="@{/vendors/{id}/toggle(id=${vendor.id})}" method="post">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                            <span th:if="${vendor.active}" th:text="#{ven.deactivate}">Deactivate</span>
+                            <span th:unless="${vendor.active}" th:text="#{ven.activate}">Activate</span>
+                        </button>
+                    </form>
+                    <form th:if="${#lists.isEmpty(invoices)}"
+                          th:action="@{/vendors/{id}/delete(id=${vendor.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{common.delete}">Delete</span>
+                        </button>
+                    </form>
+                    <div class="form-hint" th:unless="${#lists.isEmpty(invoices)}"
+                         th:text="#{ven.deleteBlocked}">Customers with invoices cannot be deleted.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

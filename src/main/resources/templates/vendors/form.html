@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ven.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/vendors}" th:text="#{ven.title}">Vendors</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{ven.form.editBreadcrumb}">Edit vendor</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{ven.form.breadcrumb}">New vendor</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{ven.form.editTitle}">Edit Vendor</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{ven.form.title}">New Vendor</h1>
+            <p class="page-subtitle" th:text="#{ven.form.subtitle}">Add a customer to start creating estimates and invoices.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/vendors}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="vendorForm">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{ven.saveVendor}">Save customer</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="vendorForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/vendors/{id}(id=${editingId})} : @{/vendors}">
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <!-- Basic information -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{ven.basicInfo}">Basic information</h3>
+                            <div class="card-subtitle" th:text="#{ven.basicInfoHint}">Used on invoices and statements</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="vendorName"><span th:text="#{ven.vendorName}">Customer name</span> <span class="required">*</span></label>
+                                <input class="form-control" id="vendorName" name="name" type="text"
+                                       th:value="${form.name}" th:placeholder="#{ven.vendorNamePlaceholder}" required autofocus>
+                                <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                                <div class="form-hint" th:text="#{ven.vendorNameHint}">The business or person you buy from.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorCompany" th:text="#{ven.company}">Company</label>
+                                <input class="form-control" id="vendorCompany" name="companyName" type="text"
+                                       th:value="${form.companyName}" th:placeholder="#{ven.companyPlaceholder}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorEmail"><span th:text="#{common.email}">Email</span> <span class="hint" th:text="#{ven.emailHint}">invoices are sent here</span></label>
+                                <input class="form-control" id="vendorEmail" name="email" type="email"
+                                       th:value="${form.email}" placeholder="billing@example.com">
+                                <div th:replace="~{layout/common :: fieldError('email')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorPhone" th:text="#{common.phone}">Phone</label>
+                                <input class="form-control" id="vendorPhone" name="phone" type="tel"
+                                       th:value="${form.phone}" placeholder="+250 7XX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorMobileMoney" th:text="#{ven.mobileMoney}">Mobile Money</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">+250</span>
+                                    <input class="form-control" id="vendorMobileMoney" name="mobileMoney" type="tel"
+                                           th:value="${form.mobileMoney}" placeholder="78X XXX XXX">
+                                </div>
+                                <div class="form-hint" th:text="#{ven.mobileMoneyHint}">Used for MTN MoMo / Airtel Money payments.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorTaxId" th:text="#{ven.taxId}">Tax ID (TIN)</label>
+                                <input class="form-control" id="vendorTaxId" name="taxId" type="text"
+                                       th:value="${form.taxId}" th:placeholder="#{ven.tinPlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Billing address -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{ven.billingAddress}">Billing address</h3>
+                            <div class="card-subtitle" th:text="#{ven.billingAddressHint}">Appears on printed invoices</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="vendorStreet" th:text="#{ven.street}">Street / Plot</label>
+                                <input class="form-control" id="vendorStreet" name="street" type="text"
+                                       th:value="${form.street}" placeholder="KG 5 RD, Plot 42">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorCity" th:text="#{common.city}">City</label>
+                                <input class="form-control" id="vendorCity" name="city" type="text" th:value="${form.city}" placeholder="Kigali">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorState" th:text="#{ven.state}">Province / State</label>
+                                <input class="form-control" id="vendorState" name="state" type="text" th:value="${form.state}" placeholder="Kigali City">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorPostal" th:text="#{ven.postal}">Postal code</label>
+                                <input class="form-control" id="vendorPostal" name="postalCode" type="text" th:value="${form.postalCode}" placeholder="0000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="vendorCountry" th:text="#{ven.country}">Country</label>
+                                <select class="form-control" id="vendorCountry" name="country">
+                                    <option th:each="cn : ${ {'Rwanda','Kenya','Uganda','Tanzania','Burundi','DR Congo'} }"
+                                            th:value="${cn}" th:text="${cn}"
+                                            th:selected="${form.country == cn}">Rwanda</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label class="form-label" for="vendorWebsite" th:text="#{ven.website}">Website</label>
+                                <input class="form-control" id="vendorWebsite" name="website" type="url" th:value="${form.website}" placeholder="https://example.com">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notes -->
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <h3 th:text="#{ven.notesPrefs}">Notes &amp; preferences</h3>
+                            <div class="card-subtitle" th:text="#{ven.notesPrefsHint}">Internal information for your team</div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="vendorNotes" th:text="#{ven.notes}">Notes</label>
+                            <textarea class="form-control" id="vendorNotes" name="notes" data-autosize
+                                      th:text="${form.notes}" th:placeholder="#{ven.notesPlaceholder}"></textarea>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{ven.isActive}">Vendor is active</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right rail -->
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <!-- Opening balance -->
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{ven.openingBalance}">Opening balance</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="vendorOpeningBalance" th:text="#{ven.amountOwed}">Amount owed to this vendor</label>
+                            <div class="input-group">
+                                <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                                <input class="form-control amount-control" id="vendorOpeningBalance" name="openingBalance"
+                                       type="number" min="0" step="0.01" th:value="${form.openingBalance}" placeholder="0.00">
+                                <div th:replace="~{layout/common :: fieldError('openingBalance')}"></div>
+                            </div>
+                            <div class="form-hint" th:text="#{ven.openingHint}">Use only when moving existing receivables into Ebook Online.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Payment terms -->
+                <section class="section">
+                    <div class="section-header">
+                        <h3 th:text="#{ven.paymentTerms}">Payment terms</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label" for="vendorPaymentTerms" th:text="#{ven.defaultTerms}">Default terms</label>
+                            <select class="form-control" id="vendorPaymentTerms" name="paymentTerms">
+                                <option th:each="t : ${paymentTermsOptions}" th:value="${t.key}" th:text="${t.value}"
+                                        th:selected="${form.paymentTerms == t.key}">Net 15</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Insights preview -->
+                <section class="card p-5" style="border-left:3px solid var(--primary-500)">
+                    <div class="d-flex gap-2 mb-2">
+                        <svg class="ebook-icon" style="color:var(--primary-500)"><use href="#icon-zap"/></svg>
+                        <h4 class="text-md font-semibold" th:text="#{ven.aiTip}">AI tip</h4>
+                    </div>
+                    <p class="text-sm text-secondary" style="line-height:var(--lh-relaxed)"
+                       th:text="#{ven.aiTipText}">Adding a mobile money number lets customers pay invoices instantly with a payment link — no cash or bank transfer needed.</p>
+                </section>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

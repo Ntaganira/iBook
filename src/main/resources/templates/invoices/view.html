@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: layout(#{inv.title} + ' INV-2026-00451', ~{::content})}">
+      th:replace="~{layout/base :: layout(#{inv.invoice}, ~{::content})}">
 
 <head></head>
 
@@ -10,101 +10,99 @@
     <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
         <a th:href="@{/invoices}" th:text="#{inv.title}">Invoices</a>
         <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
-        <span class="current">INV-2026-00451</span>
+        <span class="current" th:text="${invoice.invoiceNo}">INV-0001</span>
     </nav>
 
     <div class="page-header">
-        <div class="d-flex align-items-center gap-3">
-            <h1 class="page-title">INV-2026-00451</h1>
-            <span class="badge badge-overdue"><span class="badge-dot"></span><span th:text="#{common.status.overdue}">Overdue</span></span>
-            <span class="badge badge-info" th:text="#{inv.view.ebmSubmitted}">EBM submitted</span>
+        <div>
+            <h1 class="page-title" th:text="${invoice.invoiceNo}">INV-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="${invoice.customerName}">Customer</span>
+                <span th:text="' · ' + ${#temporals.format(invoice.issueDate, 'dd MMM yyyy')}"></span>
+            </p>
         </div>
-        <div class="page-actions">
-            <div class="dropdown">
-                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
-                    <svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg>
-                    <span th:text="#{inv.view.more}">More</span>
+        <div class="page-actions" th:with="ds=${invoice.displayStatus.name()}">
+            <span class="badge" th:classappend="${ds == 'PAID' ? 'badge-active' : (ds == 'OVERDUE' ? 'badge-error' : (ds == 'DRAFT' or ds == 'VOID' ? 'badge-muted' : 'badge-warning'))}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(ds)}">Open</span>
+            </span>
+            <a class="btn btn-secondary" th:if="${invoice.editable}" th:href="@{/invoices/{id}/edit(id=${invoice.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{inv.view.editInvoice}">Edit invoice</span>
+            </a>
+            <form th:if="${invoice.editable}" th:action="@{/invoices/{id}/post(id=${invoice.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{inv.post}">Post to ledger</span>
                 </button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" th:href="@{/invoices/451/pdf}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{inv.downloadPdf}">Download PDF</span></a>
-                    <a class="dropdown-item" th:href="@{/invoices/451/email}"><svg class="ebook-icon"><use href="#icon-send"/></svg><span th:text="#{inv.view.emailReminder}">Email reminder</span></a>
-                    <a class="dropdown-item" th:href="@{/invoices/451/edit}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{inv.view.editInvoice}">Edit invoice</span></a>
-                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-x"/></svg><span th:text="#{inv.voidInvoice}">Void invoice</span></button>
-                </div>
-            </div>
-            <button class="btn btn-primary" type="button" data-open-modal="recordPaymentModal">
-                <svg class="ebook-icon"><use href="#icon-credit-card"/></svg>
-                <span th:text="#{inv.recordPayment}">Record payment</span>
-            </button>
+            </form>
+            <form th:if="${invoice.posted and invoice.sentAt == null and invoice.status.name() != 'VOID'}"
+                  th:action="@{/invoices/{id}/send(id=${invoice.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-send"/></svg>
+                    <span th:text="#{inv.markSent}">Mark as sent</span>
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Overview tiles -->
     <div class="stat-grid mb-5">
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.view.invoiceTotal}">Invoice total</div>
-            <div class="stat-tile-value money">RWF 1,250,000</div>
+            <div class="stat-tile-value money"
+                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.total, 1, 2, 'COMMA')}">RWF 0.00</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.view.paidToDate}">Paid to date</div>
-            <div class="stat-tile-value money money-positive">RWF 0</div>
+            <div class="stat-tile-value money"
+                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.amountPaid, 1, 2, 'COMMA')}">RWF 0.00</div>
         </div>
         <div class="stat-tile">
-            <div class="stat-tile-label" th:text="#{inv.view.openBalance}">Open balance</div>
-            <div class="stat-tile-value money money-negative">RWF 1,250,000</div>
+            <div class="stat-tile-label" th:text="#{inv.balanceDue}">Balance due</div>
+            <div class="stat-tile-value money" th:classappend="${invoice.daysOverdue > 0} ? 'text-error'"
+                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.balanceDue, 1, 2, 'COMMA')}">RWF 0.00</div>
+            <div class="stat-tile-sub" th:if="${invoice.daysOverdue > 0}">
+                <span class="badge badge-error"><span class="badge-dot"></span><span th:text="#{inv.view.daysOverdue(${invoice.daysOverdue})}">0 days overdue</span></span>
+            </div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.due}">Due</div>
-            <div class="stat-tile-value text-error">15 Sep 2026</div>
-            <div class="stat-tile-sub" th:text="#{inv.view.daysOverdue('12')}">12 days overdue</div>
+            <div class="stat-tile-value" th:text="${#temporals.format(invoice.dueDate, 'dd MMM yyyy')}">31 Jan 2026</div>
         </div>
     </div>
 
     <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
 
-        <!-- Document preview -->
-        <div class="col-span-8">
-            <div class="doc-preview">
-
-                <div class="doc-preview-header">
-                    <div>
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <svg class="ebook-icon ebook-icon--lg" style="color:var(--primary-700)"><use href="#icon-logo"/></svg>
-                            <span class="font-bold text-lg">Ebook Online</span>
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.billTo}">Bill to</h3></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div>
+                            <div class="font-semibold" th:text="${invoice.customerName}">Customer</div>
+                            <div class="cell-secondary" th:if="${customer != null and customer.companyName != null}" th:text="${customer.companyName}"></div>
+                            <div class="cell-secondary" th:if="${invoice.customerEmail != null}" th:text="${invoice.customerEmail}"></div>
+                            <div class="cell-secondary" th:if="${customer != null and customer.phone != null}" th:text="${customer.phone}"></div>
+                            <div class="cell-secondary" th:if="${customer != null and customer.taxId != null}"
+                                 th:text="'TIN ' + ${customer.taxId}"></div>
                         </div>
-                        <div class="text-sm text-secondary">KG 5 Ave, Kigali, Rwanda</div>
-                        <div class="text-sm text-secondary">TIN 103 448 902</div>
-                        <div class="text-sm text-secondary">www.ebookonline.rw · billing@ebookonline.rw</div>
-                    </div>
-                    <div class="doc-preview-meta">
-                        <div class="doc-number">INV-2026-00451</div>
-                        <div class="text-sm text-secondary mt-1"><span th:text="#{inv.invoiceDate}">Invoice date</span>: 01 Sep 2026</div>
-                        <div class="text-sm text-secondary"><span th:text="#{inv.dueDate}">Due date</span>: 15 Sep 2026</div>
-                        <span class="badge badge-overdue mt-2"><span class="badge-dot"></span><span th:text="#{common.status.overdue}">Overdue</span></span>
+                        <div>
+                            <div class="cell-secondary" th:if="${invoice.reference != null}"
+                                 th:text="#{inv.view.purchaseOrder} + ': ' + ${invoice.reference}"></div>
+                            <div class="cell-secondary" th:if="${invoice.paymentTerms != null}"
+                                 th:text="#{inv.paymentTerms} + ': ' + ${invoice.paymentTerms}"></div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="d-flex justify-content-between mb-6">
-                    <div>
-                        <div class="text-xs text-muted mb-1" style="text-transform:uppercase;letter-spacing:.05em;font-weight:700" th:text="#{inv.billTo}">Bill to</div>
-                        <div class="text-md font-bold">ABC Construction Ltd</div>
-                        <div class="text-sm text-secondary">KG 5 RD, Plot 42, Nyarugenge</div>
-                        <div class="text-sm text-secondary">Kigali, Rwanda</div>
-                        <div class="text-sm text-secondary">TIN 101 223 847</div>
-                        <div class="text-sm text-secondary">+250 788 401 220</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xs text-muted mb-1" style="text-transform:uppercase;letter-spacing:.05em;font-weight:700" th:text="#{inv.view.purchaseOrder}">Purchase order</div>
-                        <div class="text-sm text-secondary">PO-2026-0018</div>
-                    </div>
-                </div>
-
-                <div class="table-wrap mb-6">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.lineItems}">Line items</h3></div>
+                <div class="table-wrap">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th th:text="#{inv.view.item}">Item</th>
                                 <th th:text="#{inv.view.description}">Description</th>
+                                <th th:text="#{inv.revenueAccount}">Revenue account</th>
                                 <th class="num" th:text="#{inv.view.qty}">Qty</th>
                                 <th class="num" th:text="#{inv.view.unitPrice}">Unit price</th>
                                 <th class="num" th:text="#{inv.view.vat}">VAT</th>
@@ -112,172 +110,174 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <tr th:each="l : ${invoice.lines}">
+                                <td th:text="${l.description}">Item</td>
+                                <td class="cell-secondary" th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">4002</td>
+                                <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
                             <tr>
-                                <td>Construction supervision</td>
-                                <td class="cell-secondary">Project KC-118 weekly supervision, block B</td>
-                                <td class="num">40</td>
-                                <td class="num">RWF 24,100</td>
-                                <td class="num">18%</td>
-                                <td class="num money font-semibold">RWF 1,020,000</td>
+                                <td colspan="5" class="text-right" th:text="#{inv.view.subtotal}">Subtotal</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${invoice.discountAmount != null and invoice.discountAmount.signum() > 0}">
+                                <td colspan="5" class="text-right" th:text="#{inv.view.discount}">Discount</td>
+                                <td class="num money" th:text="'-' + ${#numbers.formatDecimal(invoice.discountAmount, 1, 2, 'COMMA')}">0.00</td>
                             </tr>
                             <tr>
-                                <td>Mobilization</td>
-                                <td class="cell-secondary">Site setup &amp; demobilization</td>
-                                <td class="num">1</td>
-                                <td class="num">RWF 125,000</td>
-                                <td class="num">0%</td>
-                                <td class="num money font-semibold">RWF 125,000</td>
+                                <td colspan="5" class="text-right" th:text="#{inv.view.vat}">VAT</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(invoice.taxAmount, 1, 2, 'COMMA')}">0.00</td>
                             </tr>
                             <tr>
-                                <td>Transport</td>
-                                <td class="cell-secondary">Delivery of materials, 2 trips</td>
-                                <td class="num">2</td>
-                                <td class="num">RWF 52,500</td>
-                                <td class="num">0%</td>
-                                <td class="num money font-semibold">RWF 105,000</td>
+                                <td colspan="5" class="text-right font-bold" th:text="#{inv.view.total}">Total</td>
+                                <td class="num money font-bold"
+                                    th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-body" th:if="${invoice.customerMessage != null}">
+                    <div class="text-sm text-muted" th:text="${invoice.customerMessage}"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.view.paymentHistory}">Payment history</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{inv.pay.paymentDate}">Payment date</th>
+                                <th th:text="#{inv.pay.paymentMethod}">Payment method</th>
+                                <th th:text="#{inv.pay.depositTo}">Deposit to</th>
+                                <th th:text="#{common.reference}">Reference</th>
+                                <th class="num" th:text="#{common.amount}">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${payments}">
+                                <td th:text="${#temporals.format(p.paymentDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td th:text="${paymentMethods.get(p.method.name())}">Bank transfer</td>
+                                <td class="cell-secondary" th:text="${p.depositAccountCode + ' — ' + p.depositAccountName}">1101</td>
+                                <td class="cell-secondary" th:text="${p.reference != null ? p.reference : '—'}">—</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(p.amount, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(payments)}">
+                                <td class="table-empty" colspan="5">
+                                    <p class="text-secondary" th:text="#{inv.noPayments}">No payments recorded yet.</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-
-                <div class="preview-amounts">
-                    <div class="row"><span th:text="#{inv.view.subtotal}">Subtotal</span><span class="money">RWF 1,250,000</span></div>
-                    <div class="row"><span th:text="#{inv.view.discount}">Discount</span><span class="money">-RWF 0</span></div>
-                    <div class="row"><span th:text="#{inv.view.vatIncluded}">VAT included</span><span class="money">RWF 155,000</span></div>
-                    <div class="row total"><span th:text="#{inv.view.total}">Total</span><span class="money">RWF 1,250,000</span></div>
-                    <div class="row"><span class="text-secondary" th:text="#{inv.view.amountPaid}">Amount paid</span><span class="money money-positive">-RWF 0</span></div>
-                    <div class="row"><span class="text-error font-semibold" th:text="#{inv.view.balanceDue}">Balance due</span><span class="money text-error font-bold">RWF 1,250,000</span></div>
-                </div>
-
-                <hr style="margin:var(--sp-6) 0">
-                <div class="text-sm text-secondary">
-                    <strong th:text="#{inv.view.paymentDetails}">Payment details</strong>: Account no. 0002 8845 0198 2210 — BK. Bank, Kigali, Rwanda.<br>
-                    Or via MTN MoMo: 0788 401 220. Reference: INV-2026-00451.
-                </div>
             </div>
         </div>
 
-        <!-- Side activity -->
-        <div class="col-span-4 d-flex flex-column gap-5">
-            <div class="card">
-                <div class="card-header"><h3 th:text="#{inv.view.paymentHistory}">Payment history</h3></div>
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card" th:if="${invoice.posted and invoice.balanceDue.signum() > 0}">
+                <div class="card-header"><h3 th:text="#{inv.recordPayment}">Record payment</h3></div>
                 <div class="card-body">
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <span class="timeline-dot timeline-dot--error"></span>
-                            <div class="timeline-time">01 Sep 2026 · 09:00</div>
-                            <div class="timeline-text" th:utext="#{inv.view.issuedAndSubmitted}"><strong>Invoice issued</strong> and submitted to EBM</div>
+                    <form th:action="@{/invoices/{id}/payments(id=${invoice.id})}" method="post">
+                        <div class="form-group">
+                            <label class="form-label" for="payAmount" th:text="#{inv.pay.amountReceived}">Amount received</label>
+                            <input class="form-control amount-control" id="payAmount" name="amount" type="number"
+                                   step="0.01" min="0.01" th:max="${invoice.balanceDue}"
+                                   th:value="${invoice.balanceDue}" required>
+                            <div class="form-hint" th:text="#{inv.pay.outstanding} + ': ' + ${invoice.currencyCode} + ' ' + ${#numbers.formatDecimal(invoice.balanceDue, 1, 2, 'COMMA')}"></div>
                         </div>
-                        <div class="timeline-item">
-                            <span class="timeline-dot timeline-dot--warning"></span>
-                            <div class="timeline-time">12 Sep 2026</div>
-                            <div class="timeline-text" th:utext="#{inv.view.overdueTimeline}"><strong>Overdue</strong> — no payment received to date</div>
+                        <div class="form-group">
+                            <label class="form-label" for="payDate" th:text="#{inv.pay.paymentDate}">Payment date</label>
+                            <input class="form-control" id="payDate" name="paymentDate" type="date"
+                                   th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}" required>
                         </div>
-                    </div>
-                    <div class="alert alert--warning mt-4">
-                        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
-                        <div class="alert-body" th:text="#{inv.view.unpaidWarning}">This invoice is unpaid. Consider sending a friendly reminder.</div>
-                    </div>
-                    <button class="btn btn-soft w-100 mt-3" type="button">
-                        <svg class="ebook-icon"><use href="#icon-send"/></svg>
-                        <span th:text="#{inv.view.sendReminder}">Send payment reminder</span>
-                    </button>
+                        <div class="form-group">
+                            <label class="form-label" for="payMethod" th:text="#{inv.pay.paymentMethod}">Payment method</label>
+                            <select class="form-control" id="payMethod" name="method">
+                                <option th:each="m : ${paymentMethods}" th:value="${m.key}" th:text="${m.value}">Bank transfer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="payAccount" th:text="#{inv.pay.depositTo}">Deposit to</label>
+                            <select class="form-control" id="payAccount" name="depositAccountId" required>
+                                <option th:each="a : ${depositAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}">1101</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="payRef" th:text="#{common.reference}">Reference</label>
+                            <input class="form-control" id="payRef" name="reference" type="text">
+                        </div>
+                        <button class="btn btn-primary w-full" type="submit">
+                            <svg class="ebook-icon"><use href="#icon-credit-card"/></svg>
+                            <span th:text="#{inv.pay.recordBtn}">Record payment</span>
+                        </button>
+                    </form>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-header">
-                    <h3 th:text="#{inv.view.auditTrail}">Audit trail</h3>
-                    <a class="btn btn-ghost btn-sm" th:href="@{/settings/audit}" th:text="#{common.viewAll}">View all</a>
+                <div class="card-header"><h3 th:text="#{inv.ledgerEntry}">Ledger entry</h3></div>
+                <div class="card-body" th:if="${journal == null}">
+                    <div class="alert alert--info">
+                        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                        <div class="alert-body" th:text="#{inv.notPosted}">Not yet posted to the ledger</div>
+                    </div>
                 </div>
-                <div class="card-body" style="padding:var(--sp-4)">
-                    <div class="timeline">
-                        <div class="timeline-item" style="padding-bottom:var(--sp-3)">
-                            <span class="timeline-dot timeline-dot--success"></span>
-                            <div class="timeline-time">07 Sep 2026 · 14:32</div>
-                            <div class="timeline-text" th:utext="#{inv.view.createdBy('John Doe')}">Invoice <strong>created</strong> by John Doe</div>
-                        </div>
-                        <div class="timeline-item" style="padding-bottom:var(--sp-3)">
-                            <span class="timeline-dot"></span>
-                            <div class="timeline-time">07 Sep 2026 · 14:35</div>
-                            <div class="timeline-text">Amount <span class="diff-old">RWF 1,250,000</span> → <span class="diff-new">RWF 1,450,000</span></div>
-                        </div>
-                        <div class="timeline-item" style="padding-bottom:var(--sp-3)">
-                            <span class="timeline-dot timeline-dot--success"></span>
-                            <div class="timeline-time">07 Sep 2026 · 14:40</div>
-                            <div class="timeline-text" th:utext="#{inv.view.ebmSucceeded}">EBM submission <strong>succeeded</strong></div>
-                        </div>
+                <div th:if="${journal != null}">
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{coa.account}">Account</th>
+                                    <th class="num" th:text="#{je.debit}">Debit</th>
+                                    <th class="num" th:text="#{je.credit}">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="l : ${journal.lines}">
+                                    <td>
+                                        <span th:text="${l.accountCode}">1201</span>
+                                        <span class="cell-secondary" th:text="${l.accountName}">Accounts receivable</span>
+                                    </td>
+                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 2, 'COMMA')}">0.00</td>
+                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 2, 'COMMA')}">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-body">
+                        <a class="btn btn-secondary btn-sm w-full" th:href="@{/journals/{id}(id=${journal.id})}">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-book"/></svg>
+                            <span th:text="#{inv.viewJournal} + ' (' + ${journal.entryNo} + ')'">View journal entry</span>
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header"><h3 th:text="#{inv.view.related}">Related</h3></div>
-                <div class="card-body">
-                    <a class="dropdown-item" th:href="@{/customers/1}"><svg class="ebook-icon"><use href="#icon-users"/></svg><span th:text="#{inv.view.customerProfile}">Customer profile</span></a>
-                    <a class="dropdown-item" th:href="@{/sales/statements?customer=1}"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{inv.view.customerStatement}">Customer statement</span></a>
-                    <a class="dropdown-item" th:href="@{/sales/aging}"><svg class="ebook-icon"><use href="#icon-clock"/></svg><span th:text="#{inv.view.receivablesAging}">Receivables aging</span></a>
+            <div class="card" th:if="${invoice.status.name() != 'VOID'}">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <form th:if="${invoice.amountPaid.signum() == 0}"
+                          th:action="@{/invoices/{id}/void(id=${invoice.id})}" method="post">
+                        <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                               th:placeholder="#{inv.voidReason}">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-x-circle"/></svg>
+                            <span th:text="#{inv.voidInvoice}">Void invoice</span>
+                        </button>
+                    </form>
+                    <form th:if="${invoice.editable}" th:action="@{/invoices/{id}/delete(id=${invoice.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{inv.deleteDraft}">Delete draft</span>
+                        </button>
+                    </form>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Record payment modal -->
-    <div class="modal-backdrop" id="recordPaymentModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 th:text="#{inv.pay.title('INV-2026-00451')}">Record payment — INV-2026-00451</h3>
-                <button class="modal-close" type="button" data-close-modal th:aria-label="#{common.ariaClose}"><svg class="ebook-icon"><use href="#icon-x"/></svg></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert--info mb-5">
-                    <svg class="ebook-icon"><use href="#icon-info"/></svg>
-                    <div class="alert-body"><span th:text="#{inv.pay.outstanding}">Outstanding balance</span>: <strong>RWF 1,250,000</strong></div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label" for="payAmount" th:text="#{inv.pay.amountReceived}">Amount received</label>
-                        <div class="input-group">
-                            <span class="input-prefix">RWF</span>
-                            <input class="form-control amount-control" id="payAmount" type="number" value="1250000" min="0">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="payDate" th:text="#{inv.pay.paymentDate}">Payment date</label>
-                        <input class="form-control" id="payDate" type="date" value="2026-09-07">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="payMethod" th:text="#{inv.pay.paymentMethod}">Payment method</label>
-                        <select class="form-control" id="payMethod">
-                            <option th:text="#{inv.pay.mtnMobileMoney}">MTN Mobile Money</option>
-                            <option th:text="#{inv.pay.airtelMoney}">Airtel Money</option>
-                            <option th:text="#{inv.pay.bankTransfer}">Bank transfer</option>
-                            <option th:text="#{inv.pay.cash}">Cash</option>
-                            <option th:text="#{inv.pay.card}">Card</option>
-                            <option th:text="#{inv.pay.check}">Check</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="payAccount" th:text="#{inv.pay.depositTo}">Deposit to</label>
-                        <select class="form-control" id="payAccount">
-                            <option selected>1105 MTN MoMo</option>
-                            <option>1101 BK Bank — Current</option>
-                            <option>1102 Equity Bank</option>
-                            <option>1103 Bank of Kigali</option>
-                        </select>
-                    </div>
-                    <div class="form-group col-span-2">
-                        <label class="form-label" for="payNote"><span th:text="#{inv.pay.note}">Note</span> <span class="hint" th:text="#{inv.pay.noteHint}">shown on the receipt</span></label>
-                        <input class="form-control" id="payNote" type="text" placeholder="Payment for INV-2026-00451">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" data-close-modal th:text="#{common.cancel}">Cancel</button>
-                <button class="btn btn-primary" type="button">
-                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
-                    <span th:text="#{inv.recordPayment}">Record payment</span>
-                </button>
             </div>
         </div>
     </div>

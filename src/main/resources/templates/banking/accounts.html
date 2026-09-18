@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bank.accounts.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{bank.accounts.title}">Bank &amp; Cash Accounts</h1>
+            <p class="page-subtitle" th:text="#{bank.accounts.subtitle}">Balances derived from posted ledger activity.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/banking/transactions}">
+                <svg class="ebook-icon"><use href="#icon-layers"/></svg>
+                <span th:text="#{nav.banking.transactions}">Transactions</span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/accounts/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{bank.accounts.add}">Add account</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/banking/accounts}" th:classappend="${filter == 'all'} ? 'active'"
+           th:text="#{bank.accounts.all}">All</a>
+        <a class="tab" th:href="@{/banking/cash}" th:classappend="${filter == 'cash'} ? 'active'"
+           th:text="#{bank.accounts.cashOnly}">Cash on hand</a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bank.accounts.totalBalance}">Total balance</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalBalance, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bank.accounts.bank}">Bank &amp; mobile money</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bankBalance, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bank.accounts.cash}">Cash on hand</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashBalance, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bank.accounts.count}">Accounts</div>
+            <div class="stat-tile-value" th:text="${#lists.size(accounts)}">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{coa.account}">Account</th>
+                        <th th:text="#{common.type}">Type</th>
+                        <th class="num" th:text="#{bank.accounts.opening}">Opening</th>
+                        <th class="num" th:text="#{bank.accounts.moneyIn}">Money in</th>
+                        <th class="num" th:text="#{bank.accounts.moneyOut}">Money out</th>
+                        <th class="num" th:text="#{common.balance}">Balance</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="a : ${accounts}">
+                        <td>
+                            <a class="cell-link" th:href="@{/banking/transactions(account=${a.accountId})}"
+                               th:text="${a.code} + ' — ' + ${a.name}">1101 BK Bank</a>
+                        </td>
+                        <td>
+                            <span class="badge badge-muted"><span th:text="${a.kind}">BANK</span></span>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(a.openingBalance, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(a.debits, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(a.credits, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold"
+                            th:classappend="${a.balance.signum() < 0} ? 'text-error'"
+                            th:text="${#numbers.formatDecimal(a.balance, 1, 2, 'COMMA')}">0.00</td>
+                        <td>
+                            <span class="badge badge-active" th:if="${a.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                            <span class="badge badge-muted" th:unless="${a.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/banking/transactions(account=${a.accountId})}"><svg class="ebook-icon"><use href="#icon-layers"/></svg><span th:text="#{nav.banking.transactions}">Transactions</span></a>
+                                    <a class="dropdown-item" th:href="@{/reports/general-ledger(account=${a.accountId})}"><svg class="ebook-icon"><use href="#icon-book"/></svg><span th:text="#{rpt.generalLedger}">General ledger</span></a>
+                                    <a class="dropdown-item" th:href="@{/accounts/{id}/edit(id=${a.accountId})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(accounts)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-bank"/></svg></div>
+                                <p class="text-secondary" th:text="#{bank.accounts.none}">No cash or bank accounts found.</p>
+                                <p class="text-sm text-muted" th:text="#{bank.accounts.convention}">Accounts coded 10xx are treated as cash on hand and 11xx as bank or mobile money.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/accounts/new}" th:text="#{bank.accounts.add}">Add account</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{bank.accounts.convention}">Accounts coded 10xx are treated as cash on hand and 11xx as bank or mobile money.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

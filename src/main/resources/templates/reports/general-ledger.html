@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rpt.generalLedger}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/reports}" th:text="#{rpt.title}">Reports</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{rpt.generalLedger}">General Ledger</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{rpt.generalLedger}">General Ledger</h1>
+            <p class="page-subtitle"
+               th:text="${#temporals.format(from, 'dd MMM yyyy')} + ' — ' + ${#temporals.format(to, 'dd MMM yyyy')}"></p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/reports/general-ledger}">
+                <select class="form-control form-control--sm" name="account">
+                    <option value="" th:text="#{rpt.allAccounts}">All accounts</option>
+                    <option th:each="a : ${accounts}" th:value="${a.id}"
+                            th:text="${a.code + ' — ' + a.name}"
+                            th:selected="${selectedAccount != null and selectedAccount == a.id}">1101</option>
+                </select>
+                <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:each="s : ${sections}">
+        <div class="card-header">
+            <div>
+                <h3 th:text="${s.accountCode} + ' — ' + ${s.accountName}">1101 Bank</h3>
+                <p class="text-sm text-muted"
+                   th:text="#{rpt.openingBalance} + ': ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(s.openingBalance, 1, 2, 'COMMA')}"></p>
+            </div>
+            <span class="badge badge-muted">
+                <span th:text="#{rpt.closingBalance} + ': ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(s.closingBalance, 1, 2, 'COMMA')}"></span>
+            </span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{je.entryNo}">Entry</th>
+                        <th th:text="#{common.reference}">Reference</th>
+                        <th class="num" th:text="#{je.debit}">Debit</th>
+                        <th class="num" th:text="#{je.credit}">Credit</th>
+                        <th class="num" th:text="#{common.balance}">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${s.rows}">
+                        <td class="cell-secondary" th:text="${#temporals.format(r.date, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td th:text="${r.entryNo}">JE-00001</td>
+                        <td class="cell-secondary" th:text="${r.reference != null ? r.reference : (r.memo != null ? r.memo : '—')}">—</td>
+                        <td class="num money" th:text="${r.debit.signum() == 0 ? '—' : #numbers.formatDecimal(r.debit, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${r.credit.signum() == 0 ? '—' : #numbers.formatDecimal(r.credit, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.balance, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-right font-semibold" th:text="#{rpt.periodTotals}">Period totals</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(s.totalDebits, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(s.totalCredits, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(s.closingBalance, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:if="${#lists.isEmpty(sections)}">
+        <div class="table-empty">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-layers"/></svg></div>
+                <p class="text-secondary" th:text="#{rpt.noLedgerActivity}">No posted transactions in this period.</p>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

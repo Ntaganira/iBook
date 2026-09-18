@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${order.orderNo}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/sales/orders}" th:text="#{so.title}">Sales Orders</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${order.orderNo}">SO-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${order.orderNo}">SO-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="${order.customerName}">Customer</span>
+                <span th:text="' · ' + ${#temporals.format(order.orderDate, 'dd MMM yyyy')}"></span>
+                <span th:if="${order.expectedDate != null}"
+                      th:text="' · ' + #{so.expected} + ' ' + ${#temporals.format(order.expectedDate, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="st=${order.status.name()}">
+            <span class="badge"
+                  th:classappend="${st == 'INVOICED' ? 'badge-active' : (st == 'CANCELLED' ? 'badge-error' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+            </span>
+
+            <a class="btn btn-secondary" th:if="${order.editable}"
+               th:href="@{/sales/orders/{id}/edit(id=${order.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{so.view.edit}">Edit order</span>
+            </a>
+
+            <form th:if="${order.status.name() == 'DRAFT'}"
+                  th:action="@{/sales/orders/{id}/confirm(id=${order.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{so.confirm}">Confirm order</span>
+                </button>
+            </form>
+
+            <form th:if="${order.convertible}"
+                  th:action="@{/sales/orders/{id}/convert(id=${order.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-file-text"/></svg>
+                    <span th:text="#{so.convert}">Convert to invoice</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${order.converted}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{so.convertedTitle}">Invoiced</div>
+            <a class="cell-link" th:href="@{/invoices/{id}(id=${order.convertedInvoiceId})}"
+               th:text="${order.convertedInvoiceNo}">INV-0001</a>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${order.status.name() == 'CANCELLED'}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{so.cancelledTitle}">Order cancelled</div>
+            <span th:if="${order.cancelledReason != null}" th:text="${order.cancelledReason}"></span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${order.overdue}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{so.lateTitle}">Past expected date</div>
+            <span th:text="#{so.daysLate(${order.daysLate})}">3 days late</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{so.subtotal}">Subtotal</div>
+            <div class="stat-tile-value money"
+                 th:text="${order.currencyCode + ' ' + #numbers.formatDecimal(order.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{so.discount}">Discount</div>
+            <div class="stat-tile-value money"
+                 th:text="${order.currencyCode + ' ' + #numbers.formatDecimal(order.discountAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{so.tax}">Tax</div>
+            <div class="stat-tile-value money"
+                 th:text="${order.currencyCode + ' ' + #numbers.formatDecimal(order.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{so.orderTotal}">Order total</div>
+            <div class="stat-tile-value money"
+                 th:text="${order.currencyCode + ' ' + #numbers.formatDecimal(order.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{so.lineItems}">Line items</h3>
+            <span class="text-sm text-muted" th:if="${order.reference != null}"
+                  th:text="#{common.reference} + ': ' + ${order.reference}"></span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{so.itemDescription}">Item / description</th>
+                        <th th:text="#{so.revenueAccount}">Revenue account</th>
+                        <th class="num" th:text="#{so.qty}">Qty</th>
+                        <th class="num" th:text="#{so.unitPrice}">Unit price</th>
+                        <th class="num" th:text="#{so.vat}">VAT</th>
+                        <th class="num" th:text="#{so.amount}">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${order.lines}">
+                        <td>
+                            <span th:text="${l.description}">Item</span>
+                            <span class="cell-secondary" th:if="${l.productSku != null}" th:text="${l.productSku}"></span>
+                        </td>
+                        <td class="cell-secondary"
+                            th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">—</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(order.lines)}">
+                        <td class="table-empty" colspan="6">
+                            <p class="text-secondary" th:text="#{so.emptyLines}">No line items.</p>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-right font-bold" th:text="#{so.orderTotal}">Order total</td>
+                        <td class="num money font-bold"
+                            th:text="${order.currencyCode + ' ' + #numbers.formatDecimal(order.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body" th:if="${order.customerMessage != null}">
+            <div class="cell-secondary" th:text="#{so.customerMessage}">Message to customer</div>
+            <p class="text-sm" th:text="${order.customerMessage}"></p>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{so.ledgerHint}">A sales order never touches the ledger.</div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${!order.converted}">
+        <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+        <div class="card-body d-flex flex-column gap-2">
+            <form th:if="${order.status.name() != 'CANCELLED'}"
+                  th:action="@{/sales/orders/{id}/cancel(id=${order.id})}" method="post">
+                <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                       th:placeholder="#{so.cancelReason}">
+                <button class="btn btn-secondary btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{so.cancel}">Cancel order</span>
+                </button>
+            </form>
+            <form th:if="${order.status.name() == 'CANCELLED'}"
+                  th:action="@{/sales/orders/{id}/reopen(id=${order.id})}" method="post">
+                <button class="btn btn-secondary btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                    <span th:text="#{so.reopen}">Reopen order</span>
+                </button>
+            </form>
+            <form th:action="@{/sales/orders/{id}/delete(id=${order.id})}" method="post">
+                <button class="btn btn-ghost btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

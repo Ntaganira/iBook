@@ -15,6 +15,7 @@ import com.ntaganira.heritier.ibook.enums.AccountType;
 import com.ntaganira.heritier.ibook.enums.JournalEntryStatus;
 import com.ntaganira.heritier.ibook.enums.JournalEntryType;
 import com.ntaganira.heritier.ibook.enums.PeriodStatus;
+import com.ntaganira.heritier.ibook.enums.TaxTreatment;
 import com.ntaganira.heritier.ibook.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -52,6 +53,10 @@ SecuritySettingsRepository securitySettingsRepository,
                                        JournalEntryRepository journalEntryRepository,
                                        AccountingPeriodRepository accountingPeriodRepository,
                                        CustomerRepository customerRepository,
+                                       VendorRepository vendorRepository,
+                                       TaxRateRepository taxRateRepository,
+                                       ProductCategoryRepository categoryRepository,
+                                       WarehouseRepository warehouseRepository,
                                        PasswordEncoder passwordEncoder) {
         return args -> {
             seedRolesAndPermissions(roleRepository, permissionRepository);
@@ -86,6 +91,9 @@ SecuritySettingsRepository securitySettingsRepository,
             seedAccounts(accountRepository);
             seedJournalEntries(accountRepository, journalEntryRepository);
             seedCustomers(customerRepository);
+            seedVendors(vendorRepository);
+            seedTaxRates(taxRateRepository);
+            seedInventoryBasics(categoryRepository, warehouseRepository);
             seedAccountingPeriods(accountingPeriodRepository, companyRepository);
         };
     }
@@ -231,6 +239,63 @@ SecuritySettingsRepository securitySettingsRepository,
                 .email("huye@kigali-fresh.rw").defaultBranch(false).active(true).build());
     }
 
+    private void seedInventoryBasics(ProductCategoryRepository categoryRepository,
+                                     WarehouseRepository warehouseRepository) {
+        if (categoryRepository.count() == 0) {
+            categoryRepository.save(ProductCategory.builder().code("GEN").name("General")
+                    .description("Uncategorised items").active(true).build());
+            categoryRepository.save(ProductCategory.builder().code("SVC").name("Services")
+                    .description("Billable services").active(true).build());
+        }
+        if (warehouseRepository.count() == 0) {
+            warehouseRepository.save(Warehouse.builder().code("MAIN").name("Main store")
+                    .location("Kigali").defaultLocation(true).active(true).build());
+        }
+    }
+
+    private void seedTaxRates(TaxRateRepository repository) {
+        if (repository.count() > 0) {
+            return;
+        }
+        repository.save(TaxRate.builder().code("VAT18").name("Standard VAT")
+                .rate(new BigDecimal("18.00")).treatment(TaxTreatment.STANDARD)
+                .description("Standard Rwanda VAT rate").defaultRate(true).active(true).build());
+        repository.save(TaxRate.builder().code("VAT0").name("Zero-rated")
+                .rate(BigDecimal.ZERO).treatment(TaxTreatment.ZERO_RATED)
+                .description("Exports and other zero-rated supplies").defaultRate(false).active(true).build());
+        repository.save(TaxRate.builder().code("EXEMPT").name("Exempt")
+                .rate(BigDecimal.ZERO).treatment(TaxTreatment.EXEMPT)
+                .description("Supplies outside the scope of VAT").defaultRate(false).active(true).build());
+    }
+
+    private void seedVendors(VendorRepository vendorRepository) {
+        if (vendorRepository.count() > 0) {
+            return;
+        }
+        vendor(vendorRepository, "Kigali Office Supplies Ltd", "sales@kigalioffice.rw", "+250 788 310 440", "Kigali", "201234567", "Net 30");
+        vendor(vendorRepository, "Rwanda Energy Group", "billing@reg.rw", "+250 788 111 222", "Kigali", "202345678", "Due on receipt");
+        vendor(vendorRepository, "Nyabugogo Transporters", "ops@nyabugogotrans.rw", "+250 782 664 010", "Kigali", "203456789", "Net 15");
+        vendor(vendorRepository, "Highland Coffee Traders", "accounts@highlandcoffee.rw", "+250 789 220 551", "Huye", "204567890", "Net 30");
+        vendor(vendorRepository, "Akagera Hardware", "info@akagerahardware.rw", "+250 733 880 114", "Rwamagana", "205678901", "Net 60");
+        vendor(vendorRepository, "Lake Kivu Logistics", "finance@kivulogistics.rw", "+250 788 445 909", "Karongi", "206789012", "Net 30");
+    }
+
+    private void vendor(VendorRepository vendorRepository, String name, String email, String phone,
+                        String city, String taxId, String paymentTerms) {
+        vendorRepository.save(Vendor.builder()
+                .name(name)
+                .companyName(name)
+                .email(email)
+                .phone(phone)
+                .city(city)
+                .country("Rwanda")
+                .taxId(taxId)
+                .paymentTerms(paymentTerms)
+                .openingBalance(BigDecimal.ZERO)
+                .active(true)
+                .build());
+    }
+
     private void seedCustomers(CustomerRepository customerRepository) {
         if (customerRepository.count() > 0) {
             return;
@@ -310,6 +375,7 @@ SecuritySettingsRepository securitySettingsRepository,
             return;
         }
         seq(repository, "Invoices", "INVOICE", "INV-", null, 4, 1, true);
+        seq(repository, "Estimates", "ESTIMATE", "EST-", null, 4, 1, true);
         seq(repository, "Sales Orders", "SALE_ORDER", "SO-", null, 4, 1, true);
         seq(repository, "Bills", "BILL", "BILL-", null, 4, 1, true);
         seq(repository, "Purchase Orders", "PURCHASE_ORDER", "PO-", null, 4, 1, true);
@@ -423,6 +489,7 @@ SecuritySettingsRepository securitySettingsRepository,
         account(repository, "1201", "Accounts receivable", AccountType.ASSET, null, "0", true);
         account(repository, "1301", "Inventory — goods for resale", AccountType.ASSET, null, "12000000", true);
         account(repository, "1401", "Prepaid expenses", AccountType.ASSET, null, "500000", true);
+        account(repository, "1402", "VAT receivable (input)", AccountType.ASSET, null, "0", true);
         account(repository, "1501", "Office equipment", AccountType.ASSET, null, "6500000", true);
         account(repository, "1509", "Accumulated depreciation — office equipment", AccountType.ASSET, "1501", "-1100000", true);
         account(repository, "2000", "Current liabilities", AccountType.LIABILITY, null, "0", true);
@@ -447,6 +514,7 @@ SecuritySettingsRepository securitySettingsRepository,
         account(repository, "5004", "Travel & transport", AccountType.EXPENSE, null, "0", true);
         account(repository, "5005", "Office supplies", AccountType.EXPENSE, null, "0", true);
         account(repository, "5006", "Depreciation expense", AccountType.EXPENSE, null, "0", true);
+        account(repository, "5200", "Cost of goods sold", AccountType.EXPENSE, null, "0", true);
         account(repository, "5101", "Bank charges", AccountType.EXPENSE, null, "0", true);
     }
 

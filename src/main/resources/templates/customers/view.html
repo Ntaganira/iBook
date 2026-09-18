@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${customer.name}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/customers}" th:text="#{cust.title}">Customers</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${customer.name}">Customer</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${customer.name}">Customer</h1>
+            <p class="page-subtitle">
+                <span th:if="${customer.companyName != null}" th:text="${customer.companyName}">Company</span>
+                <span th:if="${stats.lastInvoiceDate != null}"
+                      th:text="' · ' + #{cust.view.lastInvoice} + ' ' + ${#temporals.format(stats.lastInvoiceDate, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <span class="badge badge-active" th:if="${customer.active}">
+                <span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span>
+            </span>
+            <span class="badge badge-muted" th:unless="${customer.active}">
+                <span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span>
+            </span>
+            <a class="btn btn-secondary" th:href="@{/customers/{id}/edit(id=${customer.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{common.edit}">Edit</span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/invoices/new(customer=${customer.id})}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{cust.createInvoice}">Create invoice</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.view.totalInvoiced}">Total invoiced</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalInvoiced, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:text="#{cust.view.invoiceCount(${stats.invoiceCount})}">0 invoices</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.view.totalPaid}">Paid to date</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalPaid, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.outstanding}">Outstanding balance</div>
+            <div class="stat-tile-value money" th:classappend="${stats.outstanding.signum() > 0} ? 'text-error'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub" th:if="${stats.openInvoices > 0}"
+                 th:text="#{cust.view.openInvoices(${stats.openInvoices})}">0 open</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{cust.openingBalance}">Opening balance</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(customer.openingBalance != null ? customer.openingBalance : 0, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{cust.view.invoiceHistory}">Invoice history</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{inv.invoice}">Invoice</th>
+                                <th th:text="#{inv.issued}">Issued</th>
+                                <th th:text="#{inv.due}">Due</th>
+                                <th class="num" th:text="#{common.amount}">Amount</th>
+                                <th class="num" th:text="#{inv.openBalance}">Open balance</th>
+                                <th th:text="#{common.status}">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="i : ${invoices}">
+                                <td>
+                                    <a class="cell-link" th:href="@{/invoices/{id}(id=${i.id})}" th:text="${i.invoiceNo}">INV-0001</a>
+                                    <span class="cell-secondary" th:if="${i.reference != null}" th:text="${i.reference}"></span>
+                                </td>
+                                <td class="cell-secondary" th:text="${#temporals.format(i.issueDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td class="cell-secondary">
+                                    <span th:text="${#temporals.format(i.dueDate, 'dd MMM yyyy')}">31 Jan 2026</span>
+                                    <span class="cell-secondary text-error" th:if="${i.daysOverdue > 0}"
+                                          th:text="#{inv.view.daysOverdue(${i.daysOverdue})}">0 days overdue</span>
+                                </td>
+                                <td class="num money"
+                                    th:text="${i.currencyCode + ' ' + #numbers.formatDecimal(i.total, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num money"
+                                    th:text="${i.currencyCode + ' ' + #numbers.formatDecimal(i.balanceDue, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td th:with="ds=${i.displayStatus.name()}">
+                                    <span class="badge" th:classappend="${ds == 'PAID' ? 'badge-active' : (ds == 'OVERDUE' ? 'badge-error' : (ds == 'DRAFT' or ds == 'VOID' ? 'badge-muted' : 'badge-warning'))}">
+                                        <span class="badge-dot"></span>
+                                        <span th:text="${statusLabels.get(ds)}">Open</span>
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(invoices)}">
+                                <td class="table-empty" colspan="6">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-receipt"/></svg></div>
+                                        <p class="text-secondary" th:text="#{cust.view.noInvoices}">No invoices for this customer yet.</p>
+                                        <a class="btn btn-primary btn-sm mt-3" th:href="@{/invoices/new(customer=${customer.id})}"
+                                           th:text="#{cust.createInvoice}">Create invoice</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" th:if="${customer.notes != null}">
+                <div class="card-header"><h3 th:text="#{cust.notes}">Notes</h3></div>
+                <div class="card-body">
+                    <p class="text-sm text-secondary" th:text="${customer.notes}"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{cust.view.contact}">Contact</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <div th:if="${customer.email != null}">
+                        <div class="cell-secondary" th:text="#{common.email}">Email</div>
+                        <div th:text="${customer.email}"></div>
+                    </div>
+                    <div th:if="${customer.phone != null}">
+                        <div class="cell-secondary" th:text="#{common.phone}">Phone</div>
+                        <div th:text="${customer.phone}"></div>
+                    </div>
+                    <div th:if="${customer.mobileMoney != null}">
+                        <div class="cell-secondary" th:text="#{cust.mobileMoney}">Mobile Money</div>
+                        <div th:text="${customer.mobileMoney}"></div>
+                    </div>
+                    <div th:if="${customer.website != null}">
+                        <div class="cell-secondary" th:text="#{cust.website}">Website</div>
+                        <div th:text="${customer.website}"></div>
+                    </div>
+                    <div th:if="${customer.taxId != null}">
+                        <div class="cell-secondary" th:text="#{cust.taxId}">Tax ID (TIN)</div>
+                        <div th:text="${customer.taxId}"></div>
+                    </div>
+                    <div th:if="${customer.paymentTerms != null}">
+                        <div class="cell-secondary" th:text="#{cust.paymentTerms}">Payment terms</div>
+                        <div th:text="${customer.paymentTerms}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${customer.street != null or customer.city != null or customer.country != null}">
+                <div class="card-header"><h3 th:text="#{cust.billingAddress}">Billing address</h3></div>
+                <div class="card-body">
+                    <div th:if="${customer.street != null}" th:text="${customer.street}"></div>
+                    <div class="cell-secondary" th:if="${customer.city != null}" th:text="${customer.city}"></div>
+                    <div class="cell-secondary" th:if="${customer.state != null}" th:text="${customer.state}"></div>
+                    <div class="cell-secondary" th:if="${customer.postalCode != null}" th:text="${customer.postalCode}"></div>
+                    <div class="cell-secondary" th:if="${customer.country != null}" th:text="${customer.country}"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <form th:action="@{/customers/{id}/toggle(id=${customer.id})}" method="post">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                            <span th:if="${customer.active}" th:text="#{cust.deactivate}">Deactivate</span>
+                            <span th:unless="${customer.active}" th:text="#{cust.activate}">Activate</span>
+                        </button>
+                    </form>
+                    <form th:if="${#lists.isEmpty(invoices)}"
+                          th:action="@{/customers/{id}/delete(id=${customer.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{common.delete}">Delete</span>
+                        </button>
+                    </form>
+                    <div class="form-hint" th:unless="${#lists.isEmpty(invoices)}"
+                         th:text="#{cust.deleteBlocked}">Customers with invoices cannot be deleted.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -17,6 +17,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     @Query("select c from Customer c where (:q is null or :q = '' " +
@@ -30,4 +32,12 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             "       or (:type = 'balance' and c.openingBalance <> 0) " +
             "       or (:type = 'active' and c.active = true))")
     Page<Customer> search(@Param("q") String q, @Param("type") String type, Pageable pageable);
+
+    List<Customer> findByActiveTrueOrderByNameAsc();
+
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+    long countByActiveTrue();
 }

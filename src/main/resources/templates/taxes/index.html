@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{nav.taxes}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{nav.taxes}">Taxes &amp; Compliance</h1>
+            <p class="page-subtitle" th:text="#{tax.subtitle}">VAT position, tax liability and filing history.</p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/taxes}">
+                <label class="form-label mb-0" th:text="#{rpt.from}">From</label>
+                <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                <label class="form-label mb-0" th:text="#{rpt.to}">To</label>
+                <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.vat.outputVat}">Output VAT</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.outputVat, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.vat.inputVat}">Input VAT</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.inputVat, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:if="${vat.payable()}" th:text="#{tax.vat.netPayable}">VAT payable</div>
+            <div class="stat-tile-label" th:unless="${vat.payable()}" th:text="#{tax.vat.netCredit}">VAT credit</div>
+            <div class="stat-tile-value money" th:classappend="${vat.payable()} ? 'text-error' : 'text-positive'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.netVat.abs(), 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.liability.net}">Net tax position</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(liability.netPosition, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <section class="mb-6">
+        <h2 class="section-title" th:text="#{tax.available}">Available reports</h2>
+        <div class="grid grid-3">
+            <a class="report-card" th:href="@{/taxes/vat(from=${from}, to=${to})}">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-file-check"/></svg>
+                <div class="report-name" th:text="#{tax.vat.title}">VAT Return</div>
+                <div class="report-desc" th:text="#{tax.vat.desc}">Output VAT less input VAT for the period</div>
+                <div class="report-meta"
+                     th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(vat.netVat, 1, 0, 'COMMA')}">RWF 0</div>
+            </a>
+            <a class="report-card" th:href="@{/taxes/liability(asOf=${to})}">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-scale"/></svg>
+                <div class="report-name" th:text="#{tax.liability.title}">Tax Liability</div>
+                <div class="report-desc" th:text="#{tax.liability.desc}">Balances on every tax account</div>
+                <div class="report-meta" th:text="#{rpt.asOf} + ' ' + ${#temporals.format(to, 'dd MMM yyyy')}"></div>
+            </a>
+            <a class="report-card" th:href="@{/taxes/transactions(from=${from}, to=${to})}">
+                <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-layers"/></svg>
+                <div class="report-name" th:text="#{tax.tx.title}">Tax Transactions</div>
+                <div class="report-desc" th:text="#{tax.tx.desc}">Every posted movement on a tax account</div>
+                <div class="report-meta" th:text="#{tax.vat.rate} + ': ' + ${#numbers.formatDecimal(vatRate, 1, 0)} + '%'">18%</div>
+            </a>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header"><h3 th:text="#{tax.liability.title}">Tax Liability</h3></div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{coa.account}">Account</th>
+                        <th class="num" th:text="#{common.balance}">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b : ${liability.balances}">
+                        <td>
+                            <a class="cell-link" th:href="@{/reports/general-ledger(account=${b.accountId})}"
+                               th:text="${b.code} + ' — ' + ${b.name}">2101 VAT payable</a>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(b.balance, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(liability.balances)}">
+                        <td class="table-empty" colspan="2">
+                            <p class="text-secondary" th:text="#{tax.liability.none}">No tax accounts found in the chart of accounts.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

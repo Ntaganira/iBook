@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.wh.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.wh.title}">Warehouses</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.wh.title}">Warehouses</h1>
+            <p class="page-subtitle" th:text="#{inv.wh.subtitle}">Locations where stock is held.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{inv.wh.code}">Code</th>
+                                <th th:text="#{common.name}">Name</th>
+                                <th th:text="#{inv.wh.location}">Location</th>
+                                <th th:text="#{common.status}">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="w : ${warehouses}">
+                                <td class="mono" th:text="${w.code}">WH</td>
+                                <td th:text="${w.name}">Main warehouse</td>
+                                <td class="cell-secondary" th:text="${w.location != null ? w.location : '—'}">—</td>
+                                <td>
+                                    <span class="badge badge-info" th:if="${w.defaultLocation}"><span class="badge-dot"></span><span th:text="#{inv.wh.default}">Default</span></span>
+                                    <span class="badge badge-active" th:if="${w.active and !w.defaultLocation}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                                    <span class="badge badge-muted" th:unless="${w.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(warehouses)}">
+                                <td class="table-empty" colspan="4">
+                                    <p class="text-secondary" th:text="#{inv.wh.none}">No warehouses yet.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{inv.wh.new}">New warehouse</h3></div>
+                <form method="post" novalidate th:object="${form}" th:action="@{/inventory/warehouses}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="wCode"><span th:text="#{inv.wh.code}">Code</span> <span class="required">*</span></label>
+                            <input class="form-control" id="wCode" name="code" type="text" th:value="${form.code}" required>
+                            <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="wName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                            <input class="form-control" id="wName" name="name" type="text" th:value="${form.name}" required>
+                            <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="wLoc" th:text="#{inv.wh.location}">Location</label>
+                            <input class="form-control" id="wLoc" name="location" type="text" th:value="${form.location}">
+                        </div>
+                        <label class="switch mt-2">
+                            <input type="checkbox" name="defaultLocation" value="true" th:checked="${form.defaultLocation}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{inv.wh.isDefault}">Use as the default location</span>
+                        </label>
+                        <label class="switch mt-2">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{common.status.active}">Active</span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary w-full" type="submit" th:text="#{inv.wh.add}">Add warehouse</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

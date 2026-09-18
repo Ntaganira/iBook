@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ven.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ven.title}">Vendors</h1>
+            <p class="page-subtitle" th:text="#{ven.subtitle}">Manage your suppliers, balances and activity.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                    <span th:text="#{common.export}">Export</span>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{common.exportCsv}">Export CSV</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{common.exportExcel}">Export Excel</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-printer"/></svg><span th:text="#{common.printList}">Print list</span></button>
+                </div>
+            </div>
+            <a class="btn btn-primary" th:href="@{/vendors/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{ven.new}">New Vendor</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.total}">Total customers</div>
+            <div class="stat-tile-value" th:text="${summary.total}">248</div>
+            <div class="stat-tile-sub" th:text="#{ven.activeCount(${summary.active})}">0 active</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.outstanding}">Outstanding balance</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-sub text-info" th:if="${summary.overdue.signum() > 0}"
+                 th:text="#{dash.overdue(${baseCurrency + ' ' + #numbers.formatDecimal(summary.overdue, 1, 0, 'COMMA')})}">overdue</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.billedMonth}">Invoiced this month</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.billedThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ven.paymentsMade}">Payments received</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.paidThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <!-- Toolbar -->
+        <form class="table-toolbar" method="get" th:action="@{/vendors}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{ven.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.filter}">Filter</span>
+                    <span class="filter-badge" th:if="${type != null and type != ''}" th:text="${type}">Overdue</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{ven.vendorType}">Customer type</div>
+                    <a class="dropdown-item" th:href="@{/vendors(q=${q})}"
+                       th:classappend="${type == null or type == ''} ? 'active'">
+                        <svg class="ebook-icon" th:if="${type == null or type == ''}"><use href="#icon-check"/></svg>
+                        <span th:text="#{ven.allVendors}">All customers</span>
+                    </a>
+                    <a class="dropdown-item" th:href="@{/vendors(q=${q}, type='balance')}"
+                       th:classappend="${type == 'balance'} ? 'active'">
+                        <svg class="ebook-icon" th:if="${type == 'balance'}"><use href="#icon-check"/></svg>
+                        <span th:text="#{ven.withBalance}">With open balance</span>
+                    </a>
+                    <a class="dropdown-item" th:href="@{/vendors(q=${q}, type='overdue')}"
+                       th:classappend="${type == 'overdue'} ? 'active'">
+                        <svg class="ebook-icon" th:if="${type == 'overdue'}"><use href="#icon-check"/></svg>
+                        <span th:text="#{common.status.overdue}">Overdue</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" th:href="@{/vendors(q=${q}, type='inactive')}"
+                       th:classappend="${type == 'inactive'} ? 'active'">
+                        <svg class="ebook-icon" th:if="${type == 'inactive'}"><use href="#icon-check"/></svg>
+                        <span th:text="#{common.status.inactive}">Inactive</span>
+                    </a>
+                </div>
+            </div>
+            <div class="dropdown" data-columns="vendors">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-columns"/></svg>
+                    <span th:text="#{common.columns}">Columns</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{ven.visibleColumns}">Visible columns</div>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="name" checked><span class="checkbox-box"></span><span th:text="#{ven.vendorHeader}">Vendors</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="phone" checked><span class="checkbox-box"></span><span th:text="#{common.phone}">Phone</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="email" checked><span class="checkbox-box"></span><span th:text="#{common.email}">Email</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="city" checked><span class="checkbox-box"></span><span th:text="#{common.city}">City</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="balance" checked><span class="checkbox-box"></span><span th:text="#{common.balance}">Balance</span></label>
+                    <label class="checkbox px-2 py-1"><input type="checkbox" data-col="status" checked><span class="checkbox-box"></span><span th:text="#{common.status}">Status</span></label>
+                </div>
+            </div>
+            <a class="btn btn-ghost btn-sm" th:href="@{/vendors}"
+               th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:text="#{common.showing(${#lists.size(vendors.content)}, ${vendors.totalElements})}">Showing 1–25 of 248 records</span>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-more-horizontal"/></svg>
+                    <span th:text="#{ven.bulkActions}">Bulk actions</span>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-mail"/></svg><span th:text="#{ven.emailSelected}">Email selected</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{ven.exportSelected}">Export selected</span></button>
+                    <button class="dropdown-item danger" type="button"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{ven.deactivateSelected}">Deactivate selected</span></button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th data-col="name" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{ven.vendorHeader}, ${sort}, ${dir})}">Vendors</th>
+                        <th data-col="phone" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'phone', #{common.phone}, ${sort}, ${dir})}">Phone</th>
+                        <th data-col="email" th:text="#{common.email}">Email</th>
+                        <th data-col="city" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'city', #{common.city}, ${sort}, ${dir})}">City</th>
+                        <th data-col="balance" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'openingBalance', #{common.balance}, ${sort}, ${dir})}">Balance</th>
+                        <th data-col="status" th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'active', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="v : ${vendors.content}">
+                        <td data-col="name">
+                            <a class="cell-link" th:href="@{/vendors/{id}(id=${v.id})}" th:text="${v.name}">ABC Construction Ltd</a>
+                            <span class="cell-secondary" th:text="#{ven.since} + ' ' + ${#temporals.format(c.createdAt, 'MMM yyyy')}">Since Jan 2024</span>
+                        </td>
+                        <td data-col="phone" class="cell-secondary" th:text="${v.phone != null ? c.phone : '—'}">+250 788 401 220</td>
+                        <td data-col="email" class="cell-secondary" th:text="${v.email != null ? c.email : '—'}">info@abcconstruction.rw</td>
+                        <td data-col="city" class="cell-secondary" th:text="${v.city != null ? c.city : '—'}">Kigali</td>
+                        <td data-col="balance" class="num money"
+                            th:text="${v.openingBalance != null and c.openingBalance.signum() < 0 ? '(RWF ' + #numbers.formatDecimal(c.openingBalance.abs(), 1, 0, 'COMMA') + ')' : 'RWF ' + #numbers.formatDecimal(c.openingBalance != null ? c.openingBalance : 0, 1, 0, 'COMMA')}">RWF 4,850,000</td>
+                        <td data-col="status">
+                            <span class="badge badge-active" th:if="${v.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                            <span class="badge badge-muted" th:unless="${v.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/vendors/{id}(id=${v.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/vendors/{id}/edit(id=${v.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/bills/new(vendor=${v.id})}"><svg class="ebook-icon"><use href="#icon-receipt"/></svg><span th:text="#{ven.createBill}">Create bill</span></a>
+                                    <a class="dropdown-item" th:href="@{/purchases/statements(vendor=${v.id})}"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{ven.statement}">Statement</span></a>
+                                    <div class="dropdown-divider"></div>
+                                    <form th:action="@{/vendors/{id}/toggle(id=${v.id})}" method="post">
+                                        <button class="dropdown-item" type="submit">
+                                            <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                                            <span th:if="${v.active}" th:text="#{ven.deactivate}">Deactivate</span>
+                                            <span th:unless="${v.active}" th:text="#{ven.activate}">Activate</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(vendors.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-shopping-bag"/></svg></div>
+                                <p class="text-secondary" th:text="#{ven.none}">No customers found.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="table-footer" th:if="${vendors.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(vendors.content)}, ${vendors.totalElements})}">Showing 1–25 of 248 records</span>
+            <div th:replace="~{layout/pagination :: pagination(${vendors.number + 1}, ${vendors.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

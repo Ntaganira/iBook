@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${estimate.estimateNo}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/sales/estimates}" th:text="#{est.title}">Estimates</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${estimate.estimateNo}">EST-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${estimate.estimateNo}">EST-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="${estimate.customerName}">Customer</span>
+                <span th:text="' · ' + ${#temporals.format(estimate.estimateDate, 'dd MMM yyyy')}"></span>
+                <span th:if="${estimate.expiryDate != null}"
+                      th:text="' · ' + #{est.expiry} + ' ' + ${#temporals.format(estimate.expiryDate, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="ds=${estimate.displayStatus.name()}">
+            <span class="badge"
+                  th:classappend="${ds == 'ACCEPTED' or ds == 'CONVERTED' ? 'badge-active' : (ds == 'DECLINED' or ds == 'EXPIRED' ? 'badge-error' : (ds == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(ds)}">Draft</span>
+            </span>
+
+            <a class="btn btn-secondary" th:if="${estimate.editable}"
+               th:href="@{/sales/estimates/{id}/edit(id=${estimate.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{est.view.editEstimate}">Edit estimate</span>
+            </a>
+
+            <form th:if="${estimate.status.name() == 'DRAFT'}"
+                  th:action="@{/sales/estimates/{id}/send(id=${estimate.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-send"/></svg>
+                    <span th:text="#{est.send}">Mark as sent</span>
+                </button>
+            </form>
+
+            <form th:if="${estimate.status.name() == 'SENT'}"
+                  th:action="@{/sales/estimates/{id}/accept(id=${estimate.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{est.accept}">Mark accepted</span>
+                </button>
+            </form>
+
+            <form th:if="${estimate.convertible}"
+                  th:action="@{/sales/estimates/{id}/convert(id=${estimate.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-file-text"/></svg>
+                    <span th:text="#{est.convert}">Convert to invoice</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${estimate.converted}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{est.convertedTitle}">Converted to an invoice</div>
+            <a class="cell-link" th:href="@{/invoices/{id}(id=${estimate.convertedInvoiceId})}"
+               th:text="${estimate.convertedInvoiceNo}">INV-0001</a>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.subtotal}">Subtotal</div>
+            <div class="stat-tile-value money"
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.discount}">Discount</div>
+            <div class="stat-tile-value money"
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.discountAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.tax}">Tax</div>
+            <div class="stat-tile-value money"
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.total}">Total</div>
+            <div class="stat-tile-value money"
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{est.lineItems}">Line items</h3>
+            <span class="text-sm text-muted" th:if="${estimate.reference != null}"
+                  th:text="#{common.reference} + ': ' + ${estimate.reference}"></span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{est.itemDescription}">Item / description</th>
+                        <th th:text="#{est.revenueAccount}">Revenue account</th>
+                        <th class="num" th:text="#{est.qty}">Qty</th>
+                        <th class="num" th:text="#{est.unitPrice}">Unit price</th>
+                        <th class="num" th:text="#{est.vat}">VAT</th>
+                        <th class="num" th:text="#{est.amount}">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${estimate.lines}">
+                        <td>
+                            <span th:text="${l.description}">Item</span>
+                            <span class="cell-secondary" th:if="${l.productSku != null}" th:text="${l.productSku}"></span>
+                        </td>
+                        <td class="cell-secondary"
+                            th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">—</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(estimate.lines)}">
+                        <td class="table-empty" colspan="6">
+                            <p class="text-secondary" th:text="#{est.emptyLines}">No line items.</p>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-right font-bold" th:text="#{est.total}">Total</td>
+                        <td class="num money font-bold"
+                            th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body" th:if="${estimate.customerMessage != null}">
+            <div class="cell-secondary" th:text="#{est.customerMessage}">Message to customer</div>
+            <p class="text-sm" th:text="${estimate.customerMessage}"></p>
+        </div>
+    </div>
+
+    <div class="card" th:if="${!estimate.converted and estimate.status.name() != 'DECLINED'}">
+        <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+        <div class="card-body d-flex gap-2">
+            <form th:if="${estimate.status.name() == 'SENT' or estimate.status.name() == 'ACCEPTED'}"
+                  th:action="@{/sales/estimates/{id}/decline(id=${estimate.id})}" method="post">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{est.decline}">Decline estimate</button>
+            </form>
+            <form th:action="@{/sales/estimates/{id}/delete(id=${estimate.id})}" method="post">
+                <button class="btn btn-ghost btn-sm" type="submit" th:text="#{common.delete}">Delete</button>
+            </form>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

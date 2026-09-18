@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tax.fil.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/taxes/filings}" th:text="#{tax.fil.title}">Tax Filings</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{tax.fil.edit}">Edit filing</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{tax.fil.new}">Record filing</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{tax.fil.edit}">Edit filing</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{tax.fil.new}">Record filing</h1>
+            <p class="page-subtitle" th:text="#{tax.fil.formSubtitle}">Record a declaration and track what is still owed on it.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/taxes/filings}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="filingForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{tax.fil.save}">Save filing</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="filingForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/taxes/filings/{id}(id=${editingId})} : @{/taxes/filings}">
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{tax.fil.details}">Filing details</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="filType" th:text="#{tax.fil.type}">Tax</label>
+                        <select class="form-control" id="filType" name="filingType">
+                            <option th:each="t : ${typeLabels}" th:value="${t.key}" th:text="${t.value}"
+                                    th:selected="${form.filingType == t.key}">VAT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="filRef" th:text="#{tax.fil.reference}">Declaration reference</label>
+                        <input class="form-control" id="filRef" name="reference" type="text"
+                               th:value="${form.reference}" th:placeholder="#{tax.fil.referencePlaceholder}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="filFrom"><span th:text="#{tax.fil.periodFrom}">Period from</span> <span class="required">*</span></label>
+                        <input class="form-control" id="filFrom" name="periodFrom" type="date"
+                               th:value="${form.periodFrom}" required>
+                        <div th:replace="~{layout/common :: fieldError('periodFrom')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="filTo"><span th:text="#{tax.fil.periodTo}">Period to</span> <span class="required">*</span></label>
+                        <input class="form-control" id="filTo" name="periodTo" type="date"
+                               th:value="${form.periodTo}" required>
+                        <div th:replace="~{layout/common :: fieldError('periodTo')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="filDue" th:text="#{tax.fil.due}">Due date</label>
+                        <input class="form-control" id="filDue" name="dueDate" type="date" th:value="${form.dueDate}">
+                        <div class="form-hint" th:text="#{tax.fil.dueHint}">Leave blank to use the standard deadline for this tax.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="filDeclared" th:text="#{tax.fil.declared}">Declared amount</label>
+                        <div class="input-group">
+                            <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                            <input class="form-control amount-control" id="filDeclared" name="declaredAmount"
+                                   type="number" step="0.01" th:value="${form.declaredAmount}">
+                        </div>
+                        <div class="form-hint" th:if="${suggested != null and suggested.signum() != 0}"
+                             th:text="#{tax.fil.suggested(${baseCurrency + ' ' + #numbers.formatDecimal(suggested, 1, 2, 'COMMA')})}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="filPaid" th:text="#{tax.fil.paid}">Already paid</label>
+                        <div class="input-group">
+                            <span class="input-prefix" th:text="${baseCurrency}">RWF</span>
+                            <input class="form-control amount-control" id="filPaid" name="paidAmount"
+                                   type="number" step="0.01" min="0" th:value="${form.paidAmount}">
+                        </div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="filNotes" th:text="#{tax.fil.notes}">Notes</label>
+                        <textarea class="form-control" id="filNotes" name="notes" rows="3"
+                                  th:text="${form.notes}" th:placeholder="#{tax.fil.notesPlaceholder}"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{tax.fil.hint}">A filing starts as a draft. Mark it submitted once lodged with the revenue authority, then record payments against it.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

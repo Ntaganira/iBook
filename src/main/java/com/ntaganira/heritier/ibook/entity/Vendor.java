@@ -65,6 +65,12 @@ public class Vendor implements Serializable {
     @Column(name = "tax_id")
     private String taxId;
 
+    @Column(name = "mobile_money")
+    private String mobileMoney;
+
+    @Column(name = "payment_terms")
+    private String paymentTerms;
+
     @Column(name = "opening_balance", precision = 14, scale = 2)
     private BigDecimal openingBalance;
 

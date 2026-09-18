@@ -1,0 +1,213 @@
+# iBook — Build Tracker
+
+Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
+a controller mapping, a template, and reads real data.
+
+**61 / 115 mapped · 54 remaining**
+
+How to check progress yourself:
+
+```bash
+# routes in the sidebar vs routes with a GetMapping
+grep -oE 'href="@\{[^}(]*' src/main/resources/templates/layout/sidebar.html | sort -u | wc -l
+grep -rhoE '@GetMapping\("[^"]*"' src/main/java --include=*Controller.java | sort -u | wc -l
+```
+
+Before trusting any change: `./mvnw -q compile` (Windows: `.\mvnw.cmd -q compile`).
+
+---
+
+## Done
+
+- [x] **Auth** — login, register, forgot/reset, DB-backed users, roles, permissions, page-level access
+- [x] **Chart of accounts** — CRUD, hierarchy, opening balances
+- [x] **Journal entries** — draft/posted, auto-numbering, ledger, trial balance, periods, fiscal close
+- [x] **Opening balances** — bulk edit with debit/credit balance check
+- [x] **Customers** — CRUD, detail page, receivables stats
+- [x] **Vendors** — CRUD, detail page, payables stats
+- [x] **Invoices** — full lifecycle, GL posting, payments, void with reversal
+- [x] **Bills** — full lifecycle, AP posting, payments, void with reversal
+- [x] **Banking** — cash/bank accounts, transactions from posted ledger activity
+- [x] **Reports** — P&L, balance sheet, cash flow, general ledger, trial balance
+- [x] **Taxes** — rate config, VAT return, liability, transactions, filings
+- [x] **Settings** — 15 pages: company, branches, currencies, numbering, templates, users, roles, audit
+
+---
+
+## Tier 1 — no new entities, just pages — **COMPLETE**
+
+Reads tables that already exist. All seven done.
+
+- [x] `/sales/aging` — per-customer buckets, drill-down, as-of date
+- [x] `/purchases/aging` — per-vendor buckets, drill-down, as-of date
+- [x] `/sales/payments` — period + method filter, breakdowns by method and account
+- [x] `/purchases/payments` — period + method filter, breakdowns by method and account
+- [x] `/sales/statements` — brought-forward balance, running balance, period filter
+- [x] `/purchases/statements` — brought-forward balance, running balance, period filter
+- [x] `/sales/collections` — worklist with contact details and last-payment date
+
+---
+
+## Tier 2 — one new entity each
+
+### Inventory (10) — foundation built
+`Product`, `ProductCategory`, `Warehouse`, `StockMovement` entities all exist.
+
+- [x] `/inventory/products` — CRUD with on-hand quantity, reorder flagging
+- [x] `/inventory/categories` — CRUD, delete blocked while in use
+- [x] `/inventory/warehouses` — CRUD with a single default location
+- [x] `/inventory/movements` — filterable movement log
+- [x] `/inventory/adjustments` — in/out with GL posting
+- [x] `/inventory/valuation` — at standard cost, as-of date
+- [ ] `/inventory/brands` — currently a free-text field on Product; needs its own entity
+- [ ] `/inventory/bundles` — needs `ProductBundle` + components
+- [ ] `/inventory/transfers` — `TRANSFER_IN`/`TRANSFER_OUT` exist; needs a paired-movement screen
+- [ ] `/inventory/counts` — needs `StockCount` + count lines
+- [x] **Products linked to invoice and bill lines** — picker with autofill; posting now moves stock
+      and applies perpetual inventory (see Known issues for the accounting change)
+
+### Sales documents (4) — variants of `Invoice`
+- [x] `/sales/estimates` — full lifecycle, converts to a draft invoice via `InvoiceService`
+- [x] `/sales/credit-notes` — full lifecycle, posts the reverse of an invoice, optional stock return,
+      applies the credit to a linked invoice (see Known issues for the statement gap)
+- [x] `/sales/orders` — draft/confirm/cancel/reopen, expected-delivery late flag, converts to a
+      draft invoice via `InvoiceService`. Non-posting: nothing reaches the ledger until that
+      invoice is posted.
+- [ ] `/sales/recurring` — `RecurringInvoice` + scheduler
+
+### Purchase documents (3) — variants of `Bill`
+- [x] `/purchases/orders` — draft/confirm/cancel/reopen, expected-delivery late flag, converts to a
+      draft bill via `BillService`. Non-posting, mirroring `/sales/orders`.
+- [x] `/purchases/expenses` — direct spend paid from cash or bank, posts in one entry (expense
+      accounts + input VAT debited, payment account credited), void writes a reversing entry.
+      Never touches accounts payable.
+- [ ] `/purchases/contractors` — `Contractor`
+
+### Payroll (7)
+`Employee`, `PayrollRun`, `Payslip`. Needs current RRA PAYE bands plus RSSB and maternity rates.
+
+- [ ] `/payroll/employees` · `/payroll/setup` · `/payroll/allowances` · `/payroll/deductions`
+- [ ] `/payroll/runs` · `/payroll/payslips` · `/payroll/remittances`
+
+### Fixed assets (6)
+`FixedAsset`, `DepreciationEntry`. Depreciation posts to the GL — mirrors the invoice posting pattern.
+
+- [ ] `/assets/register` · `/assets/categories` · `/assets/locations`
+- [ ] `/assets/depreciation` · `/assets/disposals` · `/assets/transfers`
+
+### Projects (7)
+`Project`, `TimeEntry`. Job costing tags existing journal lines to a project.
+
+- [ ] `/projects` · `/projects/timesheets` · `/projects/billable` · `/projects/budgets`
+- [ ] `/projects/job-costing` · `/projects/profitability` · `/projects/progress-billing`
+
+### Budgets (6)
+`Budget`, `BudgetLine`. Budget-vs-actual is a join against GL data that already exists.
+
+- [ ] `/budgets` · `/budgets/vs-actual`
+- [ ] `/budgets/revenue-forecast` · `/budgets/expense-forecast` · `/budgets/cash-flow-forecast`
+- [ ] `/budgets/ai-forecasts` — drop unless genuinely wanted
+
+### Documents (5)
+`Attachment`. **Needs a storage decision first: disk, S3, or database.**
+
+- [ ] `/documents` · `/documents/upload` · `/documents/attachments` · `/documents/templates`
+- [ ] `/documents/ocr` — also needs an OCR service
+
+### Other single items
+- [ ] `/accounting/recurring-journals` — `RecurringJournal` + scheduler
+- [ ] `/reports/builder` — `ReportDefinition`
+
+---
+
+## Tier 3 — blocked on something outside the codebase
+
+Building these without the external piece produces a page that cannot work.
+
+- [ ] `/sales/ebm` — RRA EBM 2.x certification
+- [ ] `/integrations/ebm` · `/integrations/mtn-momo` · `/integrations/airtel-money`
+- [ ] `/integrations/banks` · `/integrations/payments` · `/integrations/webhooks` · `/integrations/api`
+- [ ] `/sales/payment-links` — payment gateway account
+- [ ] `/banking/feeds` — feed import must come first
+- [ ] `/banking/reconcile` — needs statement lines and match state
+- [ ] `/banking/uncategorized` — depends on feed import
+- [ ] `/taxes/withholding` — withholding fields on invoice/bill lines
+- [ ] `/taxes/excise` — excise fields on invoice/bill lines
+
+---
+
+## Known issues
+
+- [ ] **Credit notes do not appear on customer statements.** `/sales/statements` builds its running
+      balance from invoice totals and `InvoicePayment` rows only, so a credited invoice's statement
+      closing balance overstates the debt by the credit. Aging, collections, outstanding totals and
+      the GL are all correct — only the statement is out. Fixing it means teaching
+      `InvoiceService.statementFor` about `CreditNote`.
+- [ ] **Enum check constraints block new enum values on existing databases.** Hibernate wrote a
+      `journal_entries_type_check` (and the same for `stock_movements.movement_type`) when those
+      tables were created, and `ddl-auto: update` never widens it. Adding a `CREDIT_NOTE` journal
+      type failed with SQLState 23514 on the existing database, so credit notes post as
+      `ADJUSTMENT` and restocking writes `ADJUSTMENT_IN`, both identified by the credit note number
+      in the entry reference. Widening these needs a Flyway migration — note that
+      `baseline-on-migrate` baselines existing databases at version 1, so a first script must be
+      `V2__` or later to run at all.
+- [ ] **Voiding a credit note does not reverse its stock movement.** The reversing journal entry is
+      written and the credit is un-applied from the invoice, but the inbound stock movement stays.
+      Same gap as voiding an invoice, which also leaves its outbound movement in place.
+- [ ] **Orders do not reserve stock and are not partially invoicable.** Applies to both
+      `/sales/orders` and `/purchases/orders`. Confirming has no effect on stock on hand, so the
+      same units can be promised twice; converting always creates one invoice or bill for the whole
+      order, with no partial or repeat conversion, and no goods-received step records a delivery
+      against a purchase order. Sales orders also cannot be raised from an accepted estimate —
+      `EstimateService` still converts straight to an invoice.
+- [ ] **Expenses carry no receipt attachment and cannot be rebilled.** There is nowhere to attach a
+      scanned receipt (waiting on the Documents storage decision) and no billable flag to recharge
+      an expense to a customer or project. Stocked products are also out of scope by design — an
+      expense is consumption, so nothing is capitalised to inventory (1301) the way a bill line is.
+- [ ] **Unapplied credit cannot be spent.** A credit note with no linked invoice, or one larger than
+      the invoice it credits, keeps the remainder as `unappliedAmount` and shows it on the list and
+      view pages, but there is no screen to apply it to a later invoice or refund it.
+- [ ] **Perpetual inventory is now live.** Posting a bill line for a stocked product debits
+      Inventory (1301) instead of the line's expense account; posting an invoice credits Inventory
+      and debits Cost of goods sold (5200) at the product's cost price. Non-stocked lines are
+      unaffected. Verify this matches your intended treatment before entering real data.
+- [ ] **Account 5200 missing on existing databases.** `DataSeeder` adds `5200 Cost of goods sold`,
+      but `seedAccounts` returns early when accounts exist. Without it, cost of sales falls back to
+      `5000 Operating expenses`. Add it manually via Chart of Accounts.
+
+- [ ] **Balance sheet does not balance.** Seeded opening balances are out by **10,700,000** on the
+      debit side. Fix at `/accounting/opening-balances` — the page shows the difference and turns
+      green at zero.
+- [ ] **Input VAT account missing on existing databases — confirmed live.** `DataSeeder` adds
+      `1402 VAT receivable (input)`, but `seedAccounts` returns early when accounts exist. Without
+      it, `BillService` and `ExpenseService` both fall back to debiting `2101`, which nets VAT
+      instead of separating input and output. Verified on the dev database: posting a test expense
+      debited `2101 VAT payable` for the input VAT. Add `1402` manually via Chart of Accounts, then
+      re-check. Nothing else needs changing — both services prefer `1402` when it exists.
+- [ ] **No `ESTIMATE` numbering sequence on existing databases.** `DataSeeder.seedNumbering` returns
+      early when any sequence exists, so databases predating it have `INVOICE`, `BILL`,
+      `CREDIT_NOTE`, `SALE_ORDER`, `PURCHASE_ORDER`, `EXPENSE` and `JOURNAL` but no `ESTIMATE`.
+      Estimates then fall back to a random number like `EST-2026-11501` instead of `EST-0001`.
+      Add the row at `/settings/numbering` — same class of drift as the missing 1402 and 5200
+      accounts.
+- [ ] **Six message keys missing in all three bundles** (pre-existing, render as `??key??`):
+      `page.title`, `set.showing`, `set.rates.addHint`, `set.role.count`, `set.workflows.steps`,
+      `set.fiscalYear.periodLabel`
+- [ ] **Cash flow uses a simplified classification**, not the IFRS indirect method. Each entry is
+      bucketed by its largest non-cash account.
+- [ ] **Zero-rated vs exempt on old lines.** Lines saved before `TaxRate` existed default to
+      zero-rated when the rate is 0%; re-pick the rate to mark them exempt.
+- [ ] **Tax filing payments do not post to the GL.** Recording a payment updates the filing only.
+      Post the cash settlement as a manual journal entry.
+
+---
+
+## Conventions to keep
+
+- Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
+  Currently 2,344 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+- Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
+- New modules follow the existing shape: entity → repository → form DTO → service → controller →
+  templates. `InvoiceService` is the reference for anything that posts to the ledger.
+- Documents that post to the GL create a `JournalEntry`; voiding writes a reversing entry rather
+  than mutating the original.

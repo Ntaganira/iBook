@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.prod.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.prod.title}">Products &amp; Services</h1>
+            <p class="page-subtitle" th:text="#{inv.prod.subtitle}">Items you buy, sell and hold in stock.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/inventory/categories}" th:text="#{inv.cat.title}">Categories</a>
+            <a class="btn btn-secondary" th:href="@{/inventory/valuation}" th:text="#{inv.val.title}">Valuation</a>
+            <a class="btn btn-primary" th:href="@{/inventory/products/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{inv.prod.new}">New product</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.prod.total}">Products</div>
+            <div class="stat-tile-value" th:text="${summary.products}">0</div>
+            <div class="stat-tile-sub" th:text="#{inv.prod.activeCount(${summary.activeProducts})}">0 active</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.val.stockValue}">Stock value</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.stockValue, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.prod.belowReorder}">Below reorder level</div>
+            <div class="stat-tile-value" th:classappend="${summary.belowReorder > 0} ? 'text-error'"
+                 th:text="${summary.belowReorder}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.cat.title}">Categories</div>
+            <div class="stat-tile-value" th:text="${summary.categories}">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/inventory/products}">
+            <input class="form-control form-control--sm" type="search" name="q" th:value="${q}"
+                   th:placeholder="#{inv.prod.searchPlaceholder}">
+            <select class="form-control form-control--sm" name="category">
+                <option value="" th:text="#{inv.prod.allCategories}">All categories</option>
+                <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                        th:selected="${category != null and category == c.id}">Category</option>
+            </select>
+            <select class="form-control form-control--sm" name="type">
+                <option value="" th:text="#{inv.prod.allTypes}">All types</option>
+                <option th:each="t : ${typeLabels}" th:value="${t.key}" th:text="${t.value}"
+                        th:selected="${type == t.key}">Good</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'sku', #{inv.prod.sku}, ${sort}, ${dir})}">SKU</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{common.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:text="#{inv.cat.title}">Category</th>
+                        <th class="num" th:text="#{inv.prod.onHand}">On hand</th>
+                        <th class="num" th:text="#{inv.prod.cost}">Cost</th>
+                        <th class="num" th:text="#{inv.prod.price}">Price</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${products.content}">
+                        <td class="mono" th:text="${p.sku}">SKU-001</td>
+                        <td>
+                            <a class="cell-link" th:href="@{/inventory/products/{id}/edit(id=${p.id})}" th:text="${p.name}">Product</a>
+                            <span class="cell-secondary" th:if="${p.brand != null}" th:text="${p.brand}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${p.categoryName != null ? p.categoryName : '—'}">—</td>
+                        <td class="num" th:with="qty=${onHand.containsKey(p.id) ? onHand.get(p.id) : 0}">
+                            <span th:if="${p.trackStock}"
+                                  th:classappend="${p.reorderLevel.signum() > 0 and qty <= p.reorderLevel} ? 'text-error'"
+                                  th:text="${#numbers.formatDecimal(qty, 1, 2)} + ' ' + ${p.unit}">0.00</span>
+                            <span th:unless="${p.trackStock}" class="cell-secondary" th:text="#{inv.prod.notTracked}">Not tracked</span>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.costPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.sellingPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td>
+                            <span class="badge badge-active" th:if="${p.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                            <span class="badge badge-muted" th:unless="${p.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/inventory/products/{id}/edit(id=${p.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:href="@{/inventory/movements(product=${p.id})}"><svg class="ebook-icon"><use href="#icon-layers"/></svg><span th:text="#{inv.mv.title}">Movements</span></a>
+                                    <form th:action="@{/inventory/products/{id}/toggle(id=${p.id})}" method="post">
+                                        <button class="dropdown-item" type="submit">
+                                            <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                                            <span th:if="${p.active}" th:text="#{common.deactivate}">Deactivate</span>
+                                            <span th:unless="${p.active}" th:text="#{common.activate}">Activate</span>
+                                        </button>
+                                    </form>
+                                    <form th:action="@{/inventory/products/{id}/delete(id=${p.id})}" method="post">
+                                        <button class="dropdown-item danger" type="submit"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(products.content)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-box"/></svg></div>
+                                <p class="text-secondary" th:text="#{inv.prod.none}">No products yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/inventory/products/new}" th:text="#{inv.prod.new}">New product</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="table-footer">
+            <span class="text-sm text-muted" th:text="#{common.showing(${#lists.size(products.content)}, ${products.totalElements})}">Showing 0 of 0</span>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pay.made.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/bills}" th:text="#{bill.title}">Invoices</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{pay.made.title}">Payments Made</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{pay.made.title}">Payments Made</h1>
+            <p class="page-subtitle"
+               th:text="${#temporals.format(from, 'dd MMM yyyy')} + ' — ' + ${#temporals.format(to, 'dd MMM yyyy')}"></p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/purchases/payments}">
+                <select class="form-control form-control--sm" name="method">
+                    <option value="" th:text="#{pay.allMethods}">All methods</option>
+                    <option th:each="m : ${methodLabels}" th:value="${m.key}" th:text="${m.value}"
+                            th:selected="${method == m.key}">Bank transfer</option>
+                </select>
+                <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pay.totalPaid}">Total paid</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pay.count}">Payments</div>
+            <div class="stat-tile-value" th:text="${report.count()}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pay.average}">Average payment</div>
+            <div class="stat-tile-value money"
+                 th:text="${report.count() == 0} ? '—' : ${baseCurrency + ' ' + #numbers.formatDecimal(report.total / report.count(), 1, 0, 'COMMA')}">—</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pay.methodsUsed}">Methods used</div>
+            <div class="stat-tile-value" th:text="${#maps.size(report.byMethod)}">0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{common.date}">Date</th>
+                                <th th:text="#{bill.bill}">Invoice</th>
+                                <th th:text="#{bill.vendor}">Vendor</th>
+                                <th th:text="#{pay.method}">Method</th>
+                                <th th:text="#{pay.paidFrom}">Paid from</th>
+                                <th th:text="#{common.reference}">Reference</th>
+                                <th class="num" th:text="#{common.amount}">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${report.rows}">
+                                <td class="cell-secondary" th:text="${#temporals.format(p.date, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                <td>
+                                    <a class="cell-link" th:if="${p.documentId != null}"
+                                       th:href="@{/bills/{id}(id=${p.documentId})}" th:text="${p.documentNo}">BILL-0001</a>
+                                    <span th:unless="${p.documentId != null}" class="cell-secondary">—</span>
+                                </td>
+                                <td>
+                                    <a class="cell-link" th:if="${p.partyId != null}"
+                                       th:href="@{/vendors/{id}(id=${p.partyId})}" th:text="${p.partyName}">Vendor</a>
+                                    <span th:unless="${p.partyId != null}" class="cell-secondary">—</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-muted">
+                                        <span th:text="${p.method != null and methodLabels.containsKey(p.method)} ? ${methodLabels.get(p.method)} : ${p.method}">Bank transfer</span>
+                                    </span>
+                                </td>
+                                <td class="cell-secondary"
+                                    th:text="${p.accountCode != null} ? ${p.accountCode + ' — ' + p.accountName} : '—'">1101 Bank</td>
+                                <td class="cell-secondary" th:text="${p.reference != null ? p.reference : '—'}">—</td>
+                                <td class="num money font-semibold"
+                                    th:text="${(p.currencyCode != null ? p.currencyCode : baseCurrency) + ' ' + #numbers.formatDecimal(p.amount, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                            <tr th:if="${report.empty}">
+                                <td class="table-empty" colspan="7">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg></div>
+                                        <p class="text-secondary" th:text="#{pay.made.none}">No payments received in this period.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot th:unless="${report.empty}">
+                            <tr>
+                                <td colspan="6" class="text-right font-bold" th:text="#{pay.totalPaid}">Total paid</td>
+                                <td class="num money font-bold"
+                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{pay.byMethod}">By method</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <tbody>
+                            <tr th:each="m : ${report.byMethod}">
+                                <td th:text="${methodLabels.containsKey(m.key)} ? ${methodLabels.get(m.key)} : ${m.key}">Bank transfer</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(m.value, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${report.empty}">
+                                <td class="cell-secondary" colspan="2" th:text="#{pay.noBreakdown}">Nothing to break down.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{pay.byAccount}">By account</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <tbody>
+                            <tr th:each="a : ${report.byAccount}">
+                                <td th:text="${a.key}">1101 — Bank</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(a.value, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${report.empty}">
+                                <td class="cell-secondary" colspan="2" th:text="#{pay.noBreakdown}">Nothing to break down.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

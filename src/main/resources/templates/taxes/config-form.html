@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tax.cfg.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/taxes/config}" th:text="#{tax.cfg.title}">Tax Configuration</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:if="${mode == 'edit'}" th:text="#{tax.cfg.edit}">Edit rate</span>
+        <span class="current" th:unless="${mode == 'edit'}" th:text="#{tax.cfg.new}">New rate</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:if="${mode == 'edit'}" th:text="#{tax.cfg.edit}">Edit rate</h1>
+            <h1 class="page-title" th:unless="${mode == 'edit'}" th:text="#{tax.cfg.new}">New rate</h1>
+            <p class="page-subtitle" th:text="#{tax.cfg.formSubtitle}">Rates appear in the tax picker on invoice and bill lines.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/taxes/config}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="taxRateForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{tax.cfg.save}">Save rate</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="taxRateForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/taxes/config/{id}(id=${editingId})} : @{/taxes/config}">
+        <div class="card">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="trCode"><span th:text="#{tax.cfg.code}">Code</span> <span class="required">*</span></label>
+                        <input class="form-control" id="trCode" name="code" type="text" th:value="${form.code}"
+                               th:placeholder="#{tax.cfg.codePlaceholder}" required autofocus>
+                        <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="trName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="trName" name="name" type="text" th:value="${form.name}"
+                               th:placeholder="#{tax.cfg.namePlaceholder}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="trRate"><span th:text="#{tax.cfg.rate}">Rate %</span> <span class="required">*</span></label>
+                        <input class="form-control amount-control" id="trRate" name="rate" type="number"
+                               step="0.01" min="0" max="100" th:value="${form.rate}" required>
+                        <div th:replace="~{layout/common :: fieldError('rate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="trTreatment" th:text="#{tax.cfg.treatment}">Treatment</label>
+                        <select class="form-control" id="trTreatment" name="treatment">
+                            <option th:each="t : ${treatmentLabels}" th:value="${t.key}" th:text="${t.value}"
+                                    th:selected="${form.treatment == t.key}">Standard</option>
+                        </select>
+                        <div class="form-hint" th:text="#{tax.cfg.treatmentHint}">Zero-rated and exempt both charge 0% but report separately.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="trDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="trDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                </div>
+
+                <label class="switch mt-3">
+                    <input type="checkbox" name="defaultRate" value="true" th:checked="${form.defaultRate}">
+                    <span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{tax.cfg.isDefault}">Use as the default rate on new lines</span>
+                </label>
+                <label class="switch mt-2">
+                    <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                    <span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{tax.cfg.isActive}">Rate is active</span>
+                </label>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

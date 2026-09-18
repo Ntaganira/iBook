@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tax.tx.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/taxes}" th:text="#{nav.taxes}">Taxes</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{tax.tx.title}">Tax Transactions</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{tax.tx.title}">Tax Transactions</h1>
+            <p class="page-subtitle"
+               th:text="${#temporals.format(from, 'dd MMM yyyy')} + ' — ' + ${#temporals.format(to, 'dd MMM yyyy')}"></p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/taxes/transactions}">
+                <label class="form-label mb-0" th:text="#{rpt.from}">From</label>
+                <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                <label class="form-label mb-0" th:text="#{rpt.to}">To</label>
+                <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{je.entryNo}">Entry</th>
+                        <th th:text="#{common.type}">Type</th>
+                        <th th:text="#{coa.account}">Tax account</th>
+                        <th th:text="#{common.reference}">Reference</th>
+                        <th class="num" th:text="#{je.debit}">Debit</th>
+                        <th class="num" th:text="#{je.credit}">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${rows}">
+                        <td class="cell-secondary" th:text="${#temporals.format(r.date, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td><a class="cell-link" th:href="@{/journals/{id}(id=${r.entryId})}" th:text="${r.entryNo}">JE-00001</a></td>
+                        <td><span class="badge badge-muted"><span th:text="${r.entryType}">INVOICE</span></span></td>
+                        <td class="cell-secondary" th:text="${r.accountCode} + ' — ' + ${r.accountName}">2101 VAT payable</td>
+                        <td class="cell-secondary" th:text="${r.reference != null ? r.reference : (r.memo != null ? r.memo : '—')}">—</td>
+                        <td class="num money" th:text="${r.debit.signum() == 0 ? '—' : #numbers.formatDecimal(r.debit, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${r.credit.signum() == 0 ? '—' : #numbers.formatDecimal(r.credit, 1, 2, 'COMMA')}">—</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(rows)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-check"/></svg></div>
+                                <p class="text-secondary" th:text="#{tax.tx.none}">No tax movements in this period.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer" th:if="${!#lists.isEmpty(rows)}">
+            <span class="text-sm text-muted" th:text="#{tax.tx.count(${#lists.size(rows)})}">0 movements</span>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

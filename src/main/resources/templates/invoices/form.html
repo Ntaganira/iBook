@@ -16,335 +16,333 @@
     <div class="page-header">
         <div>
             <h1 class="page-title" th:text="#{inv.form.title}">New Invoice</h1>
-            <p class="page-subtitle" th:utext="#{inv.form.subtitle('INV-2026-00452')}">Next number <strong>INV-2026-00452</strong></p>
+            <p class="page-subtitle" th:utext="#{inv.form.subtitle(${nextNumber})}">Next number</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-ghost" type="submit" form="invoiceForm" name="action" value="save-draft">
+            <a class="btn btn-ghost" th:href="@{/invoices}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="invoiceForm">
                 <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
                 <span th:text="#{inv.saveDraft}">Save draft</span>
             </button>
-            <button class="btn btn-soft" type="submit" form="invoiceForm" name="action" value="approve">
-                <svg class="ebook-icon"><use href="#icon-check"/></svg>
-                <span th:text="#{inv.savePreview}">Save &amp; preview</span>
-            </button>
-            <button class="btn btn-primary" type="submit" form="invoiceForm" name="action" value="send">
-                <svg class="ebook-icon"><use href="#icon-send"/></svg>
-                <span th:text="#{inv.saveSend}">Save &amp; send</span>
+            <button class="btn btn-primary" type="submit" form="invoiceForm" name="postNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{inv.post}">Post to ledger</span>
             </button>
         </div>
     </div>
 
-    <form id="invoiceForm" th:action="@{/invoices}" method="post" novalidate>
-        <div class="grid grid-12">
+    <form id="invoiceForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/invoices/{id}(id=${editingId})} : @{/invoices}">
 
+        <div class="grid grid-12">
             <div class="col-span-12 d-flex flex-column gap-5">
 
-                <!-- Customer & details -->
-                <section class="section">
-                    <div class="section-header">
-                        <div>
-                            <h3 th:text="#{inv.details}">Invoice details</h3>
-                        </div>
-                    </div>
-                    <div class="section-body">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.details}">Invoice details</h3></div>
+                    <div class="card-body">
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label" for="invoiceCustomer"><span th:text="#{inv.customerLabel}">Customer</span> <span class="required">*</span></label>
-                                <select class="form-control" id="invoiceCustomer" name="customerId" data-choices required>
+                                <label class="form-label" for="invCustomer"><span th:text="#{inv.customerLabel}">Customer</span> <span class="required">*</span></label>
+                                <select class="form-control" id="invCustomer" name="customerId" required>
                                     <option value="" th:text="#{inv.selectCustomer}">Select a customer…</option>
-                                    <option value="1">ABC Construction Ltd</option>
-                                    <option value="2">Gorilla Retreat Ltd</option>
-                                    <option value="3">Kivu Fresh Ltd</option>
-                                    <option value="4">Rwanda Artisan Co-op</option>
-                                    <option value="5">Chantal Designs</option>
-                                    <option value="6">Mountance Logistics</option>
+                                    <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}"
+                                            th:selected="${form.customerId != null and form.customerId == c.id}">Customer</option>
                                 </select>
-                                <div class="form-hint"><a th:href="@{/customers/new}" class="text-info" th:text="#{inv.addCustomer}">+ Add a new customer</a></div>
+                                <div th:replace="~{layout/common :: fieldError('customerId')}"></div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="invoiceCurrency" th:text="#{inv.currency}">Currency</label>
-                                <select class="form-control" id="invoiceCurrency" name="currencyCode">
-                                    <option value="RWF" selected>RWF — Rwandan Franc</option>
-                                    <option value="USD">USD — US Dollar</option>
-                                    <option value="EUR">EUR — Euro</option>
-                                    <option value="UGX">UGX — Uganda Shilling</option>
-                                    <option value="KES">KES — Kenyan Shilling</option>
-                                </select>
+                                <label class="form-label" for="invCurrency" th:text="#{inv.currency}">Currency</label>
+                                <input class="form-control" id="invCurrency" name="currencyCode" type="text"
+                                       th:value="${form.currencyCode}" readonly>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="invoiceDate" th:text="#{inv.invoiceDate}">Invoice date</label>
-                                <input class="form-control" id="invoiceDate" name="invoiceDate" type="date" value="2026-09-07">
+                                <label class="form-label" for="invDate"><span th:text="#{inv.invoiceDate}">Invoice date</span> <span class="required">*</span></label>
+                                <input class="form-control" id="invDate" name="issueDate" type="date"
+                                       th:value="${form.issueDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('issueDate')}"></div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="invoiceDueDate" th:text="#{inv.dueDate}">Due date</label>
-                                <input class="form-control" id="invoiceDueDate" name="dueDate" type="date" value="2026-09-22">
+                                <label class="form-label" for="invDue"><span th:text="#{inv.dueDate}">Due date</span> <span class="required">*</span></label>
+                                <input class="form-control" id="invDue" name="dueDate" type="date"
+                                       th:value="${form.dueDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('dueDate')}"></div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="invoiceTerms" th:text="#{inv.paymentTerms}">Payment terms</label>
-                                <select class="form-control" id="invoiceTerms" name="paymentTerms">
-                                    <option th:text="#{cust.dueOnReceipt}">Due on receipt</option>
-                                    <option th:text="#{cust.net7}">Net 7</option>
-                                    <option th:text="#{cust.net15}" selected>Net 15</option>
-                                    <option th:text="#{cust.net30}">Net 30</option>
-                                    <option th:text="#{cust.net45}">Net 45</option>
-                                    <option th:text="#{cust.net60}">Net 60</option>
+                                <label class="form-label" for="invTerms" th:text="#{inv.paymentTerms}">Payment terms</label>
+                                <select class="form-control" id="invTerms" name="paymentTerms">
+                                    <option th:each="t : ${paymentTermsOptions}" th:value="${t.key}" th:text="${t.value}"
+                                            th:selected="${form.paymentTerms == t.key}">Net 30</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="invoiceReference" th:text="#{inv.reference}">Reference / PO number</label>
-                                <input class="form-control" id="invoiceReference" name="poReference" type="text"
-                                       th:placeholder="#{inv.referencePlaceholder}">
+                                <label class="form-label" for="invRef" th:text="#{inv.reference}">Reference / PO number</label>
+                                <input class="form-control" id="invRef" name="reference" type="text"
+                                       th:value="${form.reference}" th:placeholder="#{inv.referencePlaceholder}">
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <!-- Line items -->
-                <section class="section">
-                    <div class="section-header">
+                <div class="card">
+                    <div class="card-header">
                         <div>
                             <h3 th:text="#{inv.lineItems}">Line items</h3>
-                            <div class="card-subtitle" th:text="#{inv.productsHint}">Products, services and taxes</div>
+                            <p class="text-sm text-muted" th:text="#{inv.productsHint}">Products, services and taxes</p>
                         </div>
-                        <button class="btn btn-soft btn-sm" type="button">
+                        <button class="btn btn-secondary btn-sm" type="button" id="addLineBtn">
                             <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
                             <span th:text="#{inv.addItem}">Add item</span>
                         </button>
                     </div>
-                    <div class="card-body" style="padding:0">
-                        <div class="table-wrap">
-                            <table class="table" id="invoiceLinesTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width:36%" th:text="#{inv.itemDescription}">Item / description</th>
-                                        <th th:text="#{inv.qty}">Qty</th>
-                                        <th style="width:15%" th:text="#{inv.unitPrice}">Unit price</th>
-                                        <th th:text="#{inv.tax}">Tax</th>
-                                        <th class="num" style="width:15%" th:text="#{inv.amount}">Amount</th>
-                                        <th class="actions-cell"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Line 1 -->
-                                    <tr class="invoice-line">
-                                        <td>
-                                            <select class="form-control" name="items[0].productId" style="height:34px;font-size:var(--fs-sm)">
-                                                <option value="" th:text="#{inv.selectProduct}">Select product or service…</option>
-                                                <option>Site survey &amp; consultation</option>
-                                                <option selected>Construction supervision</option>
-                                                <option>Civil works — per m²</option>
-                                                <option>Transport &amp; logistics</option>
-                                            </select>
-                                            <input class="form-control mt-1" name="items[0].description" type="text"
-                                                   th:placeholder="#{inv.descriptionPlaceholder}" style="height:32px;font-size:var(--fs-sm)">
-                                        </td>
-                                        <td>
-                                            <input class="form-control num" name="items[0].quantity" type="number"
-                                                   value="40" min="0.01" style="width:72px;height:34px;font-size:var(--fs-sm)">
-                                        </td>
-                                        <td>
-                                            <div class="input-group">
-                                                <span class="input-prefix" style="font-size:var(--fs-sm)">RWF</span>
-                                                <input class="form-control num" name="items[0].unitPrice" type="number"
-                                                       value="25000" min="0" step="0.01" style="height:34px;font-size:var(--fs-sm);padding-left:52px">
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <select class="form-control" name="items[0].taxCode" style="height:34px;font-size:var(--fs-sm);width:88px">
-                                                <option value="0">0%</option>
-                                                <option value="18" selected>18%</option>
-                                            </select>
-                                        </td>
-                                        <td class="num money font-semibold">RWF 1,000,000</td>
-                                        <td class="actions-cell">
-                                            <button class="row-actions-btn" type="button" th:title="#{inv.removeLine}"><svg class="ebook-icon"><use href="#icon-trash"/></svg></button>
-                                        </td>
-                                    </tr>
-                                    <!-- Line 2 -->
-                                    <tr class="invoice-line">
-                                        <td>
-                                            <select class="form-control" name="items[1].productId" style="height:34px;font-size:var(--fs-sm)">
-                                                <option value="" th:text="#{inv.selectProduct}">Select product or service…</option>
-                                                <option>Site survey &amp; consultation</option>
-                                                <option>Construction supervision</option>
-                                                <option selected>Civil works — per m²</option>
-                                                <option>Transport &amp; logistics</option>
-                                            </select>
-                                            <input class="form-control mt-1" name="items[1].description" type="text"
-                                                   placeholder="VAT inclusive" style="height:32px;font-size:var(--fs-sm)">
-                                        </td>
-                                        <td>
-                                            <input class="form-control num" name="items[1].quantity" type="number"
-                                                   value="1" min="0.01" style="width:72px;height:34px;font-size:var(--fs-sm)">
-                                        </td>
-                                        <td>
-                                            <div class="input-group">
-                                                <span class="input-prefix" style="font-size:var(--fs-sm)">RWF</span>
-                                                <input class="form-control num" name="items[1].unitPrice" type="number"
-                                                       value="150000" min="0" step="0.01" style="height:34px;font-size:var(--fs-sm);padding-left:52px">
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <select class="form-control" name="items[1].taxCode" style="height:34px;font-size:var(--fs-sm);width:88px">
-                                                <option value="0">0%</option>
-                                                <option value="18" selected>18%</option>
-                                            </select>
-                                        </td>
-                                        <td class="num money font-semibold">RWF 150,000</td>
-                                        <td class="actions-cell">
-                                            <button class="row-actions-btn" type="button" th:title="#{inv.removeLine}"><svg class="ebook-icon"><use href="#icon-trash"/></svg></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="p-5">
-                            <button class="btn btn-ghost btn-sm" type="button">
-                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
-                                <span th:text="#{inv.addAnotherLine}">Add another line</span>
-                            </button>
-                        </div>
+                    <div class="table-wrap">
+                        <table class="table" id="invoiceLinesTable">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{doc.product}">Product</th>
+                                    <th th:text="#{inv.itemDescription}">Item / description</th>
+                                    <th th:text="#{inv.revenueAccount}">Revenue account</th>
+                                    <th class="num" th:text="#{inv.qty}">Qty</th>
+                                    <th class="num" th:text="#{inv.unitPrice}">Unit price</th>
+                                    <th class="num" th:text="#{inv.taxRate}">Tax %</th>
+                                    <th class="num" th:text="#{inv.amount}">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="line, st : ${form.lines}">
+                                    <td>
+                                        <select class="form-control form-control--sm product-select"
+                                                th:name="'lines[' + ${st.index} + '].productId'">
+                                            <option value="" data-price="" data-tax="" data-name=""
+                                                    th:text="#{doc.customItem}">Custom item</option>
+                                            <option th:each="pr : ${products}" th:value="${pr.id}"
+                                                    th:attr="data-price=${pr.sellingPrice},data-tax=${pr.taxRateId},data-name=${pr.name}"
+                                                    th:text="${pr.sku + ' — ' + pr.name}"
+                                                    th:selected="${line.productId != null and line.productId == pr.id}">SKU</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm desc-input" type="text"
+                                               th:name="'lines[' + ${st.index} + '].description'"
+                                               th:value="${line.description}" th:placeholder="#{inv.descriptionPlaceholder}">
+                                    </td>
+                                    <td>
+                                        <select class="form-control form-control--sm account-select"
+                                                th:name="'lines[' + ${st.index} + '].revenueAccountId'">
+                                            <option value="" th:text="#{inv.selectAccount}">Select account…</option>
+                                            <option th:each="a : ${revenueAccounts}" th:value="${a.id}"
+                                                    th:text="${a.code + ' — ' + a.name}"
+                                                    th:selected="${line.revenueAccountId != null and line.revenueAccountId == a.id}">4002</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control qty-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].quantity'" th:value="${line.quantity}">
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control price-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].unitPrice'" th:value="${line.unitPrice}" placeholder="0">
+                                    </td>
+                                    <td>
+                                        <select class="form-control form-control--sm tax-select"
+                                                th:name="'lines[' + ${st.index} + '].taxRateId'">
+                                            <option value="" data-rate="0" th:text="#{tax.cfg.noTax}">No tax</option>
+                                            <option th:each="tr : ${taxRates}" th:value="${tr.id}"
+                                                    th:attr="data-rate=${tr.rate}"
+                                                    th:text="${tr.label}"
+                                                    th:selected="${line.taxRateId != null and line.taxRateId == tr.id}">Standard VAT (18%)</option>
+                                        </select>
+                                        <input type="hidden" class="tax-input"
+                                               th:name="'lines[' + ${st.index} + '].taxRate'" th:value="${line.taxRate}">
+                                    </td>
+                                    <td class="num money line-amount" th:text="${#numbers.formatDecimal(line.lineTotal(), 1, 2, 'COMMA')}">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                </section>
+                    <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+                </div>
 
-                <!-- Totals -->
-                <div class="card p-6">
-                    <div class="d-flex justify-content-between py-2">
-                        <span class="text-md text-secondary" th:text="#{inv.subtotal}">Subtotal</span>
-                        <span class="text-md font-semibold money">RWF 1,150,000</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-2">
-                        <span class="text-md text-secondary" th:text="#{inv.discount}">Discount</span>
-                        <span class="text-md font-semibold money money-negative">-RWF 0</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-2">
-                        <span class="text-md text-secondary" th:text="#{inv.vat('18')}">VAT (18%)</span>
-                        <span class="text-md font-semibold money">RWF 207,000</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-3 mt-2" style="border-top:2px solid var(--border-strong)">
-                        <span class="text-lg font-bold" th:text="#{inv.total}">Total</span>
-                        <span class="text-lg font-bold money">RWF 1,357,000</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-1">
-                        <span class="text-sm text-muted" th:text="#{inv.amountDue}">Amount due</span>
-                        <span class="text-sm font-semibold money">RWF 1,357,000</span>
-                    </div>
-
-                    <div class="form-grid mt-4">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.customerMessage}">Customer message</h3></div>
+                    <div class="card-body">
                         <div class="form-group">
-                            <label class="form-label" for="invoiceDiscountType" th:text="#{inv.discount}">Discount</label>
-                            <div class="input-group">
-                                <input class="form-control" id="invoiceDiscountType" type="number" value="0" min="0">
-                                <span class="input-suffix">%</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="invoiceMessage" th:text="#{inv.customerMessage}">Customer message</label>
-                            <textarea class="form-control" id="invoiceMessage" name="message"
-                                      th:placeholder="#{inv.messagePlaceholder}" data-autosize></textarea>
+                            <textarea class="form-control" name="customerMessage" rows="3"
+                                      th:text="${form.customerMessage}" th:placeholder="#{inv.messagePlaceholder}"></textarea>
                         </div>
                     </div>
                 </div>
-
-                <!-- Attachments -->
-                <section class="section">
-                    <div class="section-header">
-                        <div>
-                            <h3 th:text="#{inv.attachments}">Attachments</h3>
-                            <div class="card-subtitle" th:text="#{inv.attachmentsHint}">Supporting documents for this invoice</div>
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <div class="dropzone" style="border:2px dashed var(--border-strong);border-radius:var(--radius-lg);padding:var(--sp-8);text-align:center;color:var(--text-muted)">
-                            <svg class="ebook-icon ebook-icon--xl mb-2" style="color:var(--neutral-400)"><use href="#icon-cloud-upload"/></svg>
-                            <p class="text-md mb-1"><strong th:text="#{inv.dropzone}">Drag &amp; drop</strong> <span th:text="#{inv.browse}">files here or browse</span></p>
-                            <p class="text-xs" th:text="#{inv.dropzoneHint}">PDF, PNG, JPG up to 5MB</p>
-                        </div>
-                    </div>
-                </section>
             </div>
 
-            <!-- Right rail -->
-            <div class="col-span-12 gap-5">
-                <div class="sticky-wrap d-flex flex-column gap-5 position-sticky" style="top:calc(var(--topbar-height) + var(--sp-6))">
-
-                    <!-- Live preview -->
-                    <section class="card overflow-hidden">
-                        <div class="card-header" style="background:var(--surface-muted)">
-                            <h3 class="text-md" th:text="#{inv.preview}">Invoice preview</h3>
-                            <button class="modal-close" type="button" th:title="#{inv.previewPdf}">
-                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-maximize"/></svg>
-                            </button>
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{inv.total}">Total</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.subtotal}">Subtotal</span>
+                            <span class="money" id="sumSubtotal"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.subtotal(), 1, 2, 'COMMA')}">RWF 0.00</span>
                         </div>
-                        <div class="card-body" style="padding:var(--sp-5)">
-                            <div class="d-flex justify-content-between mb-4">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <svg class="ebook-icon ebook-icon--lg" style="color:var(--primary-700)"><use href="#icon-logo"/></svg>
-                                        <span class="font-bold">Ebook Online</span>
-                                    </div>
-                                    <div class="text-xs text-muted">www.mycompany.rw</div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-bold" style="color:var(--primary-700)">INV-2026-00452</div>
-                                    <div class="text-xs text-muted">07 Sep 2026</div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4" style="font-size:var(--fs-xs)">
-                                <div class="text-muted">
-                                    <div class="font-semibold text-secondary" th:text="#{inv.billTo}">Bill to</div>
-                                    <div class="mt-1">Customer name</div>
-                                    <div>KG 5 RD, Kigali</div>
-                                </div>
-                                <div class="text-muted text-right">
-                                    <div class="font-semibold text-secondary" th:text="#{inv.due}">Due</div>
-                                    <div class="mt-1">22 Sep 2026</div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between py-2" style="font-size:var(--fs-xs)">
-                                <span class="text-muted" th:text="#{inv.subtotal}">Subtotal</span><span class="money">RWF 1,150,000</span>
-                            </div>
-                            <div class="d-flex justify-content-between py-2" style="font-size:var(--fs-xs)">
-                                <span class="text-muted" th:text="#{inv.tax}">VAT</span><span class="money">RWF 207,000</span>
-                            </div>
-                            <div class="d-flex justify-content-between py-2 mt-1" style="border-top:1px solid var(--border);font-size:var(--fs-sm);font-weight:700">
-                                <span th:text="#{inv.total}">Total</span><span class="money">RWF 1,357,000</span>
-                            </div>
+                        <div class="form-group mb-2">
+                            <label class="form-label" for="invDiscount" th:text="#{inv.discount}">Discount</label>
+                            <input class="form-control form-control--sm amount-control" id="invDiscount" type="number" step="0.01" min="0"
+                                   name="discountAmount" th:value="${form.discountAmount}">
+                            <div th:replace="~{layout/common :: fieldError('discountAmount')}"></div>
                         </div>
-                        <div class="card-footer" style="background:var(--surface-muted)">
-                            <button class="btn btn-secondary btn-sm flex-1" type="button"><svg class="ebook-icon ebook-icon--sm"><use href="#icon-eye"/></svg><span th:text="#{inv.previewPdf}">Preview PDF</span></button>
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{inv.tax}">Tax</span>
+                            <span class="money" id="sumTax"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.taxTotal(), 1, 2, 'COMMA')}">RWF 0.00</span>
                         </div>
-                    </section>
-
-                    <!-- Payment link -->
-                    <section class="section">
-                        <div class="section-header"><h3 class="text-md" th:text="#{inv.paymentLink}">Payment link</h3></div>
-                        <div class="section-body">
-                            <label class="switch w-100 justify-content-between" style="cursor:default">
-                                <span class="switch-label" th:text="#{inv.enablePaymentLink}">Enable payment link</span>
-                                <input type="checkbox" checked><span class="switch-track"></span>
-                            </label>
-                            <p class="text-xs text-muted mt-1" th:text="#{inv.paymentLinkHint}">Customers can pay instantly via MTN MoMo, Airtel Money or card.</p>
+                        <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
+                            <span th:text="#{inv.amountDue}">Amount due</span>
+                            <span class="money" id="sumTotal"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.total(), 1, 2, 'COMMA')}">RWF 0.00</span>
                         </div>
-                    </section>
-
-                    <!-- EBM -->
-                    <section class="section">
-                        <div class="section-header"><h3 class="text-md" th:text="#{inv.rraEbm}">RRA EBM</h3></div>
-                        <div class="section-body">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge badge-info" th:text="#{inv.eInvoiceReady}">E-invoice ready</span>
-                                <label class="switch ml-auto">
-                                    <input type="checkbox" checked><span class="switch-track"></span>
-                                </label>
-                            </div>
-                            <p class="text-xs text-muted mt-1" th:text="#{inv.ebmSubmitHint}">Submit to RRA EBM when invoice is sent.</p>
-                        </div>
-                    </section>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-hint" th:text="#{inv.postHint}">Drafts do not affect account balances until posted.</div>
+                    </div>
                 </div>
             </div>
         </div>
     </form>
+
+    <script th:inline="javascript">
+        (function () {
+            var currency = /*[[${baseCurrency}]]*/ 'RWF';
+            var defaultTax = /*[[${defaultVatRate}]]*/ 18;
+            var table = document.getElementById('invoiceLinesTable');
+
+            function money(value) {
+                return currency + ' ' + value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+
+            function num(input) {
+                var v = parseFloat(input && input.value);
+                return isNaN(v) ? 0 : v;
+            }
+
+            function recalc() {
+                var subtotal = 0;
+                var tax = 0;
+                var rows = table.querySelectorAll('tbody tr');
+                var discount = num(document.getElementById('invDiscount'));
+                rows.forEach(function (row) {
+                    var base = num(row.querySelector('.qty-input')) * num(row.querySelector('.price-input'));
+                    subtotal += base;
+                    var cell = row.querySelector('.line-amount');
+                    var rate = num(row.querySelector('.tax-input'));
+                    if (cell) {
+                        cell.textContent = (base + base * rate / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                });
+                if (discount > subtotal) {
+                    discount = subtotal;
+                }
+                rows.forEach(function (row) {
+                    var base = num(row.querySelector('.qty-input')) * num(row.querySelector('.price-input'));
+                    if (base === 0 || subtotal === 0) {
+                        return;
+                    }
+                    var share = discount * base / subtotal;
+                    tax += (base - share) * num(row.querySelector('.tax-input')) / 100;
+                });
+                document.getElementById('sumSubtotal').textContent = money(subtotal);
+                document.getElementById('sumTax').textContent = money(tax);
+                document.getElementById('sumTotal').textContent = money(subtotal - discount + tax);
+            }
+
+            document.addEventListener('input', function (event) {
+                if (event.target.closest('#invoiceLinesTable') || event.target.id === 'invDiscount') {
+                    recalc();
+                }
+            });
+
+            document.getElementById('addLineBtn').addEventListener('click', function () {
+                var tbody = table.querySelector('tbody');
+                var index = tbody.querySelectorAll('tr').length;
+                var accountOptions = tbody.querySelector('select.account-select');
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td><select class="form-control form-control--sm product-select" name="lines[' + index + '].productId"></select></td>' +
+                    '<td><input class="form-control form-control--sm desc-input" type="text" name="lines[' + index + '].description"></td>' +
+                    '<td><select class="form-control form-control--sm account-select" name="lines[' + index + '].revenueAccountId"></select></td>' +
+                    '<td><input class="form-control form-control--sm amount-control qty-input" type="number" step="0.01" min="0" name="lines[' + index + '].quantity" value="1"></td>' +
+                    '<td><input class="form-control form-control--sm amount-control price-input" type="number" step="0.01" min="0" name="lines[' + index + '].unitPrice" placeholder="0"></td>' +
+                    '<td><select class="form-control form-control--sm tax-select" name="lines[' + index + '].taxRateId"></select>' +
+                    '<input type="hidden" class="tax-input" name="lines[' + index + '].taxRate" value="' + defaultTax + '"></td>' +
+                    '<td class="num money line-amount">0.00</td>';
+                tbody.appendChild(tr);
+                var select = tr.querySelector('select.account-select');
+                if (accountOptions) {
+                    Array.prototype.slice.call(accountOptions.options).forEach(function (opt) {
+                        select.appendChild(new Option(opt.text, opt.value));
+                    });
+                }
+                var productTemplate = tbody.querySelector('select.product-select');
+                var productSelect = tr.querySelector('select.product-select');
+                if (productTemplate && productSelect) {
+                    Array.prototype.slice.call(productTemplate.options).forEach(function (opt) {
+                        var copy = new Option(opt.text, opt.value);
+                        ['data-price', 'data-tax', 'data-name'].forEach(function (a) {
+                            copy.setAttribute(a, opt.getAttribute(a) || '');
+                        });
+                        productSelect.appendChild(copy);
+                    });
+                }
+                var taxTemplate = tbody.querySelector('select.tax-select');
+                var taxSelect = tr.querySelector('select.tax-select');
+                if (taxTemplate && taxSelect) {
+                    Array.prototype.slice.call(taxTemplate.options).forEach(function (opt) {
+                        var copy = new Option(opt.text, opt.value);
+                        copy.setAttribute('data-rate', opt.getAttribute('data-rate') || '0');
+                        if ((opt.getAttribute('data-rate') || '0') === String(defaultTax)) {
+                            copy.selected = true;
+                        }
+                        taxSelect.appendChild(copy);
+                    });
+                    syncRate(taxSelect);
+                }
+                recalc();
+            });
+
+
+            // Keep the hidden numeric rate in step with the selected tax rate.
+            function syncRate(select) {
+                var row = select.closest('tr');
+                var hidden = row && row.querySelector('.tax-input');
+                if (!hidden) {
+                    return;
+                }
+                var opt = select.options[select.selectedIndex];
+                hidden.value = opt ? (opt.getAttribute('data-rate') || '0') : '0';
+            }
+
+            // Choosing a product fills the description, price and tax rate.
+            document.addEventListener('change', function (event) {
+                if (event.target.classList && event.target.classList.contains('product-select')) {
+                    var prow = event.target.closest('tr');
+                    var popt = event.target.options[event.target.selectedIndex];
+                    if (prow && popt && popt.value) {
+                        var d = prow.querySelector('.desc-input');
+                        var pr = prow.querySelector('.price-input');
+                        var ts = prow.querySelector('.tax-select');
+                        if (d && !d.value) { d.value = popt.getAttribute('data-name') || ''; }
+                        if (pr) { pr.value = popt.getAttribute('data-price') || '0'; }
+                        var tid = popt.getAttribute('data-tax');
+                        if (ts && tid) { ts.value = tid; syncRate(ts); }
+                    }
+                    recalc();
+                }
+                if (event.target.classList && event.target.classList.contains('tax-select')) {
+                    syncRate(event.target);
+                    recalc();
+                }
+            });
+
+            recalc();
+        })();
+    </script>
 
 </main>
 </body>

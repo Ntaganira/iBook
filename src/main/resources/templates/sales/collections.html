@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{coll.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/invoices}" th:text="#{inv.title}">Invoices</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{coll.title}">Collections</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{coll.title}">Collections</h1>
+            <p class="page-subtitle" th:text="#{coll.subtitle}">Overdue invoices to chase, oldest and largest first.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/sales/aging(asOf=${asOf})}">
+                <svg class="ebook-icon"><use href="#icon-layers"/></svg>
+                <span th:text="#{ar.aging.title}">Receivables Aging</span>
+            </a>
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/sales/collections}">
+                <select class="form-control form-control--sm" name="customer">
+                    <option value="" th:text="#{coll.allCustomers}">All customers</option>
+                    <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}"
+                            th:selected="${selectedCustomer != null and selectedCustomer == c.id}">Customer</option>
+                </select>
+                <select class="form-control form-control--sm" name="minDays">
+                    <option value="1" th:selected="${minDays == 1}" th:text="#{coll.any}">Any overdue</option>
+                    <option value="31" th:selected="${minDays == 31}" th:text="#{coll.over30}">Over 30 days</option>
+                    <option value="61" th:selected="${minDays == 61}" th:text="#{coll.over60}">Over 60 days</option>
+                    <option value="91" th:selected="${minDays == 91}" th:text="#{coll.over90}">Over 90 days</option>
+                </select>
+                <input class="form-control form-control--sm" type="date" name="asOf" th:value="${asOf}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{coll.totalOverdue}">Total overdue</div>
+            <div class="stat-tile-value money text-error"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalOverdue, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{coll.invoiceCount}">Invoices to chase</div>
+            <div class="stat-tile-value" th:text="${report.count()}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{coll.largest}">Largest single debt</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.largest, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{coll.oldest}">Oldest debt</div>
+            <div class="stat-tile-value" th:classappend="${report.oldestDays > 90} ? 'text-error'"
+                 th:text="${report.oldestDays == 0 ? '—' : report.oldestDays + 'd'}">—</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.invoice}">Invoice</th>
+                        <th th:text="#{inv.customer}">Customer</th>
+                        <th th:text="#{coll.contact}">Contact</th>
+                        <th th:text="#{inv.due}">Due</th>
+                        <th class="num" th:text="#{coll.daysOverdue}">Days overdue</th>
+                        <th th:text="#{coll.lastPayment}">Last payment</th>
+                        <th class="num" th:text="#{inv.openBalance}">Open balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${report.rows}">
+                        <td>
+                            <a class="cell-link" th:href="@{/invoices/{id}(id=${r.invoiceId})}" th:text="${r.invoiceNo}">INV-0001</a>
+                        </td>
+                        <td>
+                            <a class="cell-link" th:href="@{/customers/{id}(id=${r.customerId})}" th:text="${r.customerName}">Customer</a>
+                        </td>
+                        <td class="cell-secondary">
+                            <a th:if="${r.customerEmail != null}" th:href="'mailto:' + ${r.customerEmail}"
+                               th:text="${r.customerEmail}">billing@example.com</a>
+                            <span th:if="${r.customerPhone != null}" th:text="${r.customerPhone}">+250…</span>
+                            <span th:if="${r.customerEmail == null and r.customerPhone == null}"
+                                  th:text="#{coll.noContact}">No contact on file</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${#temporals.format(r.dueDate, 'dd MMM yyyy')}">31 Jan 2026</td>
+                        <td class="num">
+                            <span class="badge"
+                                  th:classappend="${r.bucket == 'd90plus' ? 'badge-error' : (r.bucket == 'd61to90' ? 'badge-warning' : 'badge-muted')}">
+                                <span th:text="${r.daysOverdue}">0</span>
+                            </span>
+                        </td>
+                        <td class="cell-secondary"
+                            th:text="${r.lastPaymentDate != null ? #temporals.format(r.lastPaymentDate, 'dd MMM yyyy') : '—'}">—</td>
+                        <td class="num money font-semibold"
+                            th:text="${(r.currencyCode != null ? r.currencyCode : baseCurrency) + ' ' + #numbers.formatDecimal(r.balanceDue, 1, 2, 'COMMA')}">RWF 0.00</td>
+                    </tr>
+                    <tr th:if="${report.empty}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg></div>
+                                <p class="text-secondary" th:text="#{coll.none}">Nothing overdue — every invoice is within terms.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot th:unless="${report.empty}">
+                    <tr>
+                        <td colspan="6" class="text-right font-bold" th:text="#{coll.totalOverdue}">Total overdue</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalOverdue, 1, 2, 'COMMA')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{coll.basis}">Open invoices past their due date. Last payment is the most recent payment from that customer on any invoice.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rpt.pnl}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/reports}" th:text="#{rpt.title}">Reports</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{rpt.pnl}">Profit and Loss</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{rpt.pnl}">Profit and Loss</h1>
+            <p class="page-subtitle">
+                <span th:if="${company != null}" th:text="${company.name} + ' · '"></span>
+                <span th:text="${#temporals.format(report.from, 'dd MMM yyyy')} + ' — ' + ${#temporals.format(report.to, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/reports/pnl}">
+                <label class="form-label mb-0" th:text="#{rpt.from}">From</label>
+                <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                <label class="form-label mb-0" th:text="#{rpt.to}">To</label>
+                <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.totalIncome}">Total income</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalIncome, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.totalExpenses}">Total expenses</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalExpense, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.netProfit}">Net profit</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${report.netProfit.signum() < 0} ? 'text-error' : 'text-positive'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netProfit, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rpt.margin}">Net margin</div>
+            <div class="stat-tile-value"
+                 th:text="${report.totalIncome.signum() == 0} ? '—' : ${#numbers.formatDecimal(report.netProfit * 100 / report.totalIncome, 1, 1) + '%'}">—</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{coa.account}">Account</th>
+                        <th class="num" th:text="#{common.amount}">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="font-bold" th:text="#{rpt.income}">Income</td>
+                    </tr>
+                    <tr th:each="l : ${report.income}">
+                        <td>
+                            <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId}, from=${from}, to=${to})}"
+                               th:text="${l.accountCode} + ' — ' + ${l.accountName}">4001 Consulting</a>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(report.income)}">
+                        <td class="cell-secondary" th:text="#{rpt.noActivity}">No activity in this period.</td>
+                        <td class="num money">0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right font-semibold" th:text="#{rpt.totalIncome}">Total income</td>
+                        <td class="num money font-semibold"
+                            th:text="${#numbers.formatDecimal(report.totalIncome, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="2" class="font-bold pt-4" th:text="#{rpt.expenses}">Expenses</td>
+                    </tr>
+                    <tr th:each="l : ${report.expenses}">
+                        <td>
+                            <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId}, from=${from}, to=${to})}"
+                               th:text="${l.accountCode} + ' — ' + ${l.accountName}">5001 Rent</a>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(report.expenses)}">
+                        <td class="cell-secondary" th:text="#{rpt.noActivity}">No activity in this period.</td>
+                        <td class="num money">0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right font-semibold" th:text="#{rpt.totalExpenses}">Total expenses</td>
+                        <td class="num money font-semibold"
+                            th:text="${#numbers.formatDecimal(report.totalExpense, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td class="text-right font-bold" th:text="#{rpt.netProfit}">Net profit</td>
+                        <td class="num money font-bold"
+                            th:classappend="${report.netProfit.signum() < 0} ? 'text-error' : 'text-positive'"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netProfit, 1, 2, 'COMMA')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{rpt.postedOnly}">Only posted journal entries are included.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

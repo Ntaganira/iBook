@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bill.form.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/bills}" th:text="#{bill.title}">Invoices</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{bill.form.breadcrumb}">New invoice</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{bill.form.title}">New Invoice</h1>
+            <p class="page-subtitle" th:utext="#{bill.form.subtitle(${nextNumber})}">Next number</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/bills}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="billForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{bill.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="billForm" name="postNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{bill.post}">Post to ledger</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="billForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/bills/{id}(id=${editingId})} : @{/bills}">
+
+        <div class="grid grid-12">
+            <div class="col-span-12 d-flex flex-column gap-5">
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{bill.details}">Invoice details</h3></div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="billCustomer"><span th:text="#{bill.vendorLabel}">Customer</span> <span class="required">*</span></label>
+                                <select class="form-control" id="billCustomer" name="vendorId" required>
+                                    <option value="" th:text="#{bill.selectVendor}">Select a customer…</option>
+                                    <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"
+                                            th:selected="${form.vendorId != null and form.vendorId == v.id}">Customer</option>
+                                </select>
+                                <div th:replace="~{layout/common :: fieldError('vendorId')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="billCurrency" th:text="#{bill.currency}">Currency</label>
+                                <input class="form-control" id="billCurrency" name="currencyCode" type="text"
+                                       th:value="${form.currencyCode}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="billDate"><span th:text="#{bill.billDate}">Invoice date</span> <span class="required">*</span></label>
+                                <input class="form-control" id="billDate" name="billDate" type="date"
+                                       th:value="${form.billDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('billDate')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="billDue"><span th:text="#{bill.dueDate}">Due date</span> <span class="required">*</span></label>
+                                <input class="form-control" id="billDue" name="dueDate" type="date"
+                                       th:value="${form.dueDate}" required>
+                                <div th:replace="~{layout/common :: fieldError('dueDate')}"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="billTerms" th:text="#{bill.paymentTerms}">Payment terms</label>
+                                <select class="form-control" id="billTerms" name="paymentTerms">
+                                    <option th:each="t : ${paymentTermsOptions}" th:value="${t.key}" th:text="${t.value}"
+                                            th:selected="${form.paymentTerms == t.key}">Net 30</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="billRef" th:text="#{bill.reference}">Reference / PO number</label>
+                                <input class="form-control" id="billRef" name="reference" type="text"
+                                       th:value="${form.reference}" th:placeholder="#{bill.referencePlaceholder}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 th:text="#{bill.lineItems}">Line items</h3>
+                            <p class="text-sm text-muted" th:text="#{bill.productsHint}">Products, services and taxes</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" type="button" id="addLineBtn">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-plus"/></svg>
+                            <span th:text="#{bill.addItem}">Add item</span>
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table" id="billLinesTable">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{doc.product}">Product</th>
+                                    <th th:text="#{bill.itemDescription}">Item / description</th>
+                                    <th th:text="#{bill.expenseAccount}">Expense account</th>
+                                    <th class="num" th:text="#{bill.qty}">Qty</th>
+                                    <th class="num" th:text="#{bill.unitPrice}">Unit price</th>
+                                    <th class="num" th:text="#{bill.taxRate}">Tax %</th>
+                                    <th class="num" th:text="#{bill.amount}">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="line, st : ${form.lines}">
+                                    <td>
+                                        <select class="form-control form-control--sm product-select"
+                                                th:name="'lines[' + ${st.index} + '].productId'">
+                                            <option value="" data-price="" data-tax="" data-name=""
+                                                    th:text="#{doc.customItem}">Custom item</option>
+                                            <option th:each="pr : ${products}" th:value="${pr.id}"
+                                                    th:attr="data-price=${pr.costPrice},data-tax=${pr.taxRateId},data-name=${pr.name}"
+                                                    th:text="${pr.sku + ' — ' + pr.name}"
+                                                    th:selected="${line.productId != null and line.productId == pr.id}">SKU</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm desc-input" type="text"
+                                               th:name="'lines[' + ${st.index} + '].description'"
+                                               th:value="${line.description}" th:placeholder="#{bill.descriptionPlaceholder}">
+                                    </td>
+                                    <td>
+                                        <select class="form-control form-control--sm account-select"
+                                                th:name="'lines[' + ${st.index} + '].expenseAccountId'">
+                                            <option value="" th:text="#{bill.selectAccount}">Select account…</option>
+                                            <option th:each="a : ${expenseAccounts}" th:value="${a.id}"
+                                                    th:text="${a.code + ' — ' + a.name}"
+                                                    th:selected="${line.expenseAccountId != null and line.expenseAccountId == a.id}">4002</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control qty-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].quantity'" th:value="${line.quantity}">
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control--sm amount-control price-input" type="number" step="0.01" min="0"
+                                               th:name="'lines[' + ${st.index} + '].unitPrice'" th:value="${line.unitPrice}" placeholder="0">
+                                    </td>
+                                    <td>
+                                        <select class="form-control form-control--sm tax-select"
+                                                th:name="'lines[' + ${st.index} + '].taxRateId'">
+                                            <option value="" data-rate="0" th:text="#{tax.cfg.noTax}">No tax</option>
+                                            <option th:each="tr : ${taxRates}" th:value="${tr.id}"
+                                                    th:attr="data-rate=${tr.rate}"
+                                                    th:text="${tr.label}"
+                                                    th:selected="${line.taxRateId != null and line.taxRateId == tr.id}">Standard VAT (18%)</option>
+                                        </select>
+                                        <input type="hidden" class="tax-input"
+                                               th:name="'lines[' + ${st.index} + '].taxRate'" th:value="${line.taxRate}">
+                                    </td>
+                                    <td class="num money line-amount" th:text="${#numbers.formatDecimal(line.lineTotal(), 1, 2, 'COMMA')}">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{bill.memo}">Customer message</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <textarea class="form-control" name="memo" rows="3"
+                                      th:text="${form.memo}" th:placeholder="#{bill.memoPlaceholder}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 d-flex flex-column gap-5">
+                <div class="card">
+                    <div class="card-header"><h3 th:text="#{bill.total}">Total</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{bill.subtotal}">Subtotal</span>
+                            <span class="money" id="sumSubtotal"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.subtotal(), 1, 2, 'COMMA')}">RWF 0.00</span>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="form-label" for="billDiscount" th:text="#{bill.discount}">Discount</label>
+                            <input class="form-control form-control--sm amount-control" id="billDiscount" type="number" step="0.01" min="0"
+                                   name="discountAmount" th:value="${form.discountAmount}">
+                            <div th:replace="~{layout/common :: fieldError('discountAmount')}"></div>
+                        </div>
+                        <div class="d-flex justify-between mb-2">
+                            <span th:text="#{bill.tax}">Tax</span>
+                            <span class="money" id="sumTax"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.taxTotal(), 1, 2, 'COMMA')}">RWF 0.00</span>
+                        </div>
+                        <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
+                            <span th:text="#{bill.amountDue}">Amount due</span>
+                            <span class="money" id="sumTotal"
+                                  th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.total(), 1, 2, 'COMMA')}">RWF 0.00</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-hint" th:text="#{bill.postHint}">Drafts do not affect account balances until posted.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script th:inline="javascript">
+        (function () {
+            var currency = /*[[${baseCurrency}]]*/ 'RWF';
+            var defaultTax = /*[[${defaultVatRate}]]*/ 18;
+            var table = document.getElementById('billLinesTable');
+
+            function money(value) {
+                return currency + ' ' + value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+
+            function num(input) {
+                var v = parseFloat(input && input.value);
+                return isNaN(v) ? 0 : v;
+            }
+
+            function recalc() {
+                var subtotal = 0;
+                var tax = 0;
+                var rows = table.querySelectorAll('tbody tr');
+                var discount = num(document.getElementById('invDiscount'));
+                rows.forEach(function (row) {
+                    var base = num(row.querySelector('.qty-input')) * num(row.querySelector('.price-input'));
+                    subtotal += base;
+                    var cell = row.querySelector('.line-amount');
+                    var rate = num(row.querySelector('.tax-input'));
+                    if (cell) {
+                        cell.textContent = (base + base * rate / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                });
+                if (discount > subtotal) {
+                    discount = subtotal;
+                }
+                rows.forEach(function (row) {
+                    var base = num(row.querySelector('.qty-input')) * num(row.querySelector('.price-input'));
+                    if (base === 0 || subtotal === 0) {
+                        return;
+                    }
+                    var share = discount * base / subtotal;
+                    tax += (base - share) * num(row.querySelector('.tax-input')) / 100;
+                });
+                document.getElementById('sumSubtotal').textContent = money(subtotal);
+                document.getElementById('sumTax').textContent = money(tax);
+                document.getElementById('sumTotal').textContent = money(subtotal - discount + tax);
+            }
+
+            document.addEventListener('input', function (event) {
+                if (event.target.closest('#billLinesTable') || event.target.id === 'invDiscount') {
+                    recalc();
+                }
+            });
+
+            document.getElementById('addLineBtn').addEventListener('click', function () {
+                var tbody = table.querySelector('tbody');
+                var index = tbody.querySelectorAll('tr').length;
+                var accountOptions = tbody.querySelector('select.account-select');
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td><select class="form-control form-control--sm product-select" name="lines[' + index + '].productId"></select></td>' +
+                    '<td><input class="form-control form-control--sm desc-input" type="text" name="lines[' + index + '].description"></td>' +
+                    '<td><select class="form-control form-control--sm account-select" name="lines[' + index + '].expenseAccountId"></select></td>' +
+                    '<td><input class="form-control form-control--sm amount-control qty-input" type="number" step="0.01" min="0" name="lines[' + index + '].quantity" value="1"></td>' +
+                    '<td><input class="form-control form-control--sm amount-control price-input" type="number" step="0.01" min="0" name="lines[' + index + '].unitPrice" placeholder="0"></td>' +
+                    '<td><select class="form-control form-control--sm tax-select" name="lines[' + index + '].taxRateId"></select>' +
+                    '<input type="hidden" class="tax-input" name="lines[' + index + '].taxRate" value="' + defaultTax + '"></td>' +
+                    '<td class="num money line-amount">0.00</td>';
+                tbody.appendChild(tr);
+                var select = tr.querySelector('select.account-select');
+                if (accountOptions) {
+                    Array.prototype.slice.call(accountOptions.options).forEach(function (opt) {
+                        select.appendChild(new Option(opt.text, opt.value));
+                    });
+                }
+                var productTemplate = tbody.querySelector('select.product-select');
+                var productSelect = tr.querySelector('select.product-select');
+                if (productTemplate && productSelect) {
+                    Array.prototype.slice.call(productTemplate.options).forEach(function (opt) {
+                        var copy = new Option(opt.text, opt.value);
+                        ['data-price', 'data-tax', 'data-name'].forEach(function (a) {
+                            copy.setAttribute(a, opt.getAttribute(a) || '');
+                        });
+                        productSelect.appendChild(copy);
+                    });
+                }
+                var taxTemplate = tbody.querySelector('select.tax-select');
+                var taxSelect = tr.querySelector('select.tax-select');
+                if (taxTemplate && taxSelect) {
+                    Array.prototype.slice.call(taxTemplate.options).forEach(function (opt) {
+                        var copy = new Option(opt.text, opt.value);
+                        copy.setAttribute('data-rate', opt.getAttribute('data-rate') || '0');
+                        if ((opt.getAttribute('data-rate') || '0') === String(defaultTax)) {
+                            copy.selected = true;
+                        }
+                        taxSelect.appendChild(copy);
+                    });
+                    syncRate(taxSelect);
+                }
+                recalc();
+            });
+
+
+            // Keep the hidden numeric rate in step with the selected tax rate.
+            function syncRate(select) {
+                var row = select.closest('tr');
+                var hidden = row && row.querySelector('.tax-input');
+                if (!hidden) {
+                    return;
+                }
+                var opt = select.options[select.selectedIndex];
+                hidden.value = opt ? (opt.getAttribute('data-rate') || '0') : '0';
+            }
+
+            // Choosing a product fills the description, price and tax rate.
+            document.addEventListener('change', function (event) {
+                if (event.target.classList && event.target.classList.contains('product-select')) {
+                    var prow = event.target.closest('tr');
+                    var popt = event.target.options[event.target.selectedIndex];
+                    if (prow && popt && popt.value) {
+                        var d = prow.querySelector('.desc-input');
+                        var pr = prow.querySelector('.price-input');
+                        var ts = prow.querySelector('.tax-select');
+                        if (d && !d.value) { d.value = popt.getAttribute('data-name') || ''; }
+                        if (pr) { pr.value = popt.getAttribute('data-price') || '0'; }
+                        var tid = popt.getAttribute('data-tax');
+                        if (ts && tid) { ts.value = tid; syncRate(ts); }
+                    }
+                    recalc();
+                }
+                if (event.target.classList && event.target.classList.contains('tax-select')) {
+                    syncRate(event.target);
+                    recalc();
+                }
+            });
+
+            recalc();
+        })();
+    </script>
+
+</main>
+</body>
+</html>

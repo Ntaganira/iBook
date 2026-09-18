@@ -13,14 +13,17 @@
             <p class="page-subtitle" th:text="#{rpt.subtitle}">Financial statements and management reports.</p>
         </div>
         <div class="page-actions">
-            <div class="report-filter">
-                <label class="form-label mb-0" th:text="#{rpt.from}">From</label>
-                <input class="form-control form-control--sm" type="date" value="2026-01-01">
-            </div>
-            <div class="report-filter">
-                <label class="form-label mb-0" th:text="#{rpt.to}">To</label>
-                <input class="form-control form-control--sm" type="date" value="2026-09-07">
-            </div>
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/reports}">
+                <div class="report-filter">
+                    <label class="form-label mb-0" th:text="#{rpt.from}">From</label>
+                    <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+                </div>
+                <div class="report-filter">
+                    <label class="form-label mb-0" th:text="#{rpt.to}">To</label>
+                    <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+                </div>
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
             <div class="card-chip d-flex align-items-center gap-2">
                 <button class="chip active" type="button" data-date-preset="this-quarter" th:text="#{rpt.thisQuarter}">This quarter</button>
                 <button class="chip" type="button" data-date-preset="this-year" th:text="#{rpt.thisYear}">This year</button>
@@ -40,43 +43,42 @@
     <section class="mb-6">
         <h2 class="section-title" th:text="#{rpt.financialStatements}">Financial statements</h2>
         <div class="grid grid-3">
-            <button class="report-card" type="button">
+            <a class="report-card" th:href="@{/reports/pnl(from=${from}, to=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-trending-up"/></svg>
                 <div class="report-name" th:text="#{rpt.pnl}">Profit and Loss</div>
                 <div class="report-desc" th:text="#{rpt.pnlDesc}">Income minus expenses</div>
-                <div class="report-meta">This year · RWF
-                    <span class="text-positive">+8,200,000</span></div>
-            </button>
-            <button class="report-card" type="button">
+                <div class="report-meta" th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(pnl.netProfit, 1, 0, 'COMMA')}">RWF 0</div>
+            </a>
+            <a class="report-card" th:href="@{/reports/balance-sheet(asOf=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-scale"/></svg>
                 <div class="report-name" th:text="#{rpt.balanceSheet}">Balance Sheet</div>
                 <div class="report-desc" th:text="#{rpt.balanceSheetDesc}">Assets, liabilities &amp; equity</div>
-                <div class="report-meta">As of 07 Sep 2026</div>
-            </button>
-            <button class="report-card" type="button">
+                <div class="report-meta" th:text="#{rpt.asOf} + ' ' + ${#temporals.format(to, 'dd MMM yyyy')}"></div>
+            </a>
+            <a class="report-card" th:href="@{/reports/trial-balance}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-3)"><use href="#icon-file-text"/></svg>
                 <div class="report-name" th:text="#{rpt.trialBalance}">Trial Balance</div>
                 <div class="report-desc" th:text="#{rpt.trialBalanceDesc}">All accounts and balances</div>
-                <div class="report-meta">58 accounts</div>
-            </button>
-            <button class="report-card" type="button">
+                <div class="report-meta" th:text="#{rpt.accountCount(${accountCount})}">0 accounts</div>
+            </a>
+            <a class="report-card" th:href="@{/reports/cash-flow(from=${from}, to=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-4)"><use href="#icon-refresh"/></svg>
                 <div class="report-name" th:text="#{rpt.cashFlow}">Cash Flow Statement</div>
                 <div class="report-desc" th:text="#{rpt.cashFlowDesc}">Operating, investing, financing</div>
-                <div class="report-meta">This year · RWF 890,000</div>
-            </button>
-            <button class="report-card" type="button">
+                <div class="report-meta" th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(cashFlow.netChange, 1, 0, 'COMMA')}">RWF 0</div>
+            </a>
+            <a class="report-card" th:href="@{/reports/general-ledger(from=${from}, to=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-5)"><use href="#icon-layers"/></svg>
                 <div class="report-name" th:text="#{rpt.generalLedger}">General Ledger</div>
                 <div class="report-desc" th:text="#{rpt.generalLedgerDesc}">All posted transactions</div>
-                <div class="report-meta">1,284 transactions</div>
-            </button>
-            <button class="report-card" type="button">
+                <div class="report-meta" th:text="#{rpt.entryCount(${postedEntries})}">0 entries</div>
+            </a>
+            <a class="report-card" th:href="@{/journals}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-6)"><use href="#icon-book-open"/></svg>
                 <div class="report-name" th:text="#{rpt.journalReport}">Journal Report</div>
                 <div class="report-desc" th:text="#{rpt.journalReportDesc}">Entries by journal book</div>
-                <div class="report-meta">5 books</div>
-            </button>
+                <div class="report-meta" th:text="#{rpt.entryCount(${postedEntries})}">0 entries</div>
+            </a>
         </div>
     </section>
 

@@ -131,6 +131,59 @@ public class AccountingService {
                 account.getCode() + (account.isActive() ? " activated" : " deactivated"));
     }
 
+    // ----- Opening balances -----
+
+    @Transactional(readOnly = true)
+    public OpeningBalanceCheck openingBalanceCheck() {
+        BigDecimal debitSide = BigDecimal.ZERO;
+        BigDecimal creditSide = BigDecimal.ZERO;
+        for (Account account : accountRepository.findAllByOrderByCodeAsc()) {
+            BigDecimal ob = account.getOpeningBalance() == null ? BigDecimal.ZERO : account.getOpeningBalance();
+            if (ob.signum() == 0) {
+                continue;
+            }
+            if (normalSide(account.getType())) {
+                debitSide = debitSide.add(ob);
+            } else {
+                creditSide = creditSide.add(ob);
+            }
+        }
+        return new OpeningBalanceCheck(debitSide, creditSide, debitSide.subtract(creditSide));
+    }
+
+    @Transactional
+    public int saveOpeningBalances(Map<Long, BigDecimal> balances) {
+        if (balances == null || balances.isEmpty()) {
+            return 0;
+        }
+        int changed = 0;
+        for (Map.Entry<Long, BigDecimal> entry : balances.entrySet()) {
+            Account account = accountRepository.findById(entry.getKey()).orElse(null);
+            if (account == null) {
+                continue;
+            }
+            BigDecimal value = entry.getValue() == null ? BigDecimal.ZERO : entry.getValue();
+            BigDecimal current = account.getOpeningBalance() == null ? BigDecimal.ZERO : account.getOpeningBalance();
+            if (current.compareTo(value) == 0) {
+                continue;
+            }
+            account.setOpeningBalance(value);
+            accountRepository.save(account);
+            changed++;
+        }
+        if (changed > 0) {
+            auditService.log(MODULE, "UPDATE_OPENING_BALANCES", "accounts",
+                    changed + " opening balances updated");
+        }
+        return changed;
+    }
+
+    public record OpeningBalanceCheck(BigDecimal debitTotal, BigDecimal creditTotal, BigDecimal difference) {
+        public boolean balanced() {
+            return difference.signum() == 0;
+        }
+    }
+
     // ----- Balances -----
 
     @Transactional(readOnly = true)

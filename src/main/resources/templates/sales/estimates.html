@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{est.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{est.title}">Estimates</h1>
+            <p class="page-subtitle" th:text="#{est.subtitle}">Create and track customer quotes.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-secondary" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                    <span th:text="#{common.export}">Export</span>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-chevron-down"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{common.exportCsv}">Export CSV</span></button>
+                    <button class="dropdown-item" type="button"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{common.exportExcel}">Export Excel</span></button>
+                </div>
+            </div>
+            <a class="btn btn-primary" th:href="@{/sales/estimates/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{est.new}">New Invoice</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/sales/estimates}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{est.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/estimates(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{est.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/estimates(status='SENT')}" th:classappend="${status == 'SENT'} ? 'active'">
+            <span th:text="#{est.status.sent}">Sent</span> <span class="tab-count" th:text="${summary.sent}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/estimates(status='ACCEPTED')}" th:classappend="${status == 'ACCEPTED'} ? 'active'">
+            <span th:text="#{est.status.accepted}">Accepted</span> <span class="tab-count" th:text="${summary.accepted}">0</span>
+        </a>
+        <a class="tab" th:href="@{/sales/estimates(status='CONVERTED')}" th:classappend="${status == 'CONVERTED'} ? 'active'">
+            <span th:text="#{est.status.converted}">Converted</span> <span class="tab-count" th:text="${summary.converted}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.openValue}">Open value</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.openValue, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.acceptedValue}">Accepted value</div>
+            <div class="stat-tile-value money text-positive"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.acceptedValue, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.status.expired}">Expired</div>
+            <div class="stat-tile-value" th:classappend="${summary.expired > 0} ? 'text-error'"
+                 th:text="${summary.expired}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{est.status.converted}">Converted</div>
+            <div class="stat-tile-value" th:text="${summary.converted}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/sales/estimates}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{est.searchPlaceholder}">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-secondary btn-sm" type="button" data-dropdown-toggle>
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-filter"/></svg>
+                    <span th:text="#{common.status}">Status</span>
+                    <span class="filter-badge" th:if="${status != null and status != ''}"
+                          th:text="${statusLabels.get(status)}">Open</span>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header" th:text="#{est.invoiceStatus}">Invoice status</div>
+                    <a class="dropdown-item" th:href="@{/sales/estimates(q=${q})}"
+                       th:classappend="${status == null or status == ''} ? 'active'">
+                        <span th:text="#{est.all}">All</span>
+                    </a>
+                    <a class="dropdown-item" th:each="entry : ${statusLabels}"
+                       th:href="@{/sales/estimates(q=${q}, status=${entry.key})}"
+                       th:classappend="${status == entry.key} ? 'active'">
+                        <svg class="ebook-icon" th:if="${status == entry.key}"><use href="#icon-check"/></svg>
+                        <span th:text="${entry.value}">Draft</span>
+                    </a>
+                </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/sales/estimates}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(estimates.content)}, ${estimates.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'estimateNo', #{est.estimate}, ${sort}, ${dir})}">Invoice</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'customerName', #{est.customer}, ${sort}, ${dir})}">Customer</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'estimateDate', #{est.date}, ${sort}, ${dir})}">Issued</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'expiryDate', #{est.expiry}, ${sort}, ${dir})}">Due</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'total', #{common.amount}, ${sort}, ${dir})}">Amount</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${estimates.content}">
+                        <td>
+                            <a class="cell-link" th:href="@{/sales/estimates/{id}(id=${e.id})}" th:text="${e.estimateNo}">EST-0001</a>
+                            <span class="cell-secondary" th:if="${e.reference != null}" th:text="${e.reference}">PO ref</span>
+                        </td>
+                        <td>
+                            <a class="cell-link" th:href="@{/customers/{id}(id=${e.customerId})}" th:text="${e.customerName}">Customer</a>
+                        </td>
+                        <td class="cell-secondary" th:text="${#temporals.format(e.estimateDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td class="cell-secondary">
+                            <span th:if="${e.expiryDate != null}"
+                                  th:text="${#temporals.format(e.expiryDate, 'dd MMM yyyy')}">31 Jan 2026</span>
+                            <span th:if="${e.expiryDate == null}">—</span>
+                        </td>
+                        <td class="num money"
+                            th:text="${e.currencyCode + ' ' + #numbers.formatDecimal(e.total, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td th:with="ds=${e.displayStatus.name()}">
+                            <span class="badge" th:classappend="${ds == 'ACCEPTED' or ds == 'CONVERTED' ? 'badge-active' : (ds == 'DECLINED' or ds == 'EXPIRED' ? 'badge-error' : (ds == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(ds)}">Open</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/sales/estimates/{id}(id=${e.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:if="${e.editable}" th:href="@{/sales/estimates/{id}/edit(id=${e.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:if="${e.status.name() == 'DRAFT'}" th:action="@{/sales/estimates/{id}/send(id=${e.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-send"/></svg><span th:text="#{est.send}">Mark as sent</span></button>
+                                    </form>
+                                    <form th:if="${e.convertible}" th:action="@{/sales/estimates/{id}/convert(id=${e.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-file-text"/></svg><span th:text="#{est.convert}">Convert to invoice</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(estimates.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-receipt"/></svg></div>
+                                <p class="text-secondary" th:text="#{est.none}">No estimates found.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/sales/estimates/new}" th:text="#{est.new}">New Invoice</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${estimates.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(estimates.content)}, ${estimates.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${estimates.number + 1}, ${estimates.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

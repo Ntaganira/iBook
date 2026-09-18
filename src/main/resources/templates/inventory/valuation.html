@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{inv.val.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/inventory/products}" th:text="#{inv.prod.title}">Products</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{inv.val.title}">Stock Valuation</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{inv.val.title}">Stock Valuation</h1>
+            <p class="page-subtitle">
+                <span th:if="${company != null}" th:text="${company.name} + ' · '"></span>
+                <span th:text="#{rpt.asOf} + ' ' + ${#temporals.format(report.asOf, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/inventory/valuation}">
+                <label class="form-label mb-0" th:text="#{rpt.asOf}">As of</label>
+                <input class="form-control form-control--sm" type="date" name="asOf" th:value="${asOf}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.val.stockValue}">Stock value at cost</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalValue, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.val.retailValue}">Value at selling price</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalRetail, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.val.potentialMargin}">Potential margin</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalRetail.subtract(report.totalValue), 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{inv.prod.belowReorder}">Below reorder level</div>
+            <div class="stat-tile-value" th:classappend="${report.belowReorder > 0} ? 'text-error'"
+                 th:text="${report.belowReorder}">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.prod.sku}">SKU</th>
+                        <th th:text="#{common.name}">Product</th>
+                        <th th:text="#{inv.cat.title}">Category</th>
+                        <th class="num" th:text="#{inv.prod.onHand}">On hand</th>
+                        <th class="num" th:text="#{inv.prod.cost}">Unit cost</th>
+                        <th class="num" th:text="#{inv.val.value}">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${report.rows}">
+                        <td class="mono" th:text="${r.sku}">SKU-001</td>
+                        <td>
+                            <a class="cell-link" th:href="@{/inventory/products/{id}/edit(id=${r.productId})}" th:text="${r.name}">Product</a>
+                            <span class="cell-secondary text-error" th:if="${r.belowReorder}"
+                                  th:text="#{inv.val.lowStock(${#numbers.formatDecimal(r.reorderLevel, 1, 2)})}">Below reorder level</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${r.categoryName != null ? r.categoryName : '—'}">—</td>
+                        <td class="num" th:classappend="${r.belowReorder} ? 'text-error'"
+                            th:text="${#numbers.formatDecimal(r.quantity, 1, 2)} + ' ' + ${r.unit}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.unitCost, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(r.value, 1, 2, 'COMMA')}">0.00</td>
+                    </tr>
+                    <tr th:if="${report.empty}">
+                        <td class="table-empty" colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-box"/></svg></div>
+                                <p class="text-secondary" th:text="#{inv.val.none}">No stocked products to value.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot th:unless="${report.empty}">
+                    <tr>
+                        <td colspan="5" class="text-right font-bold" th:text="#{inv.val.stockValue}">Stock value at cost</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalValue, 1, 2, 'COMMA')}">RWF 0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{inv.val.basis}">Valued at each product's standard cost price, not weighted average or FIFO.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

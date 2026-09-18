@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ap.aging.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/bills}" th:text="#{bill.title}">Invoices</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ap.aging.title}">Payables Aging</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ap.aging.title}">Payables Aging</h1>
+            <p class="page-subtitle">
+                <span th:if="${company != null}" th:text="${company.name} + ' · '"></span>
+                <span th:text="#{rpt.asOf} + ' ' + ${#temporals.format(asOf, 'dd MMM yyyy')}"></span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <form class="d-flex align-items-center gap-2" method="get" th:action="@{/purchases/aging}">
+                <label class="form-label mb-0" th:text="#{rpt.asOf}">As of</label>
+                <input class="form-control form-control--sm" type="date" name="asOf" th:value="${asOf}">
+                <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ap.aging.totalDue}">Total outstanding</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ap.aging.current}">Not yet due</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.current, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ap.aging.overdue}">Overdue</div>
+            <div class="stat-tile-value money text-error"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total.subtract(report.totals.current), 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ap.aging.d90plus}">90+ days</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${report.totals.d90plus.signum() > 0} ? 'text-error'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.d90plus, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{bill.vendor}">Vendor</th>
+                        <th class="num" th:text="#{ap.aging.current}">Current</th>
+                        <th class="num" th:text="#{ap.aging.d1to30}">1–30</th>
+                        <th class="num" th:text="#{ap.aging.d31to60}">31–60</th>
+                        <th class="num" th:text="#{ap.aging.d61to90}">61–90</th>
+                        <th class="num" th:text="#{ap.aging.d90plus}">90+</th>
+                        <th class="num" th:text="#{ap.aging.total}">Total</th>
+                        <th class="num" th:text="#{ap.aging.oldest}">Oldest</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${report.rows}"
+                        th:classappend="${selectedVendor != null and selectedVendor == r.vendorId} ? 'is-selected'">
+                        <td>
+                            <a class="cell-link" th:href="@{/purchases/aging(asOf=${asOf}, vendor=${r.vendorId})}"
+                               th:text="${r.vendorName}">Vendor</a>
+                            <span class="cell-secondary" th:text="#{ap.aging.billCount(${r.billCount})}">0 bills</span>
+                        </td>
+                        <td class="num money" th:text="${r.current.signum() == 0 ? '—' : #numbers.formatDecimal(r.current, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${r.d1to30.signum() == 0 ? '—' : #numbers.formatDecimal(r.d1to30, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${r.d31to60.signum() == 0 ? '—' : #numbers.formatDecimal(r.d31to60, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${r.d61to90.signum() == 0 ? '—' : #numbers.formatDecimal(r.d61to90, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:classappend="${r.d90plus.signum() > 0} ? 'text-error'"
+                            th:text="${r.d90plus.signum() == 0 ? '—' : #numbers.formatDecimal(r.d90plus, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(r.total, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num cell-secondary"
+                            th:text="${r.oldestDays == 0 ? '—' : r.oldestDays + 'd'}">—</td>
+                    </tr>
+                    <tr th:if="${report.empty}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg></div>
+                                <p class="text-secondary" th:text="#{ap.aging.none}">Nothing outstanding — every invoice is settled.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot th:unless="${report.empty}">
+                    <tr>
+                        <td class="font-bold" th:text="#{ap.aging.total}">Total</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.current, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d1to30, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d31to60, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d61to90, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d90plus, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-bold"
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{ap.aging.basis}">Open invoices only. Buckets count days past the due date; anything not yet due sits in Current.</div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${detail != null}">
+        <div class="card-header">
+            <h3 th:text="#{ap.aging.detail}">Open invoices</h3>
+            <a class="btn btn-ghost btn-sm" th:href="@{/purchases/aging(asOf=${asOf})}" th:text="#{ap.aging.clear}">Clear</a>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{bill.bill}">Invoice</th>
+                        <th th:text="#{bill.billed}">Issued</th>
+                        <th th:text="#{bill.due}">Due</th>
+                        <th class="num" th:text="#{common.amount}">Amount</th>
+                        <th class="num" th:text="#{bill.openBalance}">Open balance</th>
+                        <th class="num" th:text="#{ap.aging.daysPast}">Days past due</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b : ${detail}">
+                        <td><a class="cell-link" th:href="@{/bills/{id}(id=${b.id})}" th:text="${b.billNo}">BILL-0001</a></td>
+                        <td class="cell-secondary" th:text="${#temporals.format(i.issueDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td class="cell-secondary" th:text="${#temporals.format(i.dueDate, 'dd MMM yyyy')}">31 Jan 2026</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(i.total, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(i.balanceDue, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num" th:classappend="${b.daysOverdue > 0} ? 'text-error'"
+                            th:text="${b.daysOverdue == 0 ? '—' : i.daysOverdue}">—</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(detail)}">
+                        <td class="table-empty" colspan="6">
+                            <p class="text-secondary" th:text="#{ap.aging.noDetail}">No open invoices for this customer.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

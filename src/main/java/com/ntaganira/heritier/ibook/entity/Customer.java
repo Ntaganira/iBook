@@ -68,6 +68,9 @@ public class Customer implements Serializable {
     @Column(name = "tax_id")
     private String taxId;
 
+    @Column(name = "payment_terms")
+    private String paymentTerms;
+
     @Column(name = "opening_balance", precision = 14, scale = 2)
     private BigDecimal openingBalance;
 

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${expense.expenseNo}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/purchases/expenses}" th:text="#{exp.title}">Expenses</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${expense.expenseNo}">EXP-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${expense.expenseNo}">EXP-0001</h1>
+            <p class="page-subtitle">
+                <span th:text="${expense.payeeName}">Payee</span>
+                <span th:text="' · ' + ${#temporals.format(expense.expenseDate, 'dd MMM yyyy')}"></span>
+                <span th:if="${expense.paymentMethod != null}"
+                      th:text="' · ' + ${methodLabels.get(expense.paymentMethod.name())}"></span>
+            </p>
+        </div>
+        <div class="page-actions" th:with="st=${expense.status.name()}">
+            <span class="badge"
+                  th:classappend="${st == 'POSTED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : 'badge-muted')}">
+                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+            </span>
+
+            <a class="btn btn-secondary" th:if="${expense.editable}"
+               th:href="@{/purchases/expenses/{id}/edit(id=${expense.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{exp.view.edit}">Edit expense</span>
+            </a>
+
+            <form th:if="${expense.editable}"
+                  th:action="@{/purchases/expenses/{id}/post(id=${expense.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{exp.postToLedger}">Post to ledger</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exp.subtotal}">Subtotal</div>
+            <div class="stat-tile-value money"
+                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exp.tax}">Input VAT</div>
+            <div class="stat-tile-value money"
+                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exp.total}">Expense total</div>
+            <div class="stat-tile-value money"
+                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.total, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exp.paidFrom}">Paid from</div>
+            <div class="stat-tile-value text-sm"
+                 th:text="${expense.paymentAccountCode != null ? expense.paymentAccountCode + ' — ' + expense.paymentAccountName : '—'}">1001</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="#{exp.lineItems}">What it was for</h3>
+                    <span class="text-sm text-muted" th:if="${expense.reference != null}"
+                          th:text="#{exp.reference} + ': ' + ${expense.reference}"></span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{exp.itemDescription}">Description</th>
+                                <th th:text="#{exp.expenseAccount}">Expense account</th>
+                                <th class="num" th:text="#{exp.amount}">Amount</th>
+                                <th class="num" th:text="#{exp.vat}">VAT</th>
+                                <th class="num" th:text="#{exp.lineTotal}">Line total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="l : ${expense.lines}">
+                                <td th:text="${l.description}">Item</td>
+                                <td class="cell-secondary"
+                                    th:text="${l.expenseAccountCode != null ? l.expenseAccountCode + ' — ' + l.expenseAccountName : '—'}">—</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(expense.lines)}">
+                                <td class="table-empty" colspan="5">
+                                    <p class="text-secondary" th:text="#{exp.emptyLines}">No lines.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-right font-bold" th:text="#{exp.total}">Expense total</td>
+                                <td class="num money font-bold"
+                                    th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-body" th:if="${expense.memo != null}">
+                    <div class="cell-secondary" th:text="#{exp.memo}">Memo</div>
+                    <p class="text-sm" th:text="${expense.memo}"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{exp.ledgerEntry}">Ledger entry</h3></div>
+                <div class="card-body" th:if="${journal == null}">
+                    <div class="alert alert--info">
+                        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+                        <div class="alert-body" th:text="#{exp.notPosted}">Not yet posted to the ledger</div>
+                    </div>
+                </div>
+                <div th:if="${journal != null}">
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th th:text="#{coa.account}">Account</th>
+                                    <th class="num" th:text="#{je.debit}">Debit</th>
+                                    <th class="num" th:text="#{je.credit}">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="l : ${journal.lines}">
+                                    <td>
+                                        <span th:text="${l.accountCode}">5000</span>
+                                        <span class="cell-secondary" th:text="${l.accountName}">Operating expenses</span>
+                                    </td>
+                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 2, 'COMMA')}">0.00</td>
+                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 2, 'COMMA')}">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-body">
+                        <a class="btn btn-secondary btn-sm w-full" th:href="@{/journals/{id}(id=${journal.id})}">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-book"/></svg>
+                            <span th:text="#{exp.viewJournal} + ' (' + ${journal.entryNo} + ')'">View journal entry</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${expense.status.name() != 'VOID'}">
+                <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+                <div class="card-body d-flex flex-column gap-2">
+                    <form th:if="${expense.posted}"
+                          th:action="@{/purchases/expenses/{id}/void(id=${expense.id})}" method="post">
+                        <input class="form-control form-control--sm mb-2" type="text" name="reason"
+                               th:placeholder="#{exp.voidReason}">
+                        <button class="btn btn-secondary btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-x-circle"/></svg>
+                            <span th:text="#{exp.voidExpense}">Void expense</span>
+                        </button>
+                    </form>
+                    <form th:if="${expense.editable}"
+                          th:action="@{/purchases/expenses/{id}/delete(id=${expense.id})}" method="post">
+                        <button class="btn btn-ghost btn-sm w-full" type="submit">
+                            <svg class="ebook-icon ebook-icon--sm"><use href="#icon-trash"/></svg>
+                            <span th:text="#{exp.deleteDraft}">Delete draft</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

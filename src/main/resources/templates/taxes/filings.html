@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tax.fil.title}, ~{::content})}">
+
+<head></head>
+
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/taxes}" th:text="#{nav.taxes}">Taxes</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{tax.fil.title}">Tax Filings</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{tax.fil.title}">Tax Filings</h1>
+            <p class="page-subtitle" th:text="#{tax.fil.subtitle}">Declarations submitted to the revenue authority.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/taxes/filings/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{tax.fil.new}">Record filing</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/taxes/filings}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{inv.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/taxes/filings(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{tax.fil.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/taxes/filings(status='SUBMITTED')}" th:classappend="${status == 'SUBMITTED'} ? 'active'">
+            <span th:text="#{tax.fil.status.submitted}">Submitted</span> <span class="tab-count" th:text="${summary.submitted}">0</span>
+        </a>
+        <a class="tab" th:href="@{/taxes/filings(status='PAID')}" th:classappend="${status == 'PAID'} ? 'active'">
+            <span th:text="#{tax.fil.status.paid}">Paid</span> <span class="tab-count" th:text="${summary.paid}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.fil.outstanding}">Outstanding</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.fil.overdueCount}">Overdue</div>
+            <div class="stat-tile-value" th:classappend="${summary.overdue > 0} ? 'text-error'"
+                 th:text="${summary.overdue}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.fil.status.draft}">Draft</div>
+            <div class="stat-tile-value" th:text="${summary.draft}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tax.fil.status.paid}">Paid</div>
+            <div class="stat-tile-value" th:text="${summary.paid}">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'filingType', #{tax.fil.type}, ${sort}, ${dir})}">Tax</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'periodTo', #{tax.fil.period}, ${sort}, ${dir})}">Period</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'dueDate', #{tax.fil.due}, ${sort}, ${dir})}">Due</th>
+                        <th class="num" th:text="#{tax.fil.declared}">Declared</th>
+                        <th class="num" th:text="#{tax.fil.paid}">Paid</th>
+                        <th class="num" th:text="#{tax.fil.balance}">Balance</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="f : ${filings.content}">
+                        <td>
+                            <span th:text="${typeLabels.get(f.filingType.name())}">VAT</span>
+                            <span class="cell-secondary" th:if="${f.reference != null}" th:text="${f.reference}"></span>
+                        </td>
+                        <td class="cell-secondary">
+                            <span th:text="${#temporals.format(f.periodFrom, 'dd MMM')} + ' — ' + ${#temporals.format(f.periodTo, 'dd MMM yyyy')}">01 — 31 Jan 2026</span>
+                        </td>
+                        <td class="cell-secondary">
+                            <span th:text="${f.dueDate != null ? #temporals.format(f.dueDate, 'dd MMM yyyy') : '—'}">15 Feb 2026</span>
+                            <span class="cell-secondary text-error" th:if="${f.daysOverdue > 0}"
+                                  th:text="#{tax.fil.daysOverdue(${f.daysOverdue})}">0 days overdue</span>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(f.declaredAmount, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(f.paidAmount, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold"
+                            th:classappend="${f.balanceDue.signum() > 0} ? 'text-error'"
+                            th:text="${#numbers.formatDecimal(f.balanceDue, 1, 2, 'COMMA')}">0.00</td>
+                        <td th:with="st=${f.status.name()}">
+                            <span class="badge" th:classappend="${st == 'PAID' ? 'badge-active' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning')}">
+                                <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:if="${f.editable}" th:href="@{/taxes/filings/{id}/edit(id=${f.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <a class="dropdown-item" th:if="${f.filingType.name() == 'VAT'}"
+                                       th:href="@{/taxes/vat(from=${f.periodFrom}, to=${f.periodTo})}"><svg class="ebook-icon"><use href="#icon-file-check"/></svg><span th:text="#{tax.fil.viewReturn}">View VAT return</span></a>
+                                    <form th:if="${f.editable}" th:action="@{/taxes/filings/{id}/submit(id=${f.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-send"/></svg><span th:text="#{tax.fil.submit}">Mark as submitted</span></button>
+                                    </form>
+                                    <form th:if="${f.status.name() == 'SUBMITTED' and f.balanceDue.signum() > 0}"
+                                          th:action="@{/taxes/filings/{id}/pay(id=${f.id})}" method="post">
+                                        <input type="hidden" name="amount" th:value="${f.balanceDue}">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-credit-card"/></svg><span th:text="#{tax.fil.payFull}">Record full payment</span></button>
+                                    </form>
+                                    <form th:if="${f.editable}" th:action="@{/taxes/filings/{id}/delete(id=${f.id})}" method="post">
+                                        <button class="dropdown-item danger" type="submit"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(filings.content)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-check"/></svg></div>
+                                <p class="text-secondary" th:text="#{tax.fil.none}">No filings recorded yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/taxes/filings/new}" th:text="#{tax.fil.new}">Record filing</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="table-footer" th:if="${filings.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(filings.content)}, ${filings.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${filings.number + 1}, ${filings.totalPages},
+                 ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&' : '?') + 'sort=' + sort + '&dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
