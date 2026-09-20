@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bud.vs.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/budgets}" th:text="#{bud.title}">Budgets</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{bud.vs.title}">Budget vs Actual</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{bud.vs.title}">Budget vs Actual</h1>
+            <p class="page-subtitle" th:text="#{bud.vs.subtitle}">What was planned against what the posted ledger actually did.</p>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/budgets/vs-actual}">
+            <select class="form-control form-control--sm" name="budget">
+                <option value="" th:text="#{bud.vs.selectBudget}">Choose a budget…</option>
+                <option th:each="b : ${budgets}" th:value="${b.id}"
+                        th:text="${b.name + ' (' + b.fiscalYear + ')'}"
+                        th:selected="${chosen != null and chosen.id == b.id}">Budget</option>
+            </select>
+            <select class="form-control form-control--sm" name="from">
+                <option th:each="m : ${#numbers.sequence(1, 12)}" th:value="${m}"
+                        th:text="#{bud.vs.monthNo(${m})}" th:selected="${fromMonth == m}">Month 1</option>
+            </select>
+            <select class="form-control form-control--sm" name="to">
+                <option th:each="m : ${#numbers.sequence(1, 12)}" th:value="${m}"
+                        th:text="#{bud.vs.monthNo(${m})}" th:selected="${toMonth == m}">Month 12</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Compare</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:if="${comparison != null}"
+                  th:text="${#temporals.format(comparison.from, 'dd MMM yyyy') + ' — ' + #temporals.format(comparison.to, 'dd MMM yyyy')}">Jan — Dec</span>
+        </form>
+    </div>
+
+    <div class="card" th:if="${comparison == null}">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-bar-chart"/></svg></div>
+                <p class="text-secondary" th:text="#{bud.vs.noBudget}">There is no budget to compare against yet.</p>
+                <a class="btn btn-primary btn-sm mt-3" th:href="@{/budgets/new}" th:text="#{bud.new}">New budget</a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${comparison != null}">
+
+        <div class="alert alert--info mb-4" th:if="${chosen.draft}">
+            <svg class="ebook-icon"><use href="#icon-info"/></svg>
+            <div class="alert-body">
+                <div class="alert-title" th:text="#{bud.vs.draftTitle}">Measured against a draft</div>
+                <span th:text="#{bud.vs.draftHint}">This budget has not been approved, so the figures it is measured against can still be edited.</span>
+            </div>
+        </div>
+
+        <div class="stat-grid mb-5">
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{bud.revenue}">Revenue</div>
+                <div class="stat-tile-value money"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(comparison.revenueTotal.actual, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+                <div class="cell-secondary"
+                     th:text="#{bud.vs.againstPlan(${#numbers.formatDecimal(comparison.revenueTotal.budgeted, 1, 'COMMA', 0, 'POINT')})}">against 0 planned</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{bud.expense}">Spend</div>
+                <div class="stat-tile-value money"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(comparison.expenseTotal.actual, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+                <div class="cell-secondary"
+                     th:text="#{bud.vs.againstPlan(${#numbers.formatDecimal(comparison.expenseTotal.budgeted, 1, 'COMMA', 0, 'POINT')})}">against 0 planned</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{bud.profit}">Profit</div>
+                <div class="stat-tile-value money"
+                     th:classappend="${comparison.profitTotal.actual.signum() < 0} ? 'text-error' : 'text-positive'"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(comparison.profitTotal.actual, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+                <div class="cell-secondary"
+                     th:text="#{bud.vs.againstPlan(${#numbers.formatDecimal(comparison.profitTotal.budgeted, 1, 'COMMA', 0, 'POINT')})}">against 0 planned</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-label" th:text="#{bud.vs.profitVariance}">Profit variance</div>
+                <div class="stat-tile-value money"
+                     th:classappend="${comparison.profitTotal.adverse} ? 'text-error' : 'text-positive'"
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(comparison.profitTotal.variance, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+                <div class="cell-secondary"
+                     th:text="${comparison.profitTotal.adverse} ? #{bud.vs.adverse} : #{bud.vs.favourable}">favourable</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{bud.vs.breakdown}">Account by account</h3>
+                <span class="text-sm text-muted" th:text="#{bud.vs.monthRange(${comparison.fromMonth}, ${comparison.toMonth})}">Months 1 to 12</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{bud.account}">Account</th>
+                            <th class="num" th:text="#{bud.vs.budgeted}">Budget</th>
+                            <th class="num" th:text="#{bud.vs.actual}">Actual</th>
+                            <th class="num" th:text="#{bud.vs.variance}">Variance</th>
+                            <th class="num" th:text="#{bud.vs.percent}">%</th>
+                            <th th:text="#{bud.vs.reading}">Reading</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="table-subhead">
+                            <td colspan="6" th:text="#{bud.revenue}">Revenue</td>
+                        </tr>
+                        <tr th:each="r : ${comparison.revenue}">
+                            <td>
+                                <span class="mono" th:text="${r.accountCode}">4000</span>
+                                <span class="cell-secondary" th:text="${r.accountName}">Sales</span>
+                            </td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(r.budgeted, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(r.actual, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:classappend="${r.adverse} ? 'text-error' : (${r.favourable} ? 'text-positive' : '')"
+                                th:text="${#numbers.formatDecimal(r.variance, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num cell-secondary" th:text="${#numbers.formatDecimal(r.variancePercent, 1, 1)} + '%'">0.0%</td>
+                            <td>
+                                <span class="badge badge-active" th:if="${r.favourable}"><span class="badge-dot"></span><span th:text="#{bud.vs.favourable}">Favourable</span></span>
+                                <span class="badge badge-error" th:if="${r.adverse}"><span class="badge-dot"></span><span th:text="#{bud.vs.adverse}">Adverse</span></span>
+                                <span class="badge badge-muted" th:if="${!r.favourable and !r.adverse}"><span class="badge-dot"></span><span th:text="#{bud.vs.onPlan}">On plan</span></span>
+                            </td>
+                        </tr>
+                        <tr class="font-bold">
+                            <td th:text="#{bud.vs.totalRevenue}">Total revenue</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(comparison.revenueTotal.budgeted, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(comparison.revenueTotal.actual, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:classappend="${comparison.revenueTotal.adverse} ? 'text-error' : 'text-positive'"
+                                th:text="${#numbers.formatDecimal(comparison.revenueTotal.variance, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num cell-secondary" th:text="${#numbers.formatDecimal(comparison.revenueTotal.variancePercent, 1, 1)} + '%'">0.0%</td>
+                            <td></td>
+                        </tr>
+
+                        <tr class="table-subhead">
+                            <td colspan="6" th:text="#{bud.expense}">Spend</td>
+                        </tr>
+                        <tr th:each="r : ${comparison.expense}">
+                            <td>
+                                <span class="mono" th:text="${r.accountCode}">5000</span>
+                                <span class="cell-secondary" th:text="${r.accountName}">Operating expenses</span>
+                            </td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(r.budgeted, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(r.actual, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:classappend="${r.adverse} ? 'text-error' : (${r.favourable} ? 'text-positive' : '')"
+                                th:text="${#numbers.formatDecimal(r.variance, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num cell-secondary" th:text="${#numbers.formatDecimal(r.variancePercent, 1, 1)} + '%'">0.0%</td>
+                            <td>
+                                <span class="badge badge-active" th:if="${r.favourable}"><span class="badge-dot"></span><span th:text="#{bud.vs.favourable}">Favourable</span></span>
+                                <span class="badge badge-error" th:if="${r.adverse}"><span class="badge-dot"></span><span th:text="#{bud.vs.adverse}">Adverse</span></span>
+                                <span class="badge badge-muted" th:if="${!r.favourable and !r.adverse}"><span class="badge-dot"></span><span th:text="#{bud.vs.onPlan}">On plan</span></span>
+                            </td>
+                        </tr>
+                        <tr class="font-bold">
+                            <td th:text="#{bud.vs.totalExpense}">Total spend</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(comparison.expenseTotal.budgeted, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(comparison.expenseTotal.actual, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:classappend="${comparison.expenseTotal.adverse} ? 'text-error' : 'text-positive'"
+                                th:text="${#numbers.formatDecimal(comparison.expenseTotal.variance, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num cell-secondary" th:text="${#numbers.formatDecimal(comparison.expenseTotal.variancePercent, 1, 1)} + '%'">0.0%</td>
+                            <td></td>
+                        </tr>
+
+                        <tr class="font-bold">
+                            <td th:text="#{bud.vs.netProfit}">Profit</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(comparison.profitTotal.budgeted, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(comparison.profitTotal.actual, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:classappend="${comparison.profitTotal.adverse} ? 'text-error' : 'text-positive'"
+                                th:text="${#numbers.formatDecimal(comparison.profitTotal.variance, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num cell-secondary" th:text="${#numbers.formatDecimal(comparison.profitTotal.variancePercent, 1, 1)} + '%'">0.0%</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{bud.vs.signHint}">Variance is read as favourable or adverse, not as plain arithmetic: earning more than planned and spending less than planned are both favourable, and they have opposite signs.</div>
+            </div>
+        </div>
+
+        <div class="card mb-5" th:if="${comparison.hasUnbudgeted()}">
+            <div class="card-header">
+                <h3 th:text="#{bud.vs.unbudgeted}">Traded but never budgeted</h3>
+                <span class="text-sm text-muted money"
+                      th:text="${baseCurrency + ' ' + #numbers.formatDecimal(comparison.unbudgetedTotal(), 1, 'COMMA', 0, 'POINT')}">RWF 0</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{bud.account}">Account</th>
+                            <th th:text="#{common.type}">Type</th>
+                            <th class="num" th:text="#{bud.vs.actual}">Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${comparison.unbudgeted}">
+                            <td>
+                                <span class="mono" th:text="${r.accountCode}">5001</span>
+                                <span class="cell-secondary" th:text="${r.accountName}">Rent</span>
+                            </td>
+                            <td class="cell-secondary" th:text="${r.revenueLine} ? #{bud.revenue} : #{bud.expense}">Spend</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(r.actual, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{bud.vs.unbudgetedHint}">These accounts saw real trading over the same months but the budget never named them, so they are kept out of the variance above — a budget cannot be over or under on something it does not mention. Add them to the budget to bring them into the comparison.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="form-hint" th:text="#{bud.vs.actualHint}">Actual is the posted ledger over the same months, measured exactly as the profit and loss measures it — drafts and voided entries are not counted. The comparison runs on whole months because that is the grain a budget is held at.</div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

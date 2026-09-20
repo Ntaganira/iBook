@@ -76,6 +76,22 @@ public class ReportService {
                 : m.credit().subtract(m.debit());
     }
 
+    /**
+     * Signed movement per account over a range, in the same direction the profit and loss uses.
+     * Exposed so budget comparisons measure "actual" exactly as the report does rather than
+     * growing a second definition that quietly disagrees with it.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> signedMovementsBetween(LocalDate from, LocalDate to) {
+        Map<Long, Movement> movements = movementsBetween(from, to);
+        Map<Long, BigDecimal> signedByAccount = new LinkedHashMap<>();
+        for (Account account : accountRepository.findAllByOrderByCodeAsc()) {
+            signedByAccount.put(account.getId(),
+                    signed(account.getType(), movements.get(account.getId())));
+        }
+        return signedByAccount;
+    }
+
     // ----- Profit and loss -----
 
     @Transactional(readOnly = true)

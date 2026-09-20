@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bud.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/budgets}" th:text="#{bud.title}">Budgets</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{bud.form.editCrumb} : #{bud.form.breadcrumb}">New budget</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{bud.form.editTitle} : #{bud.form.title}">New Budget</h1>
+            <p class="page-subtitle" th:text="#{bud.form.subtitle}">Budget each revenue and expense account, either month by month or as a yearly figure spread evenly.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/budgets}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="budgetForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{bud.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="budgetForm" name="approveNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{bud.saveApprove}">Save and approve</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="budgetForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/budgets/{id}(id=${editingId})} : @{/budgets}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{bud.details}">What this budget covers</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="bName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="bName" name="name" type="text" th:value="${form.name}"
+                               th:placeholder="#{bud.namePlaceholder}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bYear" th:text="#{bud.fiscalYear}">Fiscal year</label>
+                        <input class="form-control" id="bYear" name="fiscalYear" type="number" step="1"
+                               th:value="${form.fiscalYear}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bStart"><span th:text="#{bud.startsIn}">First month</span> <span class="required">*</span></label>
+                        <input class="form-control" id="bStart" name="startDate" type="date"
+                               th:value="${form.startDate}" required>
+                        <div class="form-hint" th:text="#{bud.startHint}">The twelve columns run from this month, so a July year reads July first.</div>
+                        <div th:replace="~{layout/common :: fieldError('startDate')}"></div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="bDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="bDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="bNotes" th:text="#{bud.notes}">Notes</label>
+                        <input class="form-control" id="bNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{bud.lines}">What is budgeted</h3>
+                <span class="text-sm text-muted" th:text="#{bud.linesHint}">Fill in a yearly figure, or the months, not both</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{bud.account}">Account</th>
+                            <th class="num" th:text="#{bud.annual}">Yearly</th>
+                            <th class="num" th:each="m : ${#numbers.sequence(1, 12)}" th:text="'M' + ${m}">M1</th>
+                            <th th:text="#{bud.lineNotes}">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="line, st : ${form.lines}">
+                            <td>
+                                <select class="form-control form-control--sm"
+                                        th:name="'lines[' + ${st.index} + '].accountId'">
+                                    <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                                    <option th:each="a : ${accounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${line.accountId != null and line.accountId == a.id}">4000</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].annualAmount'"
+                                       th:value="${line.annualAmount}" placeholder="0">
+                            </td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m1'" th:value="${line.m1}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m2'" th:value="${line.m2}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m3'" th:value="${line.m3}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m4'" th:value="${line.m4}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m5'" th:value="${line.m5}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m6'" th:value="${line.m6}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m7'" th:value="${line.m7}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m8'" th:value="${line.m8}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m9'" th:value="${line.m9}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m10'" th:value="${line.m10}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m11'" th:value="${line.m11}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m12'" th:value="${line.m12}"></td>
+                            <td>
+                                <input class="form-control form-control--sm" type="text"
+                                       th:name="'lines[' + ${st.index} + '].notes'" th:value="${line.notes}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{bud.spreadHint}">Leave the months empty and the yearly figure is spread evenly across the twelve, with the rounding put on the last month so they add back exactly. Fill any month in and the months are taken as given.</div>
+                <div class="form-hint mt-2" th:text="#{bud.accountsHint}">Only revenue and expense accounts can be budgeted here. Buying an asset is a capital budget, which this is not.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

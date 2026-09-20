@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**73 / 115 mapped · 42 remaining**
+**75 / 115 mapped · 40 remaining**
 
 How to check progress yourself:
 
@@ -159,7 +159,19 @@ Reads tables that already exist. All seven done.
 ### Budgets (6)
 `Budget`, `BudgetLine`. Budget-vs-actual is a join against GL data that already exists.
 
-- [ ] `/budgets` · `/budgets/vs-actual`
+- [x] `/budgets` · `/budgets/vs-actual` — a budget is twelve months of planned figures per revenue
+      or expense account, draft / approve / reopen / close. **Entirely non-posting**: a plan is not
+      a transaction, and approving only locks the figures so a comparison cannot measure against
+      something that is still moving. A line is given either month by month or as one yearly figure
+      spread evenly, with the rounding drift on the last month so the twelve add back exactly;
+      filled-in months always win over the yearly figure. Only revenue and expense accounts can be
+      budgeted — a capital budget is a different document and deliberately out of scope.
+      `/budgets/vs-actual` reads actuals through `ReportService.signedMovementsBetween`, the same
+      definition the profit and loss uses, so the two cannot drift apart. Variance is reported as
+      **favourable or adverse** rather than raw arithmetic, because earning more than planned and
+      spending less than planned are both good and have opposite signs. Revenue and expense the
+      ledger saw on accounts the budget never named are listed separately rather than folded into
+      the variance.
 - [ ] `/budgets/revenue-forecast` · `/budgets/expense-forecast` · `/budgets/cash-flow-forecast`
 - [ ] `/budgets/ai-forecasts` — drop unless genuinely wanted
 
@@ -425,7 +437,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 3,240 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 3,330 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.
