@@ -39,6 +39,7 @@ public class AssetTransferService {
 
     private final AssetTransferRepository transferRepository;
     private final FixedAssetRepository assetRepository;
+    private final AssetLocationRepository assetLocationRepository;
     private final AccountRepository accountRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final NumberingSequenceRepository numberingSequenceRepository;
@@ -47,6 +48,7 @@ public class AssetTransferService {
 
     public AssetTransferService(AssetTransferRepository transferRepository,
                                 FixedAssetRepository assetRepository,
+                                AssetLocationRepository assetLocationRepository,
                                 AccountRepository accountRepository,
                                 JournalEntryRepository journalEntryRepository,
                                 NumberingSequenceRepository numberingSequenceRepository,
@@ -54,6 +56,7 @@ public class AssetTransferService {
                                 AuditService auditService) {
         this.transferRepository = transferRepository;
         this.assetRepository = assetRepository;
+        this.assetLocationRepository = assetLocationRepository;
         this.accountRepository = accountRepository;
         this.journalEntryRepository = journalEntryRepository;
         this.numberingSequenceRepository = numberingSequenceRepository;
@@ -108,10 +111,10 @@ public class AssetTransferService {
         return rows;
     }
 
-    /** Locations already in use, so a move can pick one instead of retyping it. */
+    /** Where an asset can be sent: the locations on the register, not free text. */
     @Transactional(readOnly = true)
-    public List<String> knownLocations() {
-        return assetRepository.distinctLocations();
+    public List<AssetLocation> knownLocations() {
+        return assetLocationRepository.findByActiveTrueOrderByNameAsc();
     }
 
     // ----- Create / update -----
@@ -176,11 +179,16 @@ public class AssetTransferService {
      * box is an unchanged field rather than an instruction to wipe one.
      */
     private void applyMove(AssetTransfer transfer, FixedAsset asset, AssetTransferForm form) {
+        transfer.setFromLocationId(asset.getLocationId());
         transfer.setFromLocation(trimToNull(asset.getLocation()));
         transfer.setFromCustodian(trimToNull(asset.getCustodian()));
-        String toLocation = trimToNull(form.toLocation());
+
+        AssetLocation to = form.toLocationId() == null ? null
+                : assetLocationRepository.findById(form.toLocationId()).orElse(null);
+        transfer.setToLocationId(to == null ? transfer.getFromLocationId() : to.getId());
+        transfer.setToLocation(to == null ? transfer.getFromLocation() : to.getName());
+
         String toCustodian = trimToNull(form.toCustodian());
-        transfer.setToLocation(toLocation == null ? transfer.getFromLocation() : toLocation);
         transfer.setToCustodian(toCustodian == null ? transfer.getFromCustodian() : toCustodian);
 
         Account fromAsset = resolve(asset.getAssetAccountId(), ASSET_FALLBACK_CODE);
@@ -253,6 +261,7 @@ public class AssetTransferService {
         }
 
         // Where the asset actually is now, not where it was when the draft was raised.
+        transfer.setFromLocationId(asset.getLocationId());
         transfer.setFromLocation(trimToNull(asset.getLocation()));
         transfer.setFromCustodian(trimToNull(asset.getCustodian()));
         Account fromAsset = resolve(asset.getAssetAccountId(), ASSET_FALLBACK_CODE);
@@ -279,6 +288,7 @@ public class AssetTransferService {
             transfer.setJournalEntryId(postEntry(transfer, username, false));
         }
 
+        asset.setLocationId(transfer.getToLocationId());
         asset.setLocation(transfer.getToLocation());
         asset.setCustodian(transfer.getToCustodian());
         applyAccountsToAsset(asset, transfer.getToAssetAccountId(), transfer.getToAccumulatedAccountId());
@@ -329,6 +339,7 @@ public class AssetTransferService {
 
         FixedAsset asset = assetRepository.findById(transfer.getAssetId()).orElse(null);
         if (asset != null) {
+            asset.setLocationId(transfer.getFromLocationId());
             asset.setLocation(transfer.getFromLocation());
             asset.setCustodian(transfer.getFromCustodian());
             applyAccountsToAsset(asset, transfer.getFromAssetAccountId(),

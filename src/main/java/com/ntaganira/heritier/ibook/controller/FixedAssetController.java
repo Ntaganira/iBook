@@ -15,7 +15,10 @@ import com.ntaganira.heritier.ibook.entity.FixedAsset;
 import com.ntaganira.heritier.ibook.enums.AccountType;
 import com.ntaganira.heritier.ibook.enums.AssetStatus;
 import com.ntaganira.heritier.ibook.enums.DepreciationMethod;
+import com.ntaganira.heritier.ibook.entity.AssetCategory;
 import com.ntaganira.heritier.ibook.service.AccountingService;
+import com.ntaganira.heritier.ibook.service.AssetCategoryService;
+import com.ntaganira.heritier.ibook.service.AssetLocationService;
 import com.ntaganira.heritier.ibook.service.AuditService;
 import com.ntaganira.heritier.ibook.service.FixedAssetService;
 import com.ntaganira.heritier.ibook.service.VendorService;
@@ -44,15 +47,21 @@ public class FixedAssetController {
     private final FixedAssetService assetService;
     private final AccountingService accountingService;
     private final VendorService vendorService;
+    private final AssetCategoryService assetCategoryService;
+    private final AssetLocationService assetLocationService;
     private final MessageSource messageSource;
 
     public FixedAssetController(FixedAssetService assetService,
                                 AccountingService accountingService,
                                 VendorService vendorService,
+                                AssetCategoryService assetCategoryService,
+                                AssetLocationService assetLocationService,
                                 MessageSource messageSource) {
         this.assetService = assetService;
         this.accountingService = accountingService;
         this.vendorService = vendorService;
+        this.assetCategoryService = assetCategoryService;
+        this.assetLocationService = assetLocationService;
         this.messageSource = messageSource;
     }
 
@@ -91,6 +100,11 @@ public class FixedAssetController {
     }
 
     private void addFormContext(Model model, String mode, Long editingId) {
+        addFormContext(model, mode, editingId, null, null);
+    }
+
+    private void addFormContext(Model model, String mode, Long editingId,
+                                Long currentCategoryId, Long currentLocationId) {
         model.addAttribute("mode", mode);
         model.addAttribute("editingId", editingId);
         model.addAttribute("methodLabels", methodLabels());
@@ -99,7 +113,8 @@ public class FixedAssetController {
                 .filter(a -> a.getType() == AccountType.ASSET).toList());
         model.addAttribute("expenseAccounts", accountingService.listActiveAccounts().stream()
                 .filter(a -> a.getType() == AccountType.EXPENSE).toList());
-        model.addAttribute("categories", assetService.categories());
+        model.addAttribute("assetCategories", assetCategoryService.listForPicker(currentCategoryId));
+        model.addAttribute("assetLocations", assetLocationService.listForPicker(currentLocationId));
         model.addAttribute("baseCurrency", assetService.baseCurrency());
         model.addAttribute("nextNumber", assetService.previewNextNumber());
     }
@@ -142,10 +157,23 @@ public class FixedAssetController {
 
     // ----- Create / edit -----
 
+    /**
+     * A category can be asked for by id, which fills the form with the depreciation policy and the
+     * accounts that category carries. It is a visible action on the form rather than something that
+     * happens on save, so what was taken from the category can be seen and overridden before saving.
+     */
     @GetMapping("/new")
-    public String newAsset(Model model) {
+    public String newAsset(@RequestParam(value = "category", required = false) Long categoryId,
+                           Model model) {
         addFormContext(model, "create", null);
-        model.addAttribute("form", FixedAssetForm.empty());
+        AssetCategory category = categoryId == null ? null : assetCategoryService.get(categoryId);
+        model.addAttribute("form", category == null
+                ? FixedAssetForm.empty()
+                : FixedAssetForm.fromCategory(category.getId(),
+                        category.getDepreciationMethod().name(), category.getUsefulLifeYears(),
+                        category.getDecliningRate(), category.getAssetAccountId(),
+                        category.getAccumulatedAccountId(), category.getExpenseAccountId()));
+        model.addAttribute("appliedCategory", category);
         return "assets/asset-form";
     }
 
@@ -160,9 +188,13 @@ public class FixedAssetController {
             ra.addFlashAttribute("flashMessage", errorFlash("ast.notEditable", asset.getAssetNo()));
             return "redirect:/assets/register/" + id;
         }
-        addFormContext(model, "edit", id);
+        addFormContext(model, "edit", id, asset.getCategoryId(), asset.getLocationId());
+        model.addAttribute("unlinkedCategory",
+                asset.getCategoryId() == null ? asset.getCategory() : null);
+        model.addAttribute("unlinkedLocation",
+                asset.getLocationId() == null ? asset.getLocation() : null);
         model.addAttribute("form", new FixedAssetForm(
-                asset.getName(), asset.getDescription(), asset.getCategory(), asset.getLocation(),
+                asset.getName(), asset.getDescription(), asset.getCategoryId(), asset.getLocationId(),
                 asset.getCustodian(), asset.getSerialNumber(), asset.getTagNumber(), asset.getVendorId(),
                 asset.getPurchaseReference(), asset.getAcquisitionDate(), asset.getAcquisitionCost(),
                 asset.getResidualValue(), asset.getDepreciationMethod().name(),
@@ -178,7 +210,7 @@ public class FixedAssetController {
                          Model model, RedirectAttributes ra) {
         validate(form, br);
         if (br.hasErrors()) {
-            addFormContext(model, "create", null);
+            addFormContext(model, "create", null, form.categoryId(), form.locationId());
             return "assets/asset-form";
         }
         try {
@@ -187,7 +219,7 @@ public class FixedAssetController {
             return "redirect:/assets/register/" + saved.getId();
         } catch (RuntimeException ex) {
             rejectWithReason(br, ex);
-            addFormContext(model, "create", null);
+            addFormContext(model, "create", null, form.categoryId(), form.locationId());
             return "assets/asset-form";
         }
     }
@@ -201,7 +233,7 @@ public class FixedAssetController {
         }
         validate(form, br);
         if (br.hasErrors()) {
-            addFormContext(model, "edit", id);
+            addFormContext(model, "edit", id, form.categoryId(), form.locationId());
             return "assets/asset-form";
         }
         try {
@@ -210,7 +242,7 @@ public class FixedAssetController {
             return "redirect:/assets/register/" + saved.getId();
         } catch (RuntimeException ex) {
             rejectWithReason(br, ex);
-            addFormContext(model, "edit", id);
+            addFormContext(model, "edit", id, form.categoryId(), form.locationId());
             return "assets/asset-form";
         }
     }

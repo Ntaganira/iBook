@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.loc.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/register}" th:text="#{ast.title}">Asset Register</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.loc.title}">Asset Locations</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.loc.title}">Asset Locations</h1>
+            <p class="page-subtitle" th:text="#{ast.loc.subtitle}">The places assets are kept, and what is standing at each of them.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/assets/categories}" th:text="#{ast.cat.title}">Asset Categories</a>
+            <a class="btn btn-secondary" th:href="@{/assets/transfers}" th:text="#{ast.trf.title}">Asset Transfers</a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${!#maps.isEmpty(unlinked)}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.loc.importTitle}">Location names typed on assets</div>
+            <span th:text="#{ast.loc.importHint(${#maps.size(unlinked)})}">3 names are typed on assets but are not locations yet.</span>
+            <div class="mt-2">
+                <span class="badge badge-muted mr-2" th:each="e : ${unlinked}"
+                      th:text="${e.key + ' (' + e.value + ')'}">Kigali yard (2)</span>
+            </div>
+            <form class="mt-3" th:action="@{/assets/locations/import}" method="post">
+                <button class="btn btn-secondary btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-download"/></svg>
+                    <span th:text="#{ast.loc.import}">Import them as locations</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.loc.allTile}">Locations</div>
+            <div class="stat-tile-value" th:text="${summary.all}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.status.active}">Active</div>
+            <div class="stat-tile-value" th:text="${summary.active}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.loc.inUse}">Holding assets</div>
+            <div class="stat-tile-value" th:text="${summary.inUse}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.loc.unlinked}">Still free text</div>
+            <div class="stat-tile-value" th:classappend="${summary.unlinkedNames > 0} ? 'text-warning'"
+                 th:text="${summary.unlinkedNames}">0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <form class="table-toolbar" method="get" th:action="@{/assets/locations}">
+                    <div class="toolbar-search">
+                        <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                        <input type="text" name="q" th:value="${q}" th:placeholder="#{ast.loc.searchPlaceholder}">
+                    </div>
+                    <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+                    <a class="btn btn-ghost btn-sm" th:href="@{/assets/locations}" th:title="#{common.ariaRefresh}">
+                        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                    </a>
+                    <div class="toolbar-spacer"></div>
+                    <span class="text-sm text-muted" th:text="#{ast.loc.count(${#lists.size(locations)})}">0 locations</span>
+                </form>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{ast.loc.code}">Code</th>
+                                <th th:text="#{common.name}">Name</th>
+                                <th th:text="#{ast.loc.where}">Where</th>
+                                <th th:text="#{ast.loc.manager}">Answerable</th>
+                                <th class="num" th:text="#{ast.loc.assets}">Assets</th>
+                                <th class="num" th:text="#{ast.netBookValue}">Net book value</th>
+                                <th th:text="#{common.status}">Status</th>
+                                <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="l : ${locations}"
+                                th:with="used=${counts.containsKey(l.id) ? counts.get(l.id) : 0},
+                                         value=${values.containsKey(l.id) ? values.get(l.id) : 0}">
+                                <td class="mono" th:text="${l.code != null ? l.code : '—'}">—</td>
+                                <td>
+                                    <span th:text="${l.name}">Location</span>
+                                    <span class="cell-secondary" th:if="${l.description != null}" th:text="${l.description}"></span>
+                                </td>
+                                <td class="cell-secondary">
+                                    <span th:if="${l.site != null}" th:text="${l.site}">Site</span>
+                                    <span class="cell-secondary" th:if="${l.address != null or l.city != null}"
+                                          th:text="${(l.address != null ? l.address : '') + (l.address != null and l.city != null ? ', ' : '') + (l.city != null ? l.city : '')}">Address</span>
+                                    <span th:if="${l.site == null and l.address == null and l.city == null}">—</span>
+                                </td>
+                                <td class="cell-secondary" th:text="${l.manager != null ? l.manager : '—'}">—</td>
+                                <td class="num">
+                                    <a class="cell-link" th:if="${used > 0}"
+                                       th:href="@{/assets/register(q=${l.name})}" th:text="${used}">0</a>
+                                    <span th:if="${used == 0}" th:text="${used}">0</span>
+                                </td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(value, 1, 'COMMA', 0, 'POINT')}">0</td>
+                                <td>
+                                    <span class="badge badge-active" th:if="${l.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                                    <span class="badge badge-muted" th:unless="${l.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                                </td>
+                                <td class="actions-cell">
+                                    <div class="row-actions dropdown">
+                                        <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" th:href="@{/assets/locations(edit=${l.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                            <form th:action="@{/assets/locations/{id}/toggle(id=${l.id})}" method="post">
+                                                <button class="dropdown-item" type="submit">
+                                                    <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                                                    <span th:text="${l.active} ? #{ast.loc.deactivate} : #{ast.loc.activate}">Deactivate</span>
+                                                </button>
+                                            </form>
+                                            <form th:if="${used == 0}" th:action="@{/assets/locations/{id}/delete(id=${l.id})}" method="post">
+                                                <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(locations)}">
+                                <td class="table-empty" colspan="8">
+                                    <p class="text-secondary" th:text="#{ast.loc.none}">No asset locations yet.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-body">
+                    <div class="form-hint" th:text="#{ast.loc.valueHint}">Net book value counts only assets still on the register — anything disposed of or written off is left out. Move an asset between locations at Asset Transfers so the change is on record.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="${mode == 'edit'} ? #{ast.loc.edit} : #{ast.loc.new}">New location</h3>
+                    <a class="text-sm" th:if="${mode == 'edit'}" th:href="@{/assets/locations}" th:text="#{common.cancel}">Cancel</a>
+                </div>
+                <form method="post" novalidate th:object="${form}"
+                      th:action="${mode == 'edit'} ? @{/assets/locations/{id}(id=${editingId})} : @{/assets/locations}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="lName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                            <input class="form-control" id="lName" name="name" type="text" th:value="${form.name}"
+                                   th:placeholder="#{ast.loc.namePlaceholder}" required>
+                            <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lCode" th:text="#{ast.loc.code}">Code</label>
+                            <input class="form-control" id="lCode" name="code" type="text" th:value="${form.code}"
+                                   th:placeholder="#{ast.loc.codeOptional}">
+                            <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lSite" th:text="#{ast.loc.site}">Site or building</label>
+                            <input class="form-control" id="lSite" name="site" type="text" th:value="${form.site}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lAddress" th:text="#{ast.loc.address}">Address</label>
+                            <input class="form-control" id="lAddress" name="address" type="text" th:value="${form.address}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lCity" th:text="#{ast.loc.city}">City or district</label>
+                            <input class="form-control" id="lCity" name="city" type="text" th:value="${form.city}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lManager" th:text="#{ast.loc.manager}">Answerable for it</label>
+                            <input class="form-control" id="lManager" name="manager" type="text" th:value="${form.manager}">
+                            <div class="form-hint" th:text="#{ast.loc.managerHint}">Who answers for everything kept here, as distinct from the custodian of one asset.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lDesc" th:text="#{common.description}">Description</label>
+                            <input class="form-control" id="lDesc" name="description" type="text" th:value="${form.description}">
+                        </div>
+                        <label class="switch mt-2">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{common.status.active}">Active</span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary w-full" type="submit"
+                                th:text="${mode == 'edit'} ? #{ast.loc.update} : #{ast.loc.add}">Add location</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

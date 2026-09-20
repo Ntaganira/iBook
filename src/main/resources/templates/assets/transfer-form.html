@@ -80,12 +80,12 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label" for="tLocation" th:text="#{ast.trf.toLocation}">New location</label>
-                                <input class="form-control" id="tLocation" name="toLocation" type="text"
-                                       list="knownLocations" th:value="${form.toLocation}"
-                                       th:placeholder="#{ast.trf.locationPlaceholder}">
-                                <datalist id="knownLocations">
-                                    <option th:each="l : ${locations}" th:value="${l}"></option>
-                                </datalist>
+                                <select class="form-control" id="tLocation" name="toLocationId">
+                                    <option value="" th:text="#{ast.trf.locationUnchanged}">Leave it where it is</option>
+                                    <option th:each="l : ${locations}" th:value="${l.id}"
+                                            th:text="${l.name}"
+                                            th:selected="${form.toLocationId != null and form.toLocationId == l.id}">Kigali yard</option>
+                                </select>
                                 <div class="form-hint" th:text="#{ast.trf.blankHint}">Leave a box empty to keep what the asset already has.</div>
                             </div>
                             <div class="form-group">

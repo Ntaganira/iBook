@@ -50,8 +50,15 @@ public class AssetTransfer implements Serializable {
     @Column(name = "transfer_date", nullable = false)
     private LocalDate transferDate;
 
+    @Column(name = "from_location_id")
+    private Long fromLocationId;
+
+    /** The name as it stood when the asset moved; renaming the location later does not rewrite it. */
     @Column(name = "from_location")
     private String fromLocation;
+
+    @Column(name = "to_location_id")
+    private Long toLocationId;
 
     @Column(name = "to_location")
     private String toLocation;
@@ -178,7 +185,8 @@ public class AssetTransfer implements Serializable {
 
     @Transient
     public boolean isMovingLocation() {
-        return !Objects.equals(fromLocation, toLocation);
+        return !Objects.equals(fromLocationId, toLocationId)
+                || !Objects.equals(fromLocation, toLocation);
     }
 
     @Transient

@@ -58,5 +58,21 @@ public interface FixedAssetRepository extends JpaRepository<FixedAsset, Long> {
             + "where a.location is not null and trim(a.location) <> '' order by a.location asc")
     List<String> distinctLocations();
 
+    long countByCategoryId(Long categoryId);
+
+    long countByLocationId(Long locationId);
+
+    List<FixedAsset> findByCategoryId(Long categoryId);
+
+    List<FixedAsset> findByLocationId(Long locationId);
+
+    @Query("select a from FixedAsset a where a.categoryId is null "
+            + "and a.category is not null and trim(a.category) <> ''")
+    List<FixedAsset> findWithUnlinkedCategory();
+
+    @Query("select a from FixedAsset a where a.locationId is null "
+            + "and a.location is not null and trim(a.location) <> ''")
+    List<FixedAsset> findWithUnlinkedLocation();
+
     List<FixedAsset> findByStatusOrderByAssetNoAsc(AssetStatus status);
 }

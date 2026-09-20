@@ -44,9 +44,15 @@ public class FixedAsset implements Serializable {
     @Column(name = "description", length = 1000)
     private String description;
 
-    /** Free text until /assets/categories promotes it, the way brands were promoted. */
+    @Column(name = "category_id")
+    private Long categoryId;
+
+    /** Denormalised name alongside categoryId, the way Product carries its brand. */
     @Column(name = "category")
     private String category;
+
+    @Column(name = "location_id")
+    private Long locationId;
 
     @Column(name = "location")
     private String location;

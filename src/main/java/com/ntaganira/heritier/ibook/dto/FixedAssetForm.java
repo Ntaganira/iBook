@@ -18,8 +18,8 @@ import java.time.LocalDate;
 public record FixedAssetForm(
         @Size(max = 200) String name,
         @Size(max = 1000) String description,
-        @Size(max = 120) String category,
-        @Size(max = 120) String location,
+        Long categoryId,
+        Long locationId,
         @Size(max = 120) String custodian,
         @Size(max = 80) String serialNumber,
         @Size(max = 80) String tagNumber,
@@ -45,6 +45,16 @@ public record FixedAssetForm(
                 LocalDate.now(), BigDecimal.ZERO, BigDecimal.ZERO, "STRAIGHT_LINE", 5,
                 BigDecimal.ZERO, LocalDate.now(), BigDecimal.ZERO, null, null, null, null,
                 Boolean.FALSE);
+    }
+
+    /** A blank asset except for the policy a category carries, ready to be filled in. */
+    public static FixedAssetForm fromCategory(Long categoryId, String method, int usefulLifeYears,
+                                              BigDecimal decliningRate, Long assetAccountId,
+                                              Long accumulatedAccountId, Long expenseAccountId) {
+        return new FixedAssetForm(null, null, categoryId, null, null, null, null, null, null,
+                LocalDate.now(), BigDecimal.ZERO, BigDecimal.ZERO, method,
+                Integer.valueOf(usefulLifeYears), decliningRate, LocalDate.now(), BigDecimal.ZERO,
+                assetAccountId, accumulatedAccountId, expenseAccountId, null, Boolean.FALSE);
     }
 
     public boolean activateNowValue() {

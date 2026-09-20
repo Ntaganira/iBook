@@ -132,7 +132,8 @@ public class AssetTransferController {
     public String newTransfer(@RequestParam(value = "asset", required = false) Long assetId,
                               Model model) {
         FixedAsset asset = assetId == null ? null : assetService.get(assetId);
-        model.addAttribute("form", new AssetTransferForm(assetId, LocalDate.now(), null, null,
+        model.addAttribute("form", new AssetTransferForm(assetId, LocalDate.now(),
+                asset == null ? null : asset.getLocationId(), null,
                 asset == null ? null : asset.getAssetAccountId(),
                 asset == null ? null : asset.getAccumulatedAccountId(),
                 null, null, null, Boolean.FALSE));

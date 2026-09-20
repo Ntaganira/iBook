@@ -17,7 +17,7 @@ import java.time.LocalDate;
 public record AssetTransferForm(
         Long assetId,
         LocalDate transferDate,
-        @Size(max = 120) String toLocation,
+        Long toLocationId,
         @Size(max = 120) String toCustodian,
         Long toAssetAccountId,
         Long toAccumulatedAccountId,
@@ -30,6 +30,10 @@ public record AssetTransferForm(
     public static AssetTransferForm empty() {
         return new AssetTransferForm(null, LocalDate.now(), null, null, null, null,
                 null, null, null, Boolean.FALSE);
+    }
+
+    public boolean movingLocation() {
+        return toLocationId != null;
     }
 
     public boolean completeNowValue() {

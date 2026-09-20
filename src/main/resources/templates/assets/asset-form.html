@@ -39,6 +39,15 @@
             </div>
         </div>
 
+        <div class="alert alert--info mb-4" th:if="${appliedCategory != null}">
+            <svg class="ebook-icon"><use href="#icon-info"/></svg>
+            <div class="alert-body">
+                <div class="alert-title" th:text="#{ast.categoryAppliedTitle(${appliedCategory.name})}">Filled in from Vehicles</div>
+                <span th:if="${appliedCategory.carryingPolicy}" th:text="#{ast.categoryAppliedHint}">The method, useful life and accounts below came from the category. Change any of them before saving — the asset keeps whatever is saved here, not whatever the category says later.</span>
+                <span th:unless="${appliedCategory.carryingPolicy}" th:text="#{ast.categoryEmptyHint}">This category carries no policy yet, so nothing was filled in. Set one at Asset Categories.</span>
+            </div>
+        </div>
+
         <div class="grid grid-12">
             <div class="col-span-12 d-flex flex-column gap-5">
 
@@ -54,17 +63,31 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="aCategory" th:text="#{ast.category}">Category</label>
-                                <input class="form-control" id="aCategory" name="category" type="text"
-                                       th:value="${form.category}" list="assetCategories"
-                                       th:placeholder="#{ast.categoryPlaceholder}">
-                                <datalist id="assetCategories">
-                                    <option th:each="c : ${categories}" th:value="${c}"></option>
-                                </datalist>
+                                <select class="form-control" id="aCategory" name="categoryId">
+                                    <option value="" th:text="#{ast.noCategory}">Not categorised</option>
+                                    <option th:each="c : ${assetCategories}" th:value="${c.id}"
+                                            th:text="${c.name}"
+                                            th:selected="${form.categoryId != null and form.categoryId == c.id}">Vehicles</option>
+                                </select>
+                                <div class="form-hint" th:if="${mode == 'create'}">
+                                    <a th:href="@{/assets/register/new(category=${form.categoryId})}"
+                                       th:text="#{ast.useCategoryDefaults}">Fill this form from the category's policy</a>
+                                </div>
+                                <div class="form-hint" th:unless="${mode == 'create'}" th:text="#{ast.categoryManage}">Manage the list at Asset Categories.</div>
+                                <div class="form-hint text-warning" th:if="${unlinkedCategory != null}"
+                                     th:text="#{ast.unlinkedCategoryHint(${unlinkedCategory})}">Still free text. It is kept until a category is picked.</div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="aLocation" th:text="#{ast.location}">Where it is</label>
-                                <input class="form-control" id="aLocation" name="location" type="text"
-                                       th:value="${form.location}">
+                                <select class="form-control" id="aLocation" name="locationId">
+                                    <option value="" th:text="#{ast.noLocation}">Not recorded</option>
+                                    <option th:each="l : ${assetLocations}" th:value="${l.id}"
+                                            th:text="${l.name}"
+                                            th:selected="${form.locationId != null and form.locationId == l.id}">Kigali yard</option>
+                                </select>
+                                <div class="form-hint" th:text="#{ast.locationManage}">Manage the list at Asset Locations.</div>
+                                <div class="form-hint text-warning" th:if="${unlinkedLocation != null}"
+                                     th:text="#{ast.unlinkedLocationHint(${unlinkedLocation})}">Still free text. It is kept until a location is picked.</div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="aCustodian" th:text="#{ast.custodian}">Held by</label>

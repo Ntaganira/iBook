@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ast.cat.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/assets/register}" th:text="#{ast.title}">Asset Register</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{ast.cat.title}">Asset Categories</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ast.cat.title}">Asset Categories</h1>
+            <p class="page-subtitle" th:text="#{ast.cat.subtitle}">Group assets, and settle once how each kind is written down and which accounts it uses.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/assets/locations}" th:text="#{ast.loc.title}">Asset Locations</a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${!#maps.isEmpty(unlinked)}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ast.cat.importTitle}">Category names typed on assets</div>
+            <span th:text="#{ast.cat.importHint(${#maps.size(unlinked)})}">3 names are typed on assets but are not categories yet.</span>
+            <div class="mt-2">
+                <span class="badge badge-muted mr-2" th:each="e : ${unlinked}"
+                      th:text="${e.key + ' (' + e.value + ')'}">Vehicles (2)</span>
+            </div>
+            <form class="mt-3" th:action="@{/assets/categories/import}" method="post">
+                <button class="btn btn-secondary btn-sm" type="submit">
+                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-download"/></svg>
+                    <span th:text="#{ast.cat.import}">Import them as categories</span>
+                </button>
+            </form>
+            <div class="form-hint mt-2" th:text="#{ast.cat.importPolicyHint}">An imported category carries no depreciation policy — nothing in free text says what the policy was. Set it afterwards.</div>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.cat.allTile}">Categories</div>
+            <div class="stat-tile-value" th:text="${summary.all}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{common.status.active}">Active</div>
+            <div class="stat-tile-value" th:text="${summary.active}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.cat.inUse}">Used by assets</div>
+            <div class="stat-tile-value" th:text="${summary.inUse}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ast.cat.unlinked}">Still free text</div>
+            <div class="stat-tile-value" th:classappend="${summary.unlinkedNames > 0} ? 'text-warning'"
+                 th:text="${summary.unlinkedNames}">0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <form class="table-toolbar" method="get" th:action="@{/assets/categories}">
+                    <div class="toolbar-search">
+                        <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                        <input type="text" name="q" th:value="${q}" th:placeholder="#{ast.cat.searchPlaceholder}">
+                    </div>
+                    <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+                    <a class="btn btn-ghost btn-sm" th:href="@{/assets/categories}" th:title="#{common.ariaRefresh}">
+                        <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+                    </a>
+                    <div class="toolbar-spacer"></div>
+                    <span class="text-sm text-muted" th:text="#{ast.cat.count(${#lists.size(categories)})}">0 categories</span>
+                </form>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{ast.cat.code}">Code</th>
+                                <th th:text="#{common.name}">Name</th>
+                                <th th:text="#{ast.method}">Method</th>
+                                <th th:text="#{ast.cat.accounts}">Accounts</th>
+                                <th class="num" th:text="#{ast.cat.assets}">Assets</th>
+                                <th th:text="#{common.status}">Status</th>
+                                <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="c : ${categories}" th:with="used=${counts.containsKey(c.id) ? counts.get(c.id) : 0}">
+                                <td class="mono" th:text="${c.code != null ? c.code : '—'}">—</td>
+                                <td>
+                                    <span th:text="${c.name}">Category</span>
+                                    <span class="cell-secondary" th:if="${c.description != null}" th:text="${c.description}"></span>
+                                </td>
+                                <td class="cell-secondary">
+                                    <span th:text="${methodLabels.get(c.depreciationMethod.name())}">Straight line</span>
+                                    <span class="cell-secondary" th:if="${c.usefulLifeYears > 0}"
+                                          th:text="#{ast.overYears(${c.usefulLifeYears})}">over 5 years</span>
+                                    <span class="cell-secondary" th:if="${c.decliningRate.signum() > 0}"
+                                          th:text="${#numbers.formatDecimal(c.decliningRate, 1, 2)} + '%'">25.00%</span>
+                                </td>
+                                <td class="mono cell-secondary">
+                                    <span th:text="${c.assetAccountCode != null ? c.assetAccountCode : '—'}">1501</span>
+                                    <span th:text="' / ' + ${c.accumulatedAccountCode != null ? c.accumulatedAccountCode : '—'}"> / 1509</span>
+                                    <span th:text="' / ' + ${c.expenseAccountCode != null ? c.expenseAccountCode : '—'}"> / 5006</span>
+                                </td>
+                                <td class="num">
+                                    <a class="cell-link" th:if="${used > 0}"
+                                       th:href="@{/assets/register(category=${c.name})}" th:text="${used}">0</a>
+                                    <span th:if="${used == 0}" th:text="${used}">0</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-active" th:if="${c.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
+                                    <span class="badge badge-muted" th:unless="${c.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
+                                </td>
+                                <td class="actions-cell">
+                                    <div class="row-actions dropdown">
+                                        <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" th:href="@{/assets/categories(edit=${c.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                            <a class="dropdown-item" th:if="${c.active}" th:href="@{/assets/register/new(category=${c.id})}"><svg class="ebook-icon"><use href="#icon-plus"/></svg><span th:text="#{ast.cat.newAsset}">New asset here</span></a>
+                                            <form th:action="@{/assets/categories/{id}/toggle(id=${c.id})}" method="post">
+                                                <button class="dropdown-item" type="submit">
+                                                    <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                                                    <span th:text="${c.active} ? #{ast.cat.deactivate} : #{ast.cat.activate}">Deactivate</span>
+                                                </button>
+                                            </form>
+                                            <form th:if="${used == 0}" th:action="@{/assets/categories/{id}/delete(id=${c.id})}" method="post">
+                                                <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(categories)}">
+                                <td class="table-empty" colspan="7">
+                                    <p class="text-secondary" th:text="#{ast.cat.none}">No asset categories yet.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-body">
+                    <div class="form-hint" th:text="#{ast.cat.deleteHint}">A category in use cannot be deleted. Deactivate it instead — assets already in it keep it, but it stops being offered on new ones.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 d-flex flex-column gap-5">
+            <div class="card">
+                <div class="card-header">
+                    <h3 th:text="${mode == 'edit'} ? #{ast.cat.edit} : #{ast.cat.new}">New category</h3>
+                    <a class="text-sm" th:if="${mode == 'edit'}" th:href="@{/assets/categories}" th:text="#{common.cancel}">Cancel</a>
+                </div>
+                <form method="post" novalidate th:object="${form}"
+                      th:action="${mode == 'edit'} ? @{/assets/categories/{id}(id=${editingId})} : @{/assets/categories}">
+                    <div class="alert alert--error m-3" th:if="${#fields.hasGlobalErrors()}">
+                        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                        <div class="alert-body">
+                            <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="cName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                            <input class="form-control" id="cName" name="name" type="text" th:value="${form.name}"
+                                   th:placeholder="#{ast.cat.namePlaceholder}" required>
+                            <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cCode" th:text="#{ast.cat.code}">Code</label>
+                            <input class="form-control" id="cCode" name="code" type="text" th:value="${form.code}"
+                                   th:placeholder="#{ast.cat.codeOptional}">
+                            <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cDesc" th:text="#{common.description}">Description</label>
+                            <input class="form-control" id="cDesc" name="description" type="text" th:value="${form.description}">
+                        </div>
+                    </div>
+                    <div class="card-header"><h3 th:text="#{ast.cat.policy}">What this kind of asset does by default</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="cMethod" th:text="#{ast.method}">Method</label>
+                            <select class="form-control" id="cMethod" name="depreciationMethod">
+                                <option th:each="e : ${methodLabels}" th:value="${e.key}" th:text="${e.value}"
+                                        th:selected="${form.depreciationMethod == e.key}">Straight line</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cLife" th:text="#{ast.usefulLife}">Useful life (years)</label>
+                            <input class="form-control" id="cLife" name="usefulLifeYears" type="number" min="0" step="1"
+                                   th:value="${form.usefulLifeYears}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cRate" th:text="#{ast.decliningRate}">Reducing balance rate %</label>
+                            <input class="form-control" id="cRate" name="decliningRate" type="number" min="0" step="0.01"
+                                   th:value="${form.decliningRate}">
+                            <div class="form-hint" th:text="#{ast.decliningRateHint}">Used by reducing balance only.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cAssetAcct" th:text="#{ast.assetAccount}">Asset sits in</label>
+                            <select class="form-control" id="cAssetAcct" name="assetAccountId">
+                                <option value="" th:text="#{ast.cat.accountNone}">Leave it to the register</option>
+                                <option th:each="a : ${assetAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}"
+                                        th:selected="${form.assetAccountId != null and form.assetAccountId == a.id}">1501</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cAccumAcct" th:text="#{ast.accumulatedAccount}">Accumulated depreciation</label>
+                            <select class="form-control" id="cAccumAcct" name="accumulatedAccountId">
+                                <option value="" th:text="#{ast.cat.accountNone}">Leave it to the register</option>
+                                <option th:each="a : ${assetAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}"
+                                        th:selected="${form.accumulatedAccountId != null and form.accumulatedAccountId == a.id}">1509</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cExpAcct" th:text="#{ast.expenseAccount}">Depreciation expense</label>
+                            <select class="form-control" id="cExpAcct" name="expenseAccountId">
+                                <option value="" th:text="#{ast.cat.accountNone}">Leave it to the register</option>
+                                <option th:each="a : ${expenseAccounts}" th:value="${a.id}"
+                                        th:text="${a.code + ' — ' + a.name}"
+                                        th:selected="${form.expenseAccountId != null and form.expenseAccountId == a.id}">5006</option>
+                            </select>
+                        </div>
+                        <div class="form-hint" th:text="#{ast.cat.policyHint}">Nothing here posts. A new asset picks these up when the category is chosen on the register, and they can be overridden on the asset itself.</div>
+                        <label class="switch mt-3">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{common.status.active}">Active</span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary w-full" type="submit"
+                                th:text="${mode == 'edit'} ? #{ast.cat.update} : #{ast.cat.add}">Add category</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

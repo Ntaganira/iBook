@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**71 / 115 mapped · 44 remaining**
+**73 / 115 mapped · 42 remaining**
 
 How to check progress yourself:
 
@@ -109,7 +109,7 @@ Reads tables that already exist. All seven done.
 - [ ] `/payroll/employees` · `/payroll/setup` · `/payroll/allowances` · `/payroll/deductions`
 - [ ] `/payroll/runs` · `/payroll/payslips` · `/payroll/remittances`
 
-### Fixed assets (6)
+### Fixed assets (6) — COMPLETE
 `FixedAsset`, `DepreciationEntry`. Depreciation posts to the GL — mirrors the invoice posting pattern.
 
 - [x] `/assets/register` — draft/in-service, straight-line and reducing-balance schedules, residual
@@ -118,9 +118,17 @@ Reads tables that already exist. All seven done.
       that bought the asset already put it in the books, so registering it again would double-count.
       The schedule and the "due but not yet posted" figure are worked out for `/assets/depreciation`
       to charge.
-- [ ] `/assets/categories` · `/assets/locations` — both free text on `FixedAsset` today; promote the
-      way brands were promoted
-  
+- [x] `/assets/categories` · `/assets/locations` — both promoted out of free text the way brands
+      were: `FixedAsset` gains `categoryId` and `locationId` beside the denormalised names, the
+      register form picks from lists instead of typing, and an explicit **import** folds the names
+      already typed on assets into real records. A category is more than a label — it carries a
+      **depreciation policy** (method, useful life, reducing-balance rate) and the three accounts,
+      which a new asset picks up through a visible *"fill this form from the category's policy"*
+      action rather than silently on save; the asset keeps whatever is saved on it, so changing the
+      category later never rewrites an asset. Locations carry site, address, city and who is
+      answerable, and show the net book value standing at each. Free text that has not been imported
+      is **preserved** rather than wiped when an asset is edited, since the picker cannot offer it.
+
 - [x] `/assets/depreciation` — prepare a run to a date, preview what each asset owes, post or void.
       Charges **Dr depreciation expense / Cr accumulated depreciation** in one entry per run, grouped
       by account pair rather than one entry per asset, with rounding drift on the last line. Each
@@ -286,6 +294,17 @@ Building these without the external piece produces a page that cannot work.
       `postedAccumulated` and into the ledger without a run to sum. The asset register and the ledger
       are right; only that one tile is short. Posting a disposal also has no fiscal-period check, the
       same gap as a depreciation run.
+- [ ] **A category policy is a snapshot, and asset locations are not warehouses.** Changing a
+      category's depreciation policy or accounts never touches assets already in it — the asset
+      keeps what was saved on it, which is the right default but means there is no "reapply to
+      existing assets" action, so a corrected policy has to be applied asset by asset. Free text
+      that was never imported is preserved on edit but cannot be cleared through the form, only
+      replaced by picking a real record. Renaming a category or location updates the assets
+      carrying it, but a completed **transfer keeps the old name** it recorded, so the transfer
+      history and the register can show different names for the same place — deliberate, since that
+      is what the place was called when the asset moved. `/assets/locations` and
+      `/inventory/warehouses` are separate lists: an asset location is not a stock location, and
+      nothing reconciles the two.
 - [ ] **An asset transfer is a single step, and nothing reconciles it to a physical count.** There is
       no in-transit state: completing applies the move at once, and the transfer date is free text
       with no fiscal-period check, so a reclassification can be posted into a closed period — the
@@ -406,7 +425,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 3,148 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 3,240 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

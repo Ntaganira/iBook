@@ -45,6 +45,8 @@ public class FixedAssetService {
     private final FixedAssetRepository assetRepository;
     private final AccountRepository accountRepository;
     private final VendorRepository vendorRepository;
+    private final AssetCategoryRepository assetCategoryRepository;
+    private final AssetLocationRepository assetLocationRepository;
     private final NumberingSequenceRepository numberingSequenceRepository;
     private final CompanyRepository companyRepository;
     private final AuditService auditService;
@@ -52,12 +54,16 @@ public class FixedAssetService {
     public FixedAssetService(FixedAssetRepository assetRepository,
                              AccountRepository accountRepository,
                              VendorRepository vendorRepository,
+                             AssetCategoryRepository assetCategoryRepository,
+                             AssetLocationRepository assetLocationRepository,
                              NumberingSequenceRepository numberingSequenceRepository,
                              CompanyRepository companyRepository,
                              AuditService auditService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.vendorRepository = vendorRepository;
+        this.assetCategoryRepository = assetCategoryRepository;
+        this.assetLocationRepository = assetLocationRepository;
         this.numberingSequenceRepository = numberingSequenceRepository;
         this.companyRepository = companyRepository;
         this.auditService = auditService;
@@ -245,8 +251,7 @@ public class FixedAssetService {
 
         asset.setName(form.name().trim());
         asset.setDescription(trimToNull(form.description()));
-        asset.setCategory(trimToNull(form.category()));
-        asset.setLocation(trimToNull(form.location()));
+        applyCategoryAndLocation(asset, form);
         asset.setCustodian(trimToNull(form.custodian()));
         asset.setSerialNumber(trimToNull(form.serialNumber()));
         asset.setTagNumber(trimToNull(form.tagNumber()));
@@ -279,6 +284,43 @@ public class FixedAssetService {
             saved = activate(saved.getId());
         }
         return saved;
+    }
+
+    /**
+     * Both keep a denormalised name beside the link, the way a product carries its brand: the
+     * register lists and the search read the name, and clearing the link clears the text with it so
+     * an unlinked leftover cannot linger.
+     */
+    private void applyCategoryAndLocation(FixedAsset asset, FixedAssetForm form) {
+        AssetCategory category = form.categoryId() == null ? null
+                : assetCategoryRepository.findById(form.categoryId()).orElse(null);
+        if (category != null) {
+            asset.setCategoryId(category.getId());
+            asset.setCategory(category.getName());
+        } else if (!hasUnlinkedText(asset.getCategoryId(), asset.getCategory())) {
+            asset.setCategoryId(null);
+            asset.setCategory(null);
+        }
+
+        AssetLocation location = form.locationId() == null ? null
+                : assetLocationRepository.findById(form.locationId()).orElse(null);
+        if (location != null) {
+            asset.setLocationId(location.getId());
+            asset.setLocation(location.getName());
+        } else if (!hasUnlinkedText(asset.getLocationId(), asset.getLocation())) {
+            asset.setLocationId(null);
+            asset.setLocation(null);
+        }
+    }
+
+    /**
+     * Free text that predates the lists. The picker cannot offer it, so it comes back empty on every
+     * edit — clearing on that would throw the name away from an asset nobody meant to touch. It goes
+     * only when a real category or location is picked, or when the import at /assets/categories and
+     * /assets/locations turns it into one.
+     */
+    private static boolean hasUnlinkedText(Long linkId, String name) {
+        return linkId == null && trimToNull(name) != null;
     }
 
     private void applyAccount(FixedAsset asset, FixedAssetForm form) {
