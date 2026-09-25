@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{psl.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/payroll/payslips}" th:text="#{psl.title}">Payslips</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${payslip.employeeName}">Name</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${payslip.employeeName}">Name</h1>
+            <p class="page-subtitle">
+                <span class="font-mono" th:text="${payslip.employeeNo}">EMP-0001</span>
+                <span th:if="${payslip.jobTitle != null}" th:text="' · ' + ${payslip.jobTitle}"></span>
+                <span th:if="${payslip.periodStart != null}"
+                      th:text="' · ' + ${#temporals.format(payslip.periodStart, 'dd MMM')} + ' – ' + ${#temporals.format(payslip.periodEnd, 'dd MMM yyyy')}"></span>
+            </p>
+            <span class="badge" th:if="${runStatus != null}"
+                  th:classappend="${runStatus == 'POSTED' ? 'badge-success' : (runStatus == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                <span class="badge-dot"></span>
+                <span th:text="${statusLabels.get(runStatus)}">Draft</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:if="${runId != null}" th:href="@{/payroll/runs/{id}(id=${runId})}">
+                <svg class="ebook-icon"><use href="#icon-calculator"/></svg>
+                <span th:text="${payslip.runNo}">PAY-0001</span>
+            </a>
+            <a class="btn btn-secondary" th:if="${payslip.employeeId != null}"
+               th:href="@{/payroll/employees/{id}(id=${payslip.employeeId})}" th:text="#{psl.theRecord}">Their record</a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${runStatus == 'DRAFT'}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{psl.draftTitle}">This payslip is part of a draft run</div>
+            <span th:text="#{psl.draftHint}">Nothing has been posted and nothing is owed to anybody yet. Recalculating the run throws this away and works it out again.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{psl.gross}">Gross pay</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(payslip.grossPay, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{psl.deductions}">Deductions</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(payslip.totalDeductions, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{psl.net}">Net pay</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(payslip.netPay, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{psl.netHint}">What reaches them.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{psl.employerCost}">Cost to the company</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(payslip.employerCost, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+    </div>
+
+    <div class="grid-2 mb-5">
+        <div class="card">
+            <div class="card-header"><h3 th:text="#{psl.earningsTitle}">What they earned</h3></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{emp.basic}">Basic pay</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.basicSalary, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" th:each="l : ${payslip.lines}" th:if="${l.allowance}">
+                    <span class="text-muted">
+                        <span th:text="${l.name}">Transport</span>
+                        <span class="cell-secondary" th:unless="${l.taxable}" th:text="#{pcm.notTaxable}">Not taxable</span>
+                    </span>
+                    <span class="money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <span class="font-semibold" th:text="#{psl.gross}">Gross pay</span>
+                    <span class="money font-bold" th:text="${#numbers.formatDecimal(payslip.grossPay, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{psl.deductionsTitle}">What came off</h3>
+                <span class="text-sm text-muted" th:text="#{psl.deductionsHint}">In the order they are worked out.</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.paye}">PAYE</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.paye, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" th:if="${payslip.pensionEmployee.signum() != 0}">
+                    <span class="text-muted" th:text="#{psl.pensionEmployee}">Pension</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.pensionEmployee, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" th:if="${payslip.maternityEmployee.signum() != 0}">
+                    <span class="text-muted" th:text="#{psl.maternityEmployee}">Maternity</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.maternityEmployee, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" th:if="${payslip.medicalEmployee.signum() != 0}">
+                    <span class="text-muted" th:text="#{psl.medicalEmployee}">Medical</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.medicalEmployee, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" th:each="l : ${payslip.lines}" th:unless="${l.allowance}">
+                    <span class="text-muted" th:text="${l.name}">Staff loan</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" th:if="${payslip.cbhi.signum() != 0}">
+                    <span class="text-muted" th:text="#{psl.cbhi}">CBHI</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.cbhi, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <span class="font-semibold" th:text="#{psl.net}">Net pay</span>
+                    <span class="money font-bold" th:text="${#numbers.formatDecimal(payslip.netPay, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2 mb-5">
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{psl.basesTitle}">What each figure was worked out on</h3>
+                <span class="text-sm text-muted" th:text="#{psl.basesHint}">Three different bases, deliberately.</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.taxable}">Taxable pay</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.taxablePay, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.contributory}">Contributory pay</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.contributoryPay, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="form-hint mt-3" th:text="#{psl.basesExplain}">Taxable pay is basic plus the taxable allowances, less the employee's own pension and medical where the settings say those come off first. Contributory pay is basic plus the pensionable allowances, capped at the ceiling. CBHI is worked out on net pay, after everything else — it is the last thing off, not a share of gross.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{psl.employerTitle}">What the company paid on top</h3>
+                <span class="text-sm text-muted" th:text="#{psl.employerHint}">Never taken off pay.</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.pensionEmployer}">Pension</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.pensionEmployer, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.maternityEmployer}">Maternity</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.maternityEmployer, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.occupationalHazard}">Occupational hazards</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.occupationalHazard, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{psl.medicalEmployer}">Medical</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(payslip.medicalEmployer, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <span class="font-semibold" th:text="#{psl.employerTotal}">Employer contributions</span>
+                    <span class="money font-bold" th:text="${#numbers.formatDecimal(payslip.employerContributions, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${rateNote != null}">
+        <div class="card-header">
+            <h3 th:text="#{psl.rateNoteTitle}">The rates behind these figures</h3>
+            <span class="text-sm text-muted" th:text="#{psl.rateNoteHint}">As they stood when the run was worked out.</span>
+        </div>
+        <div class="card-body">
+            <p class="font-mono text-sm" th:text="${rateNote}">Rates</p>
+            <div class="d-flex justify-content-between mt-3" th:if="${payslip.rssbNumber != null}">
+                <span class="text-muted" th:text="#{emp.rssbNumber}">RSSB number</span>
+                <span class="font-mono" th:text="${payslip.rssbNumber}">—</span>
+            </div>
+            <div class="d-flex justify-content-between mt-2" th:if="${payslip.tinNumber != null}">
+                <span class="text-muted" th:text="#{emp.tinNumber}">TIN</span>
+                <span class="font-mono" th:text="${payslip.tinNumber}">—</span>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

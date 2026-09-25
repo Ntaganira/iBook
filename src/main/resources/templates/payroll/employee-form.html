@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{emp.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/payroll/employees}" th:text="#{emp.title}">Employees</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{emp.form.editCrumb} : #{emp.form.breadcrumb}">New employee</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{emp.form.editTitle} : #{emp.form.title}">New Employee</h1>
+            <p class="page-subtitle" th:text="#{emp.form.subtitle}">How this person is paid, and which schemes they are in.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/payroll/employees}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="empForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="empForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/payroll/employees/{id}(id=${editingId})} : @{/payroll/employees}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{emp.personTitle}">Who they are</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="eFirst"><span th:text="#{emp.firstName}">First name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="eFirst" name="firstName" type="text" th:value="${form.firstName}" required>
+                        <div th:replace="~{layout/common :: fieldError('firstName')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eLast"><span th:text="#{emp.lastName}">Last name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="eLast" name="lastName" type="text" th:value="${form.lastName}" required>
+                        <div th:replace="~{layout/common :: fieldError('lastName')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eNid" th:text="#{emp.nationalId}">National ID</label>
+                        <input class="form-control" id="eNid" name="nationalId" type="text" th:value="${form.nationalId}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eRssb" th:text="#{emp.rssbNumber}">RSSB number</label>
+                        <input class="form-control" id="eRssb" name="rssbNumber" type="text" th:value="${form.rssbNumber}">
+                        <div class="form-hint" th:text="#{emp.rssbHint}">Contributions are credited against this. A remittance schedule without it cannot say who the money is for.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eTin" th:text="#{emp.tinNumber}">TIN</label>
+                        <input class="form-control" id="eTin" name="tinNumber" type="text" th:value="${form.tinNumber}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eEmail" th:text="#{common.email}">Email</label>
+                        <input class="form-control" id="eEmail" name="email" type="email" th:value="${form.email}">
+                        <div th:replace="~{layout/common :: fieldError('email')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="ePhone" th:text="#{common.phone}">Phone</label>
+                        <input class="form-control" id="ePhone" name="phone" type="text" th:value="${form.phone}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eStatus" th:text="#{common.status}">Status</label>
+                        <select class="form-control" id="eStatus" name="status">
+                            <option th:each="s : ${statusLabels}" th:value="${s.key}" th:text="${s.value}"
+                                    th:selected="${form.status == s.key}">Active</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{emp.jobTitle2}">The job</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="eJob" th:text="#{emp.jobTitleField}">Job title</label>
+                        <input class="form-control" id="eJob" name="jobTitle" type="text" th:value="${form.jobTitle}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eDept" th:text="#{emp.department}">Department</label>
+                        <input class="form-control" id="eDept" name="department" type="text" list="deptList" th:value="${form.department}">
+                        <datalist id="deptList">
+                            <option th:each="d : ${departments}" th:value="${d}"></option>
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eHire" th:text="#{emp.hireDate}">Joined</label>
+                        <input class="form-control" id="eHire" name="hireDate" type="date" th:value="${form.hireDate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eEnd" th:text="#{emp.endDate}">Left</label>
+                        <input class="form-control" id="eEnd" name="endDate" type="date" th:value="${form.endDate}">
+                        <div class="form-hint" th:text="#{emp.endDateHint}">A run skips anybody who left before the period started or joins after it ends.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eBasic" th:text="#{emp.basicMonthly}">Basic pay, monthly</label>
+                        <input class="form-control amount-control" id="eBasic" name="basicSalary" type="number" step="0.01" min="0"
+                               th:value="${form.basicSalary}">
+                        <div th:replace="~{layout/common :: fieldError('basicSalary')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eCur" th:text="#{common.currency}">Currency</label>
+                        <input class="form-control" id="eCur" name="currencyCode" type="text" maxlength="3" th:value="${form.currencyCode}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{emp.schemesTitle}">Schemes</h3>
+                <span class="text-sm text-muted" th:text="#{emp.schemesHint}">Only a member has contributions worked out for them, on either side.</span>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="switch">
+                            <input type="checkbox" name="pensionMember" value="true" th:checked="${form.pensionMember}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{emp.pensionMember}">In the pension scheme</span>
+                        </label>
+                        <div class="form-hint" th:text="#{emp.pensionMemberHint}">Occupational hazards follows pension membership — it is the same scheme.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="switch">
+                            <input type="checkbox" name="maternityMember" value="true" th:checked="${form.maternityMember}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{emp.maternityMember}">In the maternity scheme</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="switch">
+                            <input type="checkbox" name="medicalMember" value="true" th:checked="${form.medicalMember}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{emp.medicalMember}">In the medical scheme</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="switch">
+                            <input type="checkbox" name="cbhiMember" value="true" th:checked="${form.cbhiMember}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{emp.cbhiMember}">Pays CBHI</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{emp.paymentTitle}">How they are paid</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="eMethod" th:text="#{emp.paymentMethod}">Method</label>
+                        <select class="form-control" id="eMethod" name="paymentMethod">
+                            <option th:each="m : ${methodLabels}" th:value="${m.key}" th:text="${m.value}"
+                                    th:selected="${form.paymentMethod == m.key}">Bank</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eBank" th:text="#{emp.bankName}">Bank</label>
+                        <input class="form-control" id="eBank" name="bankName" type="text" th:value="${form.bankName}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eAcct" th:text="#{emp.bankAccount}">Account number</label>
+                        <input class="form-control" id="eAcct" name="bankAccount" type="text" th:value="${form.bankAccount}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eMomo" th:text="#{emp.mobileMoney}">Mobile money</label>
+                        <input class="form-control" id="eMomo" name="mobileMoney" type="text" th:value="${form.mobileMoney}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="eNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="eNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{emp.componentsTitle}">Allowances and deductions</h3>
+                <span class="text-sm text-muted" th:text="#{emp.componentsHint}">Tick what this person carries. Leave the amount empty to use the figure on the allowance itself.</span>
+            </div>
+            <div class="table-wrap" th:if="${!#lists.isEmpty(components)}">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{emp.carries}">Carries</th>
+                            <th th:text="#{common.name}">Name</th>
+                            <th th:text="#{pcm.kind}">Kind</th>
+                            <th th:text="#{pcm.treatment}">Treatment</th>
+                            <th class="num" th:text="#{emp.overrideAmount}">Amount for this person</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="c, st : ${components}">
+                            <td>
+                                <input type="hidden" name="allComponentIds" th:value="${c.id}">
+                                <label class="checkbox">
+                                    <input type="checkbox" name="componentIds" th:value="${c.id}"
+                                           th:checked="${form.carries(c.id)}">
+                                    <span class="checkbox-box"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <span th:text="${c.name}">Transport</span>
+                                <span class="cell-secondary font-mono" th:text="${c.code}">TRANS</span>
+                            </td>
+                            <td>
+                                <span class="badge" th:classappend="${c.allowance} ? 'badge-success' : 'badge-warning'"
+                                      th:text="${c.allowance} ? #{pcm.allowance} : #{pcm.deduction}">Allowance</span>
+                            </td>
+                            <td class="cell-secondary">
+                                <span th:if="${c.allowance and c.taxable}" class="badge badge-muted" th:text="#{pcm.taxable}">Taxable</span>
+                                <span th:if="${c.allowance and !c.taxable}" class="badge badge-muted" th:text="#{pcm.notTaxable}">Not taxable</span>
+                                <span th:if="${c.allowance and c.pensionable}" class="badge badge-muted" th:text="#{pcm.pensionable}">Pensionable</span>
+                            </td>
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0"
+                                       name="componentOverrides" th:value="${form.overrideFor(c.id)}"
+                                       th:placeholder="${#numbers.formatDecimal(c.amountFor(form.basicSalaryValue()), 1, 'COMMA', 2, 'POINT')}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body" th:if="${#lists.isEmpty(components)}">
+                <p class="text-secondary" th:text="#{emp.noComponents}">No allowances or deductions have been set up yet.</p>
+                <div class="mt-2">
+                    <a class="btn btn-secondary btn-sm" th:href="@{/payroll/allowances}" th:text="#{emp.toAllowances}">Allowances</a>
+                    <a class="btn btn-secondary btn-sm" th:href="@{/payroll/deductions}" th:text="#{emp.toDeductions}">Deductions</a>
+                </div>
+            </div>
+            <div class="card-body" th:if="${!#lists.isEmpty(components)}">
+                <div class="form-hint" th:text="#{emp.overrideHint}">An amount of zero is a real instruction — it suspends the allowance without taking it off the record. Only an empty box falls back to the standard figure.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rem.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/payroll/remittances}" th:text="#{rem.title}">Remittances</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${remittance.reference}">REM-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${authorityLabels.get(remittance.authority.name())}">PAYE</h1>
+            <p class="page-subtitle">
+                <span class="font-mono" th:text="${remittance.reference}">REM-0001</span>
+                <span th:text="' · ' + ${#temporals.format(remittance.periodStart, 'dd MMM yyyy')} + ' – ' + ${#temporals.format(remittance.periodEnd, 'dd MMM yyyy')}"></span>
+            </p>
+            <span class="badge" th:with="st=${remittance.status.name()}"
+                  th:classappend="${st == 'PAID' ? 'badge-success' : (st == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                <span class="badge-dot"></span>
+                <span th:text="${statusLabels.get(remittance.status.name())}">Draft</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:if="${remittance.editable}" th:href="@{/payroll/remittances/{id}/edit(id=${remittance.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{common.edit}">Edit</span>
+            </a>
+            <form th:if="${remittance.draft}" th:action="@{/payroll/remittances/{id}/pay(id=${remittance.id})}" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{rem.markPaid}">Record the payment</span>
+                </button>
+            </form>
+            <a class="btn btn-secondary" th:if="${journal != null}" th:href="@{/journals/{id}(id=${journal.id})}">
+                <svg class="ebook-icon"><use href="#icon-book-open"/></svg>
+                <span th:text="${journal.entryNo}">JE-00001</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${remittance.matchingExpected}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{rem.differenceTitle}">This differs from what the runs computed</div>
+            <span th:text="#{rem.differenceDetail(${#numbers.formatDecimal(remittance.expectedAmount, 1, 'COMMA', 2, 'POINT')}, ${#numbers.formatDecimal(remittance.difference, 1, 'COMMA', 2, 'POINT')})}">Expected against paid.</span>
+            <div class="form-hint mt-2" th:text="#{rem.differenceAllowed}">That is allowed and often right — a penalty, an adjustment, a correction to an earlier month. It is flagged rather than refused so the gap is visible.</div>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rem.amountPaid}">Paid</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(remittance.amount, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rem.expected}">What the runs say</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(remittance.expectedAmount, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{rem.expectedHint}">Posted runs in this period.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rem.difference}">Difference</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${remittance.matchingExpected} ? 'text-success' : 'text-warning'"
+                 th:text="${#numbers.formatDecimal(remittance.difference, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rem.paymentDate}">Paid on</div>
+            <div class="stat-tile-value" th:text="${#temporals.format(remittance.paymentDate, 'dd MMM yyyy')}">15 Feb</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header"><h3 th:text="#{rem.detailsTitle}">Details</h3></div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{rem.liabilityAccount}">Liability cleared</span>
+                <span>
+                    <span class="font-mono" th:text="${remittance.liabilityAccountCode}">2102</span>
+                    <span class="cell-secondary" th:text="${remittance.liabilityAccountName}">PAYE payable</span>
+                </span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{rem.paymentAccount}">Paid from</span>
+                <span>
+                    <span class="font-mono" th:text="${remittance.paymentAccountCode}">1101</span>
+                    <span class="cell-secondary" th:text="${remittance.paymentAccountName}">Bank</span>
+                </span>
+            </div>
+            <div class="d-flex justify-content-between mb-2" th:if="${remittance.declarationNo != null}">
+                <span class="text-muted" th:text="#{rem.declarationNo}">Declaration</span>
+                <span class="font-mono" th:text="${remittance.declarationNo}">—</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2" th:if="${remittance.notes != null}">
+                <span class="text-muted" th:text="#{prj.notes}">Notes</span>
+                <span th:text="${remittance.notes}">—</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${journal != null}">
+        <div class="card-header"><h3 th:text="#{rem.entryTitle}">What it posted</h3></div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.account}">Account</th>
+                        <th th:text="#{jc.memo}">Memo</th>
+                        <th class="num" th:text="#{jc.debit}">Debit</th>
+                        <th class="num" th:text="#{jc.credit}">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${journal.lines}">
+                        <td>
+                            <span class="font-mono" th:text="${l.accountCode}">2102</span>
+                            <span class="cell-secondary" th:text="${l.accountName}">PAYE payable</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${l.memo}">Memo</td>
+                        <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:unless="${remittance.voided}">
+        <div class="card-header"><h3 th:text="#{rem.voidTitle}">Void this remittance</h3></div>
+        <form method="post" th:action="@{/payroll/remittances/{id}/void(id=${remittance.id})}" th:if="${remittance.paid}">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="vReason" th:text="#{pry.voidReason}">Why</label>
+                    <input class="form-control" id="vReason" name="reason" type="text">
+                    <div class="form-hint" th:text="#{rem.voidHint}">Voiding writes a reversing entry dated today, which puts the liability back. The original entry is untouched.</div>
+                </div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pry.void}">Void it</span>
+                </button>
+            </div>
+        </form>
+        <form method="post" th:action="@{/payroll/remittances/{id}/delete(id=${remittance.id})}" th:if="${remittance.draft}">
+            <div class="card-body">
+                <div class="form-hint mb-3" th:text="#{rem.deleteHint}">A draft has reached nothing, so deleting it leaves no trace.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>

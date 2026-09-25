@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rem.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/payroll/remittances}" th:text="#{rem.title}">Remittances</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{rem.form.editCrumb} : #{rem.form.breadcrumb}">New payment</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{rem.form.editTitle} : #{rem.form.title}">Record a Remittance</h1>
+            <p class="page-subtitle" th:text="#{rem.form.subtitle}">Debits the liability and credits the account the money left.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/payroll/remittances}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="remForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{rem.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="remForm" name="payNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{rem.saveAndPay}">Save and record the payment</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="remForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/payroll/remittances/{id}(id=${editingId})} : @{/payroll/remittances}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{rem.detailsTitle}">What is being paid</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="rAuth" th:text="#{rem.authority}">Owed to</label>
+                        <select class="form-control" id="rAuth" name="authority">
+                            <option th:each="a : ${authorityLabels}" th:value="${a.key}" th:text="${a.value}"
+                                    th:selected="${form.authority == a.key}">PAYE</option>
+                        </select>
+                        <div class="form-hint" th:text="#{rem.authorityHint}">Which liability account is cleared follows from this, and comes from Payroll setup.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rAmount" th:text="#{common.amount}">Amount</label>
+                        <input class="form-control amount-control" id="rAmount" name="amount" type="number" step="0.01" min="0"
+                               th:value="${form.amount}">
+                        <div class="form-hint" th:text="#{rem.amountHint}">Prefilled with what the posted runs say is owed, and editable — what was actually declared and paid is what belongs here.</div>
+                        <div th:replace="~{layout/common :: fieldError('amount')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rPeriodStart"><span th:text="#{pry.periodStart}">Period starts</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rPeriodStart" name="periodStart" type="date" th:value="${form.periodStart}" required>
+                        <div th:replace="~{layout/common :: fieldError('periodStart')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rPeriodEnd"><span th:text="#{pry.periodEnd}">Period ends</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rPeriodEnd" name="periodEnd" type="date" th:value="${form.periodEnd}" required>
+                        <div class="form-hint" th:text="#{rem.periodHint}">Which weeks of payroll this covers — not when it was paid.</div>
+                        <div th:replace="~{layout/common :: fieldError('periodEnd')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rPayDate"><span th:text="#{rem.paymentDate}">Paid on</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rPayDate" name="paymentDate" type="date" th:value="${form.paymentDate}" required>
+                        <div class="form-hint" th:text="#{rem.paymentDateHint}">The date the entry carries.</div>
+                        <div th:replace="~{layout/common :: fieldError('paymentDate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rAccount"><span th:text="#{rem.paymentAccount}">Paid from</span> <span class="required">*</span></label>
+                        <select class="form-control" id="rAccount" name="paymentAccountId" required>
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${paymentAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.paymentAccountId != null and form.paymentAccountId == a.id}">1101</option>
+                        </select>
+                        <div class="form-hint" th:text="#{rem.paymentAccountHint}">Cash and bank accounts only.</div>
+                        <div th:replace="~{layout/common :: fieldError('paymentAccountId')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rDecl" th:text="#{rem.declarationNo}">Declaration or receipt number</label>
+                        <input class="form-control" id="rDecl" name="declarationNo" type="text" th:value="${form.declarationNo}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="rNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

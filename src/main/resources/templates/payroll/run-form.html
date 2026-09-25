@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pry.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/payroll/runs}" th:text="#{pry.title}">Payroll runs</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{pry.form.editCrumb} : #{pry.form.breadcrumb}">New run</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{pry.form.editTitle} : #{pry.form.title}">New Payroll Run</h1>
+            <p class="page-subtitle" th:text="#{pry.form.subtitle}">Work out a period of payroll. Nothing reaches the ledger until it is posted.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/payroll/runs}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="pryForm">
+                <svg class="ebook-icon"><use href="#icon-calculator"/></svg>
+                <span th:text="#{pry.calculate}">Work it out</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${ratesConfirmed}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pry.gateTitle}">No run can post yet</div>
+            <span th:text="#{pry.gateHint}">The rates have not been confirmed.</span>
+            <div class="mt-2">
+                <a class="btn btn-primary btn-sm" th:href="@{/payroll/setup}" th:text="#{pry.toSetup}">Payroll setup</a>
+            </div>
+        </div>
+    </div>
+
+    <form id="pryForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/payroll/runs/{id}(id=${editingId})} : @{/payroll/runs}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{pry.periodTitle}">Which weeks, and when they are paid</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rName" th:text="#{common.name}">Name</label>
+                        <input class="form-control" id="rName" name="name" type="text" th:value="${form.name}"
+                               th:placeholder="#{pry.namePlaceholder}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rStart"><span th:text="#{pry.periodStart}">Period starts</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rStart" name="periodStart" type="date" th:value="${form.periodStart}" required>
+                        <div th:replace="~{layout/common :: fieldError('periodStart')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rEnd"><span th:text="#{pry.periodEnd}">Period ends</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rEnd" name="periodEnd" type="date" th:value="${form.periodEnd}" required>
+                        <div th:replace="~{layout/common :: fieldError('periodEnd')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rPay"><span th:text="#{pry.payDate}">Pay date</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rPay" name="payDate" type="date" th:value="${form.payDate}" required>
+                        <div class="form-hint" th:text="#{pry.payDateHint}">The date the journal entry carries.</div>
+                        <div th:replace="~{layout/common :: fieldError('payDate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rDept" th:text="#{emp.department}">Department</label>
+                        <select class="form-control" id="rDept" name="department">
+                            <option value="" th:text="#{pry.allDepartments}">Everybody</option>
+                            <option th:each="d : ${departments}" th:value="${d}" th:text="${d}"
+                                    th:selected="${form.department == d}">Finance</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="rNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{pry.peopleTitle}">Who is on it</h3>
+                <span class="text-sm text-muted" th:text="#{pry.peopleHint}">Tick nobody and the run covers everybody payable for the period.</span>
+            </div>
+            <div class="table-wrap" th:if="${!#lists.isEmpty(people)}">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{pry.include}">Include</th>
+                            <th th:text="#{emp.number}">Number</th>
+                            <th th:text="#{common.name}">Name</th>
+                            <th th:text="#{emp.department}">Department</th>
+                            <th class="num" th:text="#{emp.basic}">Basic</th>
+                            <th th:text="#{common.status}">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${people}">
+                            <td>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="employeeIds" th:value="${p.id}"
+                                           th:checked="${form.employeeIdsValue().contains(p.id)}">
+                                    <span class="checkbox-box"></span>
+                                </label>
+                            </td>
+                            <td><span class="font-mono" th:text="${p.employeeNo}">EMP-0001</span></td>
+                            <td>
+                                <span th:text="${p.fullName}">Name</span>
+                                <span class="cell-secondary" th:if="${p.jobTitle != null}" th:text="${p.jobTitle}"></span>
+                            </td>
+                            <td class="cell-secondary" th:text="${p.department != null} ? ${p.department} : '—'">—</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(p.basicSalary, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td>
+                                <span class="badge" th:classappend="${p.active} ? 'badge-active' : 'badge-warning'">
+                                    <span class="badge-dot"></span>
+                                    <span th:text="${p.status.name()}">ACTIVE</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body" th:if="${#lists.isEmpty(people)}">
+                <p class="text-secondary" th:text="#{pry.noPeople}">Nobody is on the register yet.</p>
+                <div class="mt-2">
+                    <a class="btn btn-primary btn-sm" th:href="@{/payroll/employees/new}" th:text="#{emp.new}">New employee</a>
+                </div>
+            </div>
+            <div class="card-body" th:if="${!#lists.isEmpty(people)}">
+                <div class="form-hint" th:text="#{pry.namedHint}">Naming people is for the off-cycle case — one late starter, a single correction. A run covering everybody is refused if another run already covers the same weeks, because that would pay them twice; a named run is not, so use this deliberately.</div>
+                <div class="form-hint mt-2" th:text="#{pry.skipHint}">Anybody who left before the period started, joins after it ends, or is suspended is skipped even if ticked.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

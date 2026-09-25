@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pcm.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{${basePathForKind}}" th:text="${isDeduction} ? #{pcm.deductionsTitle} : #{pcm.allowancesTitle}">Allowances</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{pcm.form.editCrumb} : #{pcm.form.breadcrumb}">New</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{pcm.form.editTitle} : (${isDeduction} ? #{pcm.newDeduction} : #{pcm.newAllowance})">New allowance</h1>
+            <p class="page-subtitle" th:text="${isDeduction} ? #{pcm.deductionFormSubtitle} : #{pcm.allowanceFormSubtitle}">Something added to pay every period.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{${basePathForKind}}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="pcmForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${mode == 'edit' and usageCount != null and usageCount > 0}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pcm.inUseTitle}">People are carrying this</div>
+            <span th:text="#{pcm.inUseHint(${usageCount})}">Changing it changes their pay from the next run on.</span>
+        </div>
+    </div>
+
+    <form id="pcmForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/payroll/components/{id}(id=${editingId})} : @{/payroll/components}">
+        <input type="hidden" name="kind" th:value="${kind}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{pcm.detailsTitle}">What it is</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="cCode"><span th:text="#{pcm.code}">Code</span> <span class="required">*</span></label>
+                        <input class="form-control" id="cCode" name="code" type="text" th:value="${form.code}" required>
+                        <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="cName" name="name" type="text" th:value="${form.name}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cCalc" th:text="#{pcm.calculation}">Worked out as</label>
+                        <select class="form-control" id="cCalc" name="calculation">
+                            <option th:each="c : ${calculationLabels}" th:value="${c.key}" th:text="${c.value}"
+                                    th:selected="${form.calculation == c.key}">Fixed amount</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cAmount" th:text="#{pcm.amount}">Fixed amount</label>
+                        <input class="form-control amount-control" id="cAmount" name="amount" type="number" step="0.01" min="0"
+                               th:value="${form.amount}">
+                        <div th:replace="~{layout/common :: fieldError('amount')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cPercent" th:text="#{pcm.percent}">Percentage of basic pay</label>
+                        <input class="form-control amount-control" id="cPercent" name="percent" type="number" step="0.01" min="0"
+                               th:value="${form.percent}">
+                        <div class="form-hint" th:text="#{pcm.percentHint}">Only one of the two is used — whichever the method above says.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cSort" th:text="#{pcm.sortOrder}">Order on a payslip</label>
+                        <input class="form-control" id="cSort" name="sortOrder" type="number" step="1" th:value="${form.sortOrder}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="cAccount"><span th:text="#{common.account}">Account</span> <span class="required">*</span></label>
+                        <select class="form-control" id="cAccount" name="accountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.accountId != null and form.accountId == a.id}">5004</option>
+                        </select>
+                        <div class="form-hint" th:text="${isDeduction} ? #{pcm.deductionAccountHint} : #{pcm.allowanceAccountHint}">Where it goes in the ledger.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="cDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="cDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5" th:unless="${isDeduction}">
+            <div class="card-header">
+                <h3 th:text="#{pcm.treatmentTitle}">How it is treated</h3>
+                <span class="text-sm text-muted" th:text="#{pcm.treatmentHint}">Both of these decide real money. Neither is inferred from the name.</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="switch">
+                        <input type="checkbox" name="taxable" value="true" th:checked="${form.taxable}">
+                        <span class="switch-track"></span>
+                        <span class="switch-label" th:text="#{pcm.taxableLabel}">Counts towards taxable pay</span>
+                    </label>
+                    <div class="form-hint" th:text="#{pcm.taxableFieldHint}">Off means PAYE is worked out as though this allowance were not there. Some allowances are exempt only up to a limit — this switch is all or nothing, so an allowance that is partly exempt has to be split into two.</div>
+                </div>
+                <div class="form-group mt-4">
+                    <label class="switch">
+                        <input type="checkbox" name="pensionable" value="true" th:checked="${form.pensionable}">
+                        <span class="switch-track"></span>
+                        <span class="switch-label" th:text="#{pcm.pensionableLabel}">Counts towards contributions</span>
+                    </label>
+                    <div class="form-hint" th:text="#{pcm.pensionableFieldHint}">Pension, maternity, occupational hazards and medical are all worked out on the same base. An allowance one scheme counts and another does not cannot be told apart here — turn it off and add it back another way if that matters.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <label class="switch">
+                    <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                    <span class="switch-track"></span>
+                    <span class="switch-label" th:text="#{pcm.activeLabel}">In use</span>
+                </label>
+                <div class="form-hint" th:text="#{pcm.activeHint}">Retiring it stops it being offered on new records and stops it being worked out on a run. It stays on the people already carrying it, and on every payslip it has already appeared on.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

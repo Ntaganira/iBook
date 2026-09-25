@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rem.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{rem.title}">Remittances</h1>
+            <p class="page-subtitle" th:text="#{rem.subtitle}">Money taken off pay, handed over to whoever it belongs to.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/payroll/payslips}" th:text="#{psl.title}">Payslips</a>
+            <a class="btn btn-primary" th:href="@{/payroll/remittances/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{rem.new}">Record a payment</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{rem.ledgerTitle}">Posting payroll only recognises the debt</div>
+            <span th:text="#{rem.ledgerHint}">PAYE, RSSB and CBHI sit on the balance sheet as liabilities until somebody actually pays them — which is right, because it is other people's money being held. Recording a payment here debits the liability and credits the bank, and that is the entry that clears it. Without it the balance sheet goes on carrying deductions that left the building months ago.</span>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{rem.positionTitle}">What is owed for a period</h3>
+            <span class="text-sm text-muted" th:text="#{rem.positionHint}">Read from posted runs only.</span>
+        </div>
+        <form class="table-toolbar" method="get" th:action="@{/payroll/remittances}">
+            <input type="hidden" name="authority" th:value="${authority}">
+            <input type="hidden" name="status" th:value="${status}">
+            <label class="form-label" for="rFrom" th:text="#{common.from}">From</label>
+            <input class="form-control" id="rFrom" type="date" name="from" th:value="${from}">
+            <label class="form-label" for="rTo" th:text="#{common.to}">To</label>
+            <input class="form-control" id="rTo" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+        </form>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{rem.authority}">Owed to</th>
+                        <th class="num" th:text="#{rem.owed}">Owed</th>
+                        <th class="num" th:text="#{rem.alreadyPaid}">Already paid</th>
+                        <th class="num" th:text="#{rem.outstanding}">Still owing</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${positions}">
+                        <td th:text="${authorityLabels.get(p.authority.name())}">PAYE</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.owed, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.paid, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money font-bold"
+                            th:classappend="${p.outstanding.signum() > 0} ? 'text-error' : 'text-success'"
+                            th:text="${#numbers.formatDecimal(p.outstanding, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="actions-cell">
+                            <a class="btn btn-secondary btn-sm" th:if="${p.outstanding.signum() > 0}"
+                               th:href="@{/payroll/remittances/new(authority=${p.authority.name()}, from=${from}, to=${to})}"
+                               th:text="#{rem.payThis}">Pay it</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{rem.differenceHint}">A payment is not forced to equal what the runs computed. A declaration can be filed for a different figure — a penalty, an adjustment, a correction to an earlier month — and a screen that refused to record what was really paid would push the books further from the truth. The difference is shown on each payment instead.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 th:text="#{rem.listTitle}">Payments recorded</h3></div>
+        <form class="table-toolbar" method="get" th:action="@{/payroll/remittances}">
+            <input type="hidden" name="from" th:value="${from}">
+            <input type="hidden" name="to" th:value="${to}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{rem.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="authority">
+                <option value="" th:text="#{rem.allAuthorities}">All</option>
+                <option th:each="a : ${authorityLabels}" th:value="${a.key}" th:text="${a.value}"
+                        th:selected="${authority == a.key}">PAYE</option>
+            </select>
+            <select class="form-control" name="status">
+                <option value="" th:text="#{prj.all}">All</option>
+                <option th:each="s : ${statusLabels}" th:value="${s.key}" th:text="${s.value}"
+                        th:selected="${status == s.key}">Paid</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(remittances.content)}, ${remittances.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'reference', #{common.reference}, ${sort}, ${dir})}">Reference</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'authority', #{rem.authority}, ${sort}, ${dir})}">Owed to</th>
+                        <th th:text="#{pry.period}">Period</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'paymentDate', #{rem.paymentDate}, ${sort}, ${dir})}">Paid on</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'amount', #{common.amount}, ${sort}, ${dir})}">Amount</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${remittances.content}">
+                        <td>
+                            <a class="cell-link font-mono" th:href="@{/payroll/remittances/{id}(id=${r.id})}" th:text="${r.reference}">REM-0001</a>
+                            <span class="cell-secondary" th:if="${r.declarationNo != null}" th:text="${r.declarationNo}"></span>
+                        </td>
+                        <td th:text="${authorityLabels.get(r.authority.name())}">PAYE</td>
+                        <td class="cell-secondary"
+                            th:text="${#temporals.format(r.periodStart, 'dd MMM')} + ' – ' + ${#temporals.format(r.periodEnd, 'dd MMM yyyy')}">01 – 31 Jan</td>
+                        <td th:text="${#temporals.format(r.paymentDate, 'dd MMM yyyy')}">15 Feb</td>
+                        <td class="num money">
+                            <span th:text="${#numbers.formatDecimal(r.amount, 1, 'COMMA', 2, 'POINT')}">0</span>
+                            <span class="cell-secondary text-warning" th:unless="${r.matchingExpected}"
+                                  th:text="#{rem.differs(${#numbers.formatDecimal(r.difference, 1, 'COMMA', 2, 'POINT')})}">Differs</span>
+                        </td>
+                        <td th:with="st=${r.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'PAID' ? 'badge-success' : (st == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/payroll/remittances/{id}(id=${r.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:if="${r.editable}" th:href="@{/payroll/remittances/{id}/edit(id=${r.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:if="${r.draft}" th:action="@{/payroll/remittances/{id}/pay(id=${r.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{rem.markPaid}">Record the payment</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(remittances.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-send"/></svg></div>
+                                <p class="text-secondary" th:text="#{rem.none}">Nothing has been remitted yet.</p>
+                                <p class="form-hint mt-2" th:text="#{rem.noneHint}">Post a payroll run first — until then nothing is owed to anybody.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${remittances.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(remittances.content)}, ${remittances.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${remittances.number + 1}, ${remittances.totalPages}, ${basePath + filterQuery + '&amp;sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{emp.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{emp.title}">Employees</h1>
+            <p class="page-subtitle" th:text="#{emp.subtitle}">Everybody on the payroll, and how each of them is paid.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/payroll/setup}" th:text="#{emp.toSetup}">Payroll setup</a>
+            <a class="btn btn-primary" th:href="@{/payroll/employees/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{emp.new}">New employee</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{emp.ledgerTitle}">A standing instruction, not a transaction</div>
+            <span th:text="#{emp.ledgerHint}">Nothing on this page posts. An employee record says how somebody is to be paid; a raise changes what the next run computes and moves no figure already in the ledger. Scheme membership is held per person rather than assumed, because contributing for somebody who is not a member sends money to a fund that will not credit it.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{emp.status.active}">Active</div>
+            <div class="stat-tile-value" th:text="${summary.active}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{emp.basicTotal}">Basic pay, monthly</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.activeBasicTotal, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{emp.basicTotalHint}">Active people only, before allowances.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{emp.status.on_leave}">On leave</div>
+            <div class="stat-tile-value" th:text="${summary.onLeave}">0</div>
+            <div class="cell-secondary" th:text="#{emp.onLeaveHint}">Still paid unless suspended.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{emp.endingSoon}">Contracts ending</div>
+            <div class="stat-tile-value" th:text="${summary.endingSoon}">0</div>
+            <div class="cell-secondary" th:text="#{emp.endingSoonHint}">Within thirty days.</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/payroll/employees}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{prj.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/payroll/employees(status='ACTIVE')}" th:classappend="${status == 'ACTIVE'} ? 'active'">
+            <span th:text="#{emp.status.active}">Active</span> <span class="tab-count" th:text="${summary.active}">0</span>
+        </a>
+        <a class="tab" th:href="@{/payroll/employees(status='ON_LEAVE')}" th:classappend="${status == 'ON_LEAVE'} ? 'active'">
+            <span th:text="#{emp.status.on_leave}">On leave</span> <span class="tab-count" th:text="${summary.onLeave}">0</span>
+        </a>
+        <a class="tab" th:href="@{/payroll/employees(status='SUSPENDED')}" th:classappend="${status == 'SUSPENDED'} ? 'active'">
+            <span th:text="#{emp.status.suspended}">Suspended</span> <span class="tab-count" th:text="${summary.suspended}">0</span>
+        </a>
+        <a class="tab" th:href="@{/payroll/employees(status='TERMINATED')}" th:classappend="${status == 'TERMINATED'} ? 'active'">
+            <span th:text="#{emp.status.terminated}">Left</span> <span class="tab-count" th:text="${summary.terminated}">0</span>
+        </a>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/payroll/employees}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{emp.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="department">
+                <option value="" th:text="#{emp.allDepartments}">Every department</option>
+                <option th:each="d : ${departments}" th:value="${d}" th:text="${d}"
+                        th:selected="${department == d}">Finance</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(employees.content)}, ${employees.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'employeeNo', #{emp.number}, ${sort}, ${dir})}">Number</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'lastName', #{common.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'department', #{emp.department}, ${sort}, ${dir})}">Department</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'basicSalary', #{emp.basic}, ${sort}, ${dir})}">Basic</th>
+                        <th th:text="#{emp.schemes}">Schemes</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${employees.content}">
+                        <td><a class="cell-link font-mono" th:href="@{/payroll/employees/{id}(id=${e.id})}" th:text="${e.employeeNo}">EMP-0001</a></td>
+                        <td>
+                            <a class="cell-link" th:href="@{/payroll/employees/{id}(id=${e.id})}" th:text="${e.fullName}">Name</a>
+                            <span class="cell-secondary" th:if="${e.jobTitle != null}" th:text="${e.jobTitle}">Role</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${e.department != null} ? ${e.department} : '—'">Finance</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(e.basicSalary, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td>
+                            <span class="badge badge-muted" th:if="${e.pensionMember}" th:text="#{emp.schemePension}">Pension</span>
+                            <span class="badge badge-muted" th:if="${e.medicalMember}" th:text="#{emp.schemeMedical}">Medical</span>
+                            <span class="badge badge-muted" th:if="${e.cbhiMember}" th:text="#{emp.schemeCbhi}">CBHI</span>
+                        </td>
+                        <td th:with="st=${e.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'ACTIVE' ? 'badge-active' : (st == 'TERMINATED' ? 'badge-void' : (st == 'SUSPENDED' ? 'badge-error' : 'badge-warning'))}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Active</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/payroll/employees/{id}(id=${e.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/payroll/employees/{id}/edit(id=${e.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(employees.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-users"/></svg></div>
+                                <p class="text-secondary" th:text="#{emp.none}">Nobody on the payroll yet.</p>
+                                <p class="form-hint mt-2" th:text="#{emp.noneHint}">Add people here, then set up the allowances and deductions they carry before the first run.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/payroll/employees/new}" th:text="#{emp.new}">New employee</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${employees.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(employees.content)}, ${employees.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${employees.number + 1}, ${employees.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

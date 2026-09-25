@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pry.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/payroll/runs}" th:text="#{pry.title}">Payroll runs</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${run.runNo}">PAY-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${run.name != null} ? ${run.name} : ${run.runNo}">PAY-0001</h1>
+            <p class="page-subtitle">
+                <span class="font-mono" th:text="${run.runNo}">PAY-0001</span>
+                <span th:text="' · ' + ${#temporals.format(run.periodStart, 'dd MMM yyyy')} + ' – ' + ${#temporals.format(run.periodEnd, 'dd MMM yyyy')}"></span>
+            </p>
+            <span class="badge" th:with="st=${run.status.name()}"
+                  th:classappend="${st == 'POSTED' ? 'badge-success' : (st == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                <span class="badge-dot"></span>
+                <span th:text="${statusLabels.get(run.status.name())}">Draft</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:if="${run.editable}" th:href="@{/payroll/runs/{id}/edit(id=${run.id})}">
+                <svg class="ebook-icon"><use href="#icon-refresh"/></svg>
+                <span th:text="#{pry.recalculate}">Recalculate</span>
+            </a>
+            <form th:if="${run.draft}" th:action="@{/payroll/runs/{id}/post(id=${run.id})}" method="post">
+                <button class="btn btn-primary" type="submit" th:disabled="${!ratesConfirmed}">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{pry.post}">Post it</span>
+                </button>
+            </form>
+            <a class="btn btn-secondary" th:if="${journal != null}" th:href="@{/journals/{id}(id=${journal.id})}">
+                <svg class="ebook-icon"><use href="#icon-book-open"/></svg>
+                <span th:text="${journal.entryNo}">JE-00001</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${run.draft and !ratesConfirmed}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pry.gateTitle}">This run cannot post</div>
+            <span th:text="#{pry.gateHint}">The rates have not been confirmed.</span>
+            <div class="mt-2">
+                <a class="btn btn-primary btn-sm" th:href="@{/payroll/setup}" th:text="#{pry.toSetup}">Payroll setup</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${run.rateNote != null}">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pry.rateNoteTitle}">Worked out with these rates</div>
+            <span class="font-mono text-sm" th:text="${run.rateNote}">Rates</span>
+            <div class="form-hint mt-2" th:text="#{pry.rateNoteHint}">Written down when the run was calculated, so it still explains itself after the rates change.</div>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{psl.gross}">Gross pay</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{pry.peopleCount(${run.employeeCount})}">0 people</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pry.statutory}">Deducted and contributed</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(run.totalStatutory, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{pry.statutoryHint}">Owed to the RRA, RSSB and the CBHI fund.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{psl.net}">Net pay</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(run.totalNetPay, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{pry.netHint}">What actually reaches people.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pry.employerCost}">Cost to the company</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(run.totalEmployerCost, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{pry.employerCostHint}">Gross pay plus the contributions paid on top.</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{pry.breakdownTitle}">Where the money goes</h3>
+            <span class="text-sm text-muted" th:text="#{pry.breakdownHint}">Gross pay less what comes off it is net pay; the employer side is a cost on top.</span>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{pry.basicPay}">Basic pay</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalBasic, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.allowances}">Allowances</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalAllowances, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="font-semibold" th:text="#{psl.gross}">Gross pay</span>
+                <span class="money font-bold" th:text="${#numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.paye}">PAYE</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalPaye, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.pensionEmployee}">Pension — employee</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalPensionEmployee, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.maternityEmployee}">Maternity — employee</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalMaternityEmployee, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.medicalEmployee}">Medical — employee</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalMedicalEmployee, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.cbhi}">CBHI</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalCbhi, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="text-muted" th:text="#{psl.otherDeductions}">Other deductions</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalOtherDeductions, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-4">
+                <span class="font-semibold" th:text="#{psl.net}">Net pay</span>
+                <span class="money font-bold" th:text="${#numbers.formatDecimal(run.totalNetPay, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.pensionEmployer}">Pension — employer</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalPensionEmployer, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.maternityEmployer}">Maternity — employer</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalMaternityEmployer, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" th:text="#{psl.occupationalHazard}">Occupational hazards</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalOccupationalHazard, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="text-muted" th:text="#{psl.medicalEmployer}">Medical — employer</span>
+                <span class="money" th:text="${#numbers.formatDecimal(run.totalMedicalEmployer, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="font-semibold" th:text="#{pry.employerCost}">Cost to the company</span>
+                <span class="money font-bold" th:text="${#numbers.formatDecimal(run.totalEmployerCost, 1, 'COMMA', 2, 'POINT')}">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{pry.payslipsTitle}">Payslips on this run</h3>
+            <span class="text-sm text-muted" th:text="#{pry.payslipsHint}">Frozen once the run posts.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.name}">Name</th>
+                        <th class="num" th:text="#{emp.basic}">Basic</th>
+                        <th class="num" th:text="#{psl.allowances}">Allowances</th>
+                        <th class="num" th:text="#{psl.gross}">Gross</th>
+                        <th class="num" th:text="#{psl.taxable}">Taxable</th>
+                        <th class="num" th:text="#{psl.paye}">PAYE</th>
+                        <th class="num" th:text="#{psl.deductions}">Deductions</th>
+                        <th class="num" th:text="#{psl.net}">Net</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${payslips}">
+                        <td>
+                            <a class="cell-link" th:href="@{/payroll/payslips/{id}(id=${p.id})}" th:text="${p.employeeName}">Name</a>
+                            <span class="cell-secondary font-mono" th:text="${p.employeeNo}">EMP-0001</span>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.basicSalary, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.totalAllowances, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.grossPay, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.taxablePay, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.paye, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.totalDeductions, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(p.netPay, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(payslips)}">
+                        <td class="table-empty" colspan="8">
+                            <p class="text-secondary" th:text="#{pry.noPayslips}">This run produced no payslips.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${journal != null}">
+        <div class="card-header">
+            <h3 th:text="#{pry.entryTitle}">What it posted</h3>
+            <span class="text-sm text-muted" th:text="#{pry.entryHint}">One entry for the whole run, grouped by account.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.account}">Account</th>
+                        <th th:text="#{jc.memo}">Memo</th>
+                        <th class="num" th:text="#{jc.debit}">Debit</th>
+                        <th class="num" th:text="#{jc.credit}">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${journal.lines}">
+                        <td>
+                            <span class="font-mono" th:text="${l.accountCode}">5002</span>
+                            <span class="cell-secondary" th:text="${l.accountName}">Salaries</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${l.memo}">Memo</td>
+                        <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="font-bold" th:text="#{fc.total}">Total</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(journal.totalDebits, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(journal.totalCredits, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:unless="${run.voided}">
+        <div class="card-header"><h3 th:text="#{pry.voidTitle}">Void this run</h3></div>
+        <form method="post" th:action="@{/payroll/runs/{id}/void(id=${run.id})}" th:if="${run.posted}">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="vReason" th:text="#{pry.voidReason}">Why</label>
+                    <input class="form-control" id="vReason" name="reason" type="text">
+                    <div class="form-hint" th:text="#{pry.voidHint}">Voiding writes a reversing entry dated today and never touches the original. The payslips stay exactly as they were, because they were given to people.</div>
+                </div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pry.void}">Void it</span>
+                </button>
+            </div>
+        </form>
+        <form method="post" th:action="@{/payroll/runs/{id}/delete(id=${run.id})}" th:if="${run.draft}">
+            <div class="card-body">
+                <div class="form-hint mb-3" th:text="#{pry.deleteHint}">A draft has not reached the ledger, so deleting it leaves nothing behind. Once posted it has to be voided instead.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pst.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{pst.title}">Payroll Setup</h1>
+            <p class="page-subtitle" th:text="#{pst.subtitle}">The rates and accounts every payroll run is worked out from.</p>
+            <span class="badge" th:classappend="${settings.confirmed} ? 'badge-success' : 'badge-warning'">
+                <span class="badge-dot"></span>
+                <span th:text="${settings.confirmed} ? #{pst.confirmedBadge} : #{pst.unconfirmedBadge}">Not confirmed</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/payroll/runs}" th:text="#{pst.toRuns}">Payroll runs</a>
+            <button class="btn btn-primary" type="submit" form="pstForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${settings.confirmed}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pst.gateTitle}">Nothing will post until these figures are confirmed</div>
+            <span th:text="#{pst.gateHint}">The rates below are a starting point, not an authority. Check every one against the current RRA PAYE schedule and the RSSB contribution rates, correct what is wrong, and confirm them. A payroll run refuses to post while they are unconfirmed, because a payroll computed from a stale band goes on being wrong until the RRA asks for the difference.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${settings.confirmed}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pst.confirmedTitle}">These rates have been confirmed</div>
+            <span th:text="#{pst.confirmedBy(${settings.confirmedBy}, ${#temporals.format(settings.confirmedAt, 'dd MMM yyyy')})}">Confirmed by somebody.</span>
+            <span th:if="${settings.rateSource != null}" th:text="#{pst.checkedAgainst(${settings.rateSource})}">Checked against.</span>
+            <div class="form-hint mt-2" th:text="#{pst.editWithdraws}">Changing any figure below withdraws the confirmation, so the new figure has to be looked at rather than inheriting this approval.</div>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${!#lists.isEmpty(missingAccounts)}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{pst.missingAccountsTitle}">The chart of accounts is missing codes this module expects</div>
+            <span th:text="#{pst.missingAccountsHint(${#strings.listJoin(missingAccounts, ', ')})}">Missing codes.</span>
+            <div class="mt-2">
+                <a class="btn btn-secondary btn-sm" th:href="@{/accounts}" th:text="#{pst.toChart}">Chart of accounts</a>
+            </div>
+        </div>
+    </div>
+
+    <form id="pstForm" method="post" novalidate th:object="${form}" th:action="@{/payroll/setup}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{pst.bandsTitle}">PAYE bands, per month</h3>
+                <span class="text-sm text-muted" th:text="#{pst.bandsHint}">Each band taxes only the part of pay that falls inside it. The bands must run on from one another without a gap, and exactly one must be left open at the top.</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="num" th:text="#{pst.bandFrom}">From</th>
+                            <th class="num" th:text="#{pst.bandTo}">To</th>
+                            <th class="num" th:text="#{pst.bandRate}">Rate %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="band, st : ${form.bands}">
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0"
+                                       th:name="'bands[' + ${st.index} + '].bandFloor'" th:value="${band.bandFloor}" placeholder="0">
+                            </td>
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0"
+                                       th:name="'bands[' + ${st.index} + '].bandCeiling'" th:value="${band.bandCeiling}"
+                                       th:placeholder="#{pst.bandOpen}">
+                            </td>
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0" max="100"
+                                       th:name="'bands[' + ${st.index} + '].rate'" th:value="${band.rate}" placeholder="0">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{pst.bandOpenHint}">Leave the last band's To empty — that is the open band every salary above the previous ceiling falls into.</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{pst.contributionsTitle}">Contribution rates</h3>
+                <span class="text-sm text-muted" th:text="#{pst.contributionsHint}">All worked out on the same base — basic pay plus the allowances marked pensionable, capped at the ceiling if one is set.</span>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="pPensionEmp" th:text="#{pst.pensionEmployee}">Pension — employee %</label>
+                        <input class="form-control" id="pPensionEmp" name="pensionEmployeeRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.pensionEmployeeRate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pPensionEr" th:text="#{pst.pensionEmployer}">Pension — employer %</label>
+                        <input class="form-control" id="pPensionEr" name="pensionEmployerRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.pensionEmployerRate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pHazard" th:text="#{pst.occupationalHazard}">Occupational hazards — employer %</label>
+                        <input class="form-control" id="pHazard" name="occupationalHazardRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.occupationalHazardRate}">
+                        <div class="form-hint" th:text="#{pst.hazardHint}">Employer only. Nothing is taken off pay for it.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pMatEmp" th:text="#{pst.maternityEmployee}">Maternity — employee %</label>
+                        <input class="form-control" id="pMatEmp" name="maternityEmployeeRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.maternityEmployeeRate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pMatEr" th:text="#{pst.maternityEmployer}">Maternity — employer %</label>
+                        <input class="form-control" id="pMatEr" name="maternityEmployerRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.maternityEmployerRate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pMedEmp" th:text="#{pst.medicalEmployee}">Medical — employee %</label>
+                        <input class="form-control" id="pMedEmp" name="medicalEmployeeRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.medicalEmployeeRate}">
+                        <div class="form-hint" th:text="#{pst.medicalHint}">Only applied to somebody the register marks as a member.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pMedEr" th:text="#{pst.medicalEmployer}">Medical — employer %</label>
+                        <input class="form-control" id="pMedEr" name="medicalEmployerRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.medicalEmployerRate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCbhi" th:text="#{pst.cbhi}">CBHI — employee %</label>
+                        <input class="form-control" id="pCbhi" name="cbhiEmployeeRate" type="number" step="0.01" min="0" max="100"
+                               th:value="${form.cbhiEmployeeRate}">
+                        <div class="form-hint" th:text="#{pst.cbhiHint}">Worked out on net pay, after everything else has come off — it is the last deduction, not a share of gross.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCeiling" th:text="#{pst.ceiling}">Contribution ceiling</label>
+                        <input class="form-control amount-control" id="pCeiling" name="contributionCeiling" type="number" step="0.01" min="0"
+                               th:value="${form.contributionCeiling}" th:placeholder="#{pst.ceilingNone}">
+                        <div class="form-hint" th:text="#{pst.ceilingHint}">Left empty there is no limit on the pay contributions are worked out from.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="pensionDeductibleForPaye" value="true"
+                                   th:checked="${form.pensionDeductibleForPaye}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{pst.pensionDeductible}">Employee pension and medical come off pay before PAYE is worked out</span>
+                        </label>
+                        <div class="form-hint" th:text="#{pst.pensionDeductibleHint}">This changes the tax on every payslip in the company. It is a question of tax law rather than of arithmetic — check it rather than assuming it.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{pst.accountsTitle}">Where a run posts</h3>
+                <span class="text-sm text-muted" th:text="#{pst.accountsHint}">All six are required. A run cannot invent an account halfway through posting.</span>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="aWages" th:text="#{pst.wagesAccount}">Wages and salaries</label>
+                        <select class="form-control" id="aWages" name="wagesExpenseAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.wagesExpenseAccountId != null and form.wagesExpenseAccountId == a.id}">5002</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pst.wagesAccountHint}">Debited with basic pay. Allowances go to their own accounts.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="aEmployer" th:text="#{pst.employerAccount}">Employer contributions</label>
+                        <select class="form-control" id="aEmployer" name="employerContributionAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.employerContributionAccountId != null and form.employerContributionAccountId == a.id}">5008</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pst.employerAccountHint}">The company's own share, which is a cost on top of gross pay rather than a deduction from it.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="aPaye" th:text="#{pst.payeAccount}">PAYE payable</label>
+                        <select class="form-control" id="aPaye" name="payePayableAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.payePayableAccountId != null and form.payePayableAccountId == a.id}">2102</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="aRssb" th:text="#{pst.rssbAccount}">RSSB payable</label>
+                        <select class="form-control" id="aRssb" name="rssbPayableAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.rssbPayableAccountId != null and form.rssbPayableAccountId == a.id}">2104</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pst.rssbAccountHint}">Pension, maternity, occupational hazards and medical all sit here — both sides of each.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="aCbhi" th:text="#{pst.cbhiAccount}">CBHI payable</label>
+                        <select class="form-control" id="aCbhi" name="cbhiPayableAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.cbhiPayableAccountId != null and form.cbhiPayableAccountId == a.id}">2105</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="aNet" th:text="#{pst.netPayAccount}">Net pay payable</label>
+                        <select class="form-control" id="aNet" name="netPayPayableAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.netPayPayableAccountId != null and form.netPayPayableAccountId == a.id}">2103</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pst.netPayAccountHint}">Net pay is credited to a payable, not to the bank. Posting a payroll recognises a wage bill; the bank is touched when the money actually leaves.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pSource" th:text="#{pst.rateSource}">What these were checked against</label>
+                        <input class="form-control" id="pSource" name="rateSource" type="text" th:value="${form.rateSource}"
+                               th:placeholder="#{pst.rateSourcePlaceholder}">
+                        <div class="form-hint" th:text="#{pst.rateSourceHint}">A citation, not a calculation — which schedule, and dated when. Somebody checking this next year needs to know what was true when it was confirmed.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-header"><h3 th:text="#{pst.confirmTitle}">Confirm these figures</h3></div>
+        <form method="post" th:action="@{/payroll/setup/confirm}" th:unless="${settings.confirmed}">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="cSource" th:text="#{pst.rateSource}">What these were checked against</label>
+                    <input class="form-control" id="cSource" name="rateSource" type="text"
+                           th:value="${settings.rateSource}" th:placeholder="#{pst.rateSourcePlaceholder}">
+                </div>
+                <div class="form-hint mb-3" th:text="#{pst.confirmHint}">Confirming records who did it and when. Save any changes first — saving withdraws the confirmation.</div>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-shield"/></svg>
+                    <span th:text="#{pst.confirm}">I have checked these against the current schedules</span>
+                </button>
+            </div>
+        </form>
+        <form method="post" th:action="@{/payroll/setup/withdraw}" th:if="${settings.confirmed}">
+            <div class="card-body">
+                <div class="form-hint mb-3" th:text="#{pst.withdrawHint}">Withdrawing stops any further run from posting until the figures are confirmed again. Runs already posted are untouched.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pst.withdraw}">Withdraw the confirmation</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>
