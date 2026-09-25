@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bil.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{bil.title}">Billable Time</h1>
+            <p class="page-subtitle" th:text="#{bil.subtitle}">Approved hours that have not been invoiced yet.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/projects/timesheets}" th:text="#{tsh.title}">Timesheets</a>
+            <a class="btn btn-secondary" th:href="@{/projects}" th:text="#{prj.title}">Projects</a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{bil.ledgerTitle}">This raises a draft, not a posting</div>
+            <span th:text="#{bil.ledgerHint}">Billing writes one draft invoice per customer through the invoice module, so numbering, tax and totals stay in one place. Nothing reaches the ledger until that invoice is posted. The hours are marked as invoiced so the same work cannot be billed twice.</span>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/projects/billable}">
+            <select class="form-control form-control--sm" name="customer">
+                <option value="" th:text="#{prj.allCustomers}">All customers</option>
+                <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}"
+                        th:selected="${customerId != null and customerId == c.id}">Customer</option>
+            </select>
+            <select class="form-control form-control--sm" name="project">
+                <option value="" th:text="#{tsh.allProjects}">All projects</option>
+                <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}"
+                        th:selected="${projectId != null and projectId == p.id}">Project</option>
+            </select>
+            <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+            <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{bil.waiting(${billable.entryCount()}, ${#numbers.formatDecimal(billable.hours, 1, 'COMMA', 2, 'POINT')})}">0 entries</span>
+        </form>
+    </div>
+
+    <div class="card" th:if="${billable.isEmpty()}">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-plus"/></svg></div>
+                <p class="text-secondary" th:text="#{bil.none}">Nothing is waiting to be billed.</p>
+                <p class="form-hint mt-2" th:text="#{bil.noneHint}">Hours show up here once they are approved, marked billable, and sitting on a job that charges by the hour for a customer.</p>
+            </div>
+        </div>
+    </div>
+
+    <form th:unless="${billable.isEmpty()}" method="post" th:action="@{/projects/billable}">
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{bil.invoiceSettings}">The invoice this will raise</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="bIssue" th:text="#{bil.issueDate}">Issued</label>
+                        <input class="form-control" id="bIssue" name="issueDate" type="date" th:value="${today}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bDue" th:text="#{bil.dueDate}">Due</label>
+                        <input class="form-control" id="bDue" name="dueDate" type="date" th:value="${dueDefault}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bTax" th:text="#{bil.taxRate}">VAT</label>
+                        <select class="form-control" id="bTax" name="taxRateId">
+                            <option value="" th:text="#{bil.noTax}">No VAT on these lines</option>
+                            <option th:each="t : ${taxRates}" th:value="${t.id}"
+                                    th:text="${t.code + ' — ' + t.name}">VAT 18%</option>
+                        </select>
+                        <div class="form-hint" th:text="#{bil.taxHint}">Nothing is assumed here. Left empty, the draft carries no VAT at all — check it before posting.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bRef" th:text="#{bil.reference}">Reference</label>
+                        <input class="form-control" id="bRef" name="reference" type="text">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="bMsg" th:text="#{bil.message}">Message to the customer</label>
+                        <input class="form-control" id="bMsg" name="customerMessage" type="text">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="oneLinePerProject" value="true">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{bil.rollUp}">One line per project instead of one line per day</span>
+                        </label>
+                        <div class="form-hint" th:text="#{bil.rollUpHint}">Rolling up still splits a project by rate, so hours times price always agrees with the work actually done.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5" th:each="g : ${billable.groups}">
+            <div class="card-header">
+                <h3 th:text="${g.customerName}">Customer</h3>
+                <span class="text-sm text-muted"
+                      th:text="${#numbers.formatDecimal(g.hours(), 1, 'COMMA', 2, 'POINT')} + ' h · ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(g.amount(), 1, 'COMMA', 0, 'POINT')}">0 h</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th th:text="#{tsh.date}">Day</th>
+                            <th th:text="#{prj.title}">Project</th>
+                            <th th:text="#{tsh.person}">Who</th>
+                            <th th:text="#{tsh.task}">What was done</th>
+                            <th class="num" th:text="#{tsh.hours}">Hours</th>
+                            <th class="num" th:text="#{tsh.billRate}">Rate</th>
+                            <th class="num" th:text="#{tsh.billableAmount}">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e : ${g.entries}">
+                            <td><input type="checkbox" name="entryIds" th:value="${e.id}" checked
+                                       th:aria-label="#{tsh.select}"></td>
+                            <td th:text="${#temporals.format(e.workDate, 'dd MMM yyyy')}">01 Jan</td>
+                            <td>
+                                <span class="mono" th:text="${e.projectCode}">PRJ-0001</span>
+                                <span class="cell-secondary" th:text="${e.projectName}">Project</span>
+                            </td>
+                            <td th:text="${e.person}">Somebody</td>
+                            <td>
+                                <span th:if="${e.task != null}" th:text="${e.task}">Task</span>
+                                <span class="cell-secondary" th:if="${e.description != null}" th:text="${e.description}"></span>
+                            </td>
+                            <td class="num" th:text="${#numbers.formatDecimal(e.hours, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(e.billRate, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(e.billableAmount, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        </tr>
+                        <tr class="table-total">
+                            <td colspan="5" th:text="#{fc.total}">Total</td>
+                            <td class="num font-bold" th:text="${#numbers.formatDecimal(g.hours(), 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td></td>
+                            <td class="num money font-bold" th:text="${#numbers.formatDecimal(g.amount(), 1, 'COMMA', 0, 'POINT')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body d-flex justify-between align-center">
+                <div>
+                    <div class="text-sm text-muted" th:text="#{bil.grandTotal}">Everything ticked above</div>
+                    <div class="stat-tile-value money"
+                         th:text="${baseCurrency + ' ' + #numbers.formatDecimal(billable.amount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+                    <div class="form-hint" th:text="#{bil.perCustomerHint}">One draft invoice is raised per customer.</div>
+                </div>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                    <span th:text="#{bil.raise}">Raise the draft invoices</span>
+                </button>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

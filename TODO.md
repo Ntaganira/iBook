@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**78 / 115 mapped · 37 remaining**
+**81 / 115 mapped · 34 remaining**
 
 How to check progress yourself:
 
@@ -150,10 +150,30 @@ Reads tables that already exist. All seven done.
       while a later completed move of the same asset exists. `FixedAsset` gains a `custodian` field
       and `DataSeeder` an `ASSET_TRANSFER` / `ATR-` sequence.
 
-### Projects (7)
+### Projects (7) — 3 of 7 done
 `Project`, `TimeEntry`. Job costing tags existing journal lines to a project.
 
-- [ ] `/projects` · `/projects/timesheets` · `/projects/billable` · `/projects/budgets`
+- [x] `/projects` · `/projects/timesheets` · `/projects/billable` — a project is a job that hours and
+      cost are booked against, draft / running / on hold / complete / cancelled, and it is charged
+      one of three ways: **time and materials**, a **fixed price**, or **not at all**. Booking time
+      is **entirely non-posting**, and deliberately so: the wages behind those hours already reach
+      the ledger through payroll, so accruing them again from a timesheet would count the same cost
+      twice. The cost rate on an entry is a management figure and is labelled as one on every page
+      that shows it.
+      Time becomes money in exactly one place. Approved, billable hours on a time-and-materials job
+      for a customer appear at `/projects/billable` and convert to **one draft invoice per customer**
+      through `InvoiceService`, so numbering, tax resolution and totals stay in one place; nothing
+      reaches the ledger until that invoice is posted. The entries are then stamped `INVOICED`,
+      which locks them against editing, deleting and re-billing. Only a job that bills **by the
+      hour** produces billable time — a fixed price is already agreed, so charging its hours as well
+      would bill twice, and the rule is enforced on save *and* re-checked at billing time, so a tick
+      box submitted from a stale page cannot get round it. Rolling a project's hours into one
+      invoice line splits it **by rate**, never averaging two rates into one, because hours times
+      price has to keep agreeing with the work actually done.
+      "Earned" on a job is **what has actually been invoiced**, not what has been approved, so an
+      unbilled job honestly shows a loss; a fixed-price job shows the agreed price instead. Hours
+      awaiting billing are reported separately rather than counted as income nobody has asked for.
+- [ ] `/projects/budgets`
 - [ ] `/projects/job-costing` · `/projects/profitability` · `/projects/progress-billing`
 
 ### Budgets (6)
@@ -224,6 +244,29 @@ Building these without the external piece produces a page that cannot work.
 
 ## Known issues
 
+- [ ] **Billed time is a one-way door, and the draft it raises needs checking before posting.**
+      Voiding an invoice raised from timesheets does **not** put its hours back: the entries stay
+      `INVOICED` and drop out of `/projects/billable` for good, so work that was billed in error has
+      to be credited rather than re-billed. Same class of gap as voiding a credit note leaving its
+      stock movement in place. The draft also takes the app's **default revenue account** — observed
+      live as `4002 Product sales`, which is wrong for a services business and has to be changed on
+      the draft — and carries **no VAT** unless a rate is picked on the billing form, which is
+      deliberate (nothing is assumed) but easy to post past. Two more limits: a customer with hours
+      in several currencies is billed in one invoice without conversion, the same app-wide gap; and
+      `Project.currencyCode` is recorded but never used, since the invoice takes the customer's.
+- [ ] **No `PROJECT` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now adds
+      `PRJ-`, but it returns early when any sequence exists — observed live: `PRJ-2026-67042`,
+      `PRJ-2026-78353`, `PRJ-2026-92962`. Add the row at `/settings/numbering`, same class of drift
+      as `ATR-`, `TRF-`, `SC-`, `FA-`, `DEP-` and `DIS-`.
+- [ ] **A timesheet has no approver separation, no period lock, and no employee register.** Anybody
+      who can reach the page can approve their own hours — there is no "not the person who booked
+      it" rule and no approval workflow behind it. Time can be booked on any date, including inside
+      a closed fiscal period, the same gap depreciation runs, disposals and transfers already have.
+      `TimeEntry.person` is **free text** with a datalist of names already used, because there is no
+      `Employee` yet; two spellings of one person are two people to every figure on these pages, and
+      the cost rate comes from the project rather than from what anybody is actually paid. Renaming a
+      project updates the entries under it, which is the opposite of the choice made for asset
+      transfers — a transfer records what a place was called on the day, a timesheet does not.
 - [ ] **A forecast is a guess with no accuracy record, and the cash flow is VAT-blind.** Nothing
       compares a published forecast back against what the ledger then did, so no method is ever shown
       to have been better than another — `/budgets/vs-actual` does that job for budgets and has no
@@ -472,7 +515,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 3,477 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 3,649 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

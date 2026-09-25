@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{prj.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/projects}" th:text="#{prj.title}">Projects</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{prj.form.editCrumb} : #{prj.form.breadcrumb}">New project</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{prj.form.editTitle} : #{prj.form.title}">New Project</h1>
+            <p class="page-subtitle" th:text="#{prj.form.subtitle}">A job that hours and cost are booked against, and that may or may not be billed for.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/projects}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="projectForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{prj.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="projectForm" name="activateNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{prj.saveStart}">Save and start</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="projectForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/projects/{id}(id=${editingId})} : @{/projects}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{prj.details}">What the job is</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="pName" name="name" type="text" th:value="${form.name}"
+                               th:placeholder="#{prj.namePlaceholder}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCode" th:text="#{prj.code}">Code</label>
+                        <input class="form-control" id="pCode" name="code" type="text" th:value="${form.code}"
+                               th:placeholder="${nextCode}">
+                        <div class="form-hint" th:text="#{prj.codeHint(${nextCode})}">Left blank, the next number is used.</div>
+                        <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pManager" th:text="#{prj.manager}">Run by</label>
+                        <input class="form-control" id="pManager" name="manager" type="text" th:value="${form.manager}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="pDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pStart" th:text="#{prj.startDate}">Starts</label>
+                        <input class="form-control" id="pStart" name="startDate" type="date" th:value="${form.startDate}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pEnd" th:text="#{prj.endDate}">Due</label>
+                        <input class="form-control" id="pEnd" name="endDate" type="date" th:value="${form.endDate}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{prj.billingSection}">How it is charged</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="pBilling" th:text="#{prj.billingLabel}">Billing</label>
+                        <select class="form-control" id="pBilling" name="billingType">
+                            <option th:each="entry : ${billingLabels}" th:value="${entry.key}"
+                                    th:text="${entry.value}"
+                                    th:selected="${form.billingType == entry.key}">Time and materials</option>
+                        </select>
+                        <div class="form-hint" th:each="entry : ${billingHints}"
+                             th:if="${form.billingType == entry.key}" th:text="${entry.value}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCustomer" th:text="#{prj.customer}">Customer</label>
+                        <select class="form-control" id="pCustomer" name="customerId">
+                            <option value="" th:text="#{prj.noCustomer}">Nobody — internal work</option>
+                            <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}"
+                                    th:selected="${form.customerId != null and form.customerId == c.id}">Customer</option>
+                        </select>
+                        <div class="form-hint" th:text="#{prj.customerHint}">Only work with nobody to bill can go without a customer.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pFixed" th:text="#{prj.fixedPrice}">Agreed price</label>
+                        <input class="form-control amount-control" id="pFixed" name="fixedPrice" type="number" step="0.01" min="0"
+                               th:value="${form.fixedPrice}">
+                        <div class="form-hint" th:text="#{prj.fixedPriceHint}">Used by a fixed-price job only. Hours are still booked against it, but they do not bill.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pBillRate" th:text="#{prj.billRate}">Charged per hour</label>
+                        <input class="form-control amount-control" id="pBillRate" name="defaultBillRate" type="number" step="0.01" min="0"
+                               th:value="${form.defaultBillRate}">
+                        <div class="form-hint" th:text="#{prj.billRateHint}">What a new time entry starts at. Each entry can still carry its own rate.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCostRate" th:text="#{prj.costRate}">Costs per hour</label>
+                        <input class="form-control amount-control" id="pCostRate" name="defaultCostRate" type="number" step="0.01" min="0"
+                               th:value="${form.defaultCostRate}">
+                        <div class="form-hint" th:text="#{prj.costRateHint}">A management figure for working out whether the job pays. It never reaches the ledger — payroll already puts these wages there.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pHours" th:text="#{prj.estimatedHours}">Expected hours</label>
+                        <input class="form-control amount-control" id="pHours" name="estimatedHours" type="number" step="0.01" min="0"
+                               th:value="${form.estimatedHours}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pCurrency" th:text="#{prj.currency}">Currency</label>
+                        <input class="form-control" id="pCurrency" name="currencyCode" type="text"
+                               th:value="${form.currencyCode}" th:placeholder="${baseCurrency}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="pNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+                <div class="form-hint mt-3" th:text="#{prj.ledgerHint}">Booking time never reaches the ledger.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

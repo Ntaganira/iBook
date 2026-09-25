@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tsh.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/projects/timesheets}" th:text="#{tsh.title}">Timesheets</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{tsh.form.editCrumb} : #{tsh.form.breadcrumb}">Book time</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{tsh.form.editTitle} : #{tsh.form.title}">Book Time</h1>
+            <p class="page-subtitle" th:text="#{tsh.form.subtitle}">Hours worked on a job, on one day, by one person.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/projects/timesheets}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="timeForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{tsh.saveDraft}">Save</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="timeForm" name="approveNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{tsh.saveApprove}">Save and approve</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="timeForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/projects/timesheets/{id}(id=${editingId})} : @{/projects/timesheets}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{tsh.details}">The work</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="tProject"><span th:text="#{prj.title}">Project</span> <span class="required">*</span></label>
+                        <select class="form-control" id="tProject" name="projectId" required>
+                            <option value="" th:text="#{tsh.selectProject}">Choose a project…</option>
+                            <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}"
+                                    th:selected="${form.projectId != null and form.projectId == p.id}">PRJ-0001</option>
+                        </select>
+                        <div class="form-hint" th:text="#{tsh.projectHint}">Only jobs still open take time. Rates come from the job unless you set them below.</div>
+                        <div th:replace="~{layout/common :: fieldError('projectId')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="tPerson"><span th:text="#{tsh.person}">Who did the work</span> <span class="required">*</span></label>
+                        <input class="form-control" id="tPerson" name="person" type="text" th:value="${form.person}"
+                               list="peopleList" required>
+                        <datalist id="peopleList">
+                            <option th:each="pp : ${people}" th:value="${pp}"></option>
+                        </datalist>
+                        <div th:replace="~{layout/common :: fieldError('person')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="tDate"><span th:text="#{tsh.date}">Day worked</span> <span class="required">*</span></label>
+                        <input class="form-control" id="tDate" name="workDate" type="date" th:value="${form.workDate}" required>
+                        <div th:replace="~{layout/common :: fieldError('workDate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="tHours"><span th:text="#{tsh.hours}">Hours</span> <span class="required">*</span></label>
+                        <input class="form-control amount-control" id="tHours" name="hours" type="number" step="0.25" min="0.25" max="24"
+                               th:value="${form.hours}" required>
+                        <div th:replace="~{layout/common :: fieldError('hours')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="tTask" th:text="#{tsh.task}">Task</label>
+                        <input class="form-control" id="tTask" name="task" type="text" th:value="${form.task}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="tDesc" th:text="#{common.description}">What was done</label>
+                        <input class="form-control" id="tDesc" name="description" type="text" th:value="${form.description}"
+                               th:placeholder="#{tsh.descriptionPlaceholder}">
+                        <div class="form-hint" th:text="#{tsh.descriptionHint}">This wording goes onto the invoice line, so write it for the customer.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{tsh.moneySection}">What it is worth</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="tBillRate" th:text="#{tsh.billRate}">Charged per hour</label>
+                        <input class="form-control amount-control" id="tBillRate" name="billRate" type="number" step="0.01" min="0"
+                               th:value="${form.billRate}">
+                        <div class="form-hint" th:text="#{tsh.rateHint}">Left empty, the job's own rate is used.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="tCostRate" th:text="#{tsh.costRate}">Costs per hour</label>
+                        <input class="form-control amount-control" id="tCostRate" name="costRate" type="number" step="0.01" min="0"
+                               th:value="${form.costRate}">
+                        <div class="form-hint" th:text="#{tsh.costHint}">Used to work out whether the job pays. It never reaches the ledger.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="billable" value="true" th:checked="${form.billable}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{tsh.billable}">These hours can be charged to the customer</span>
+                        </label>
+                        <div class="form-hint" th:text="#{tsh.billableHint}">A fixed-price or internal job produces no billable time whatever this says — the price is already agreed, so billing the hours as well would charge twice.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

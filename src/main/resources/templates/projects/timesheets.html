@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{tsh.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{tsh.title}">Timesheets</h1>
+            <p class="page-subtitle" th:text="#{tsh.subtitle}">Hours booked against a job, and whether they have been approved.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/projects}" th:text="#{prj.title}">Projects</a>
+            <a class="btn btn-secondary" th:href="@{/projects/billable}">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{bil.title}">Billable Time</span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/projects/timesheets/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{tsh.book}">Book time</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/projects/timesheets}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{prj.all}">All</span>
+        </a>
+        <a class="tab" th:href="@{/projects/timesheets(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{tsh.status.draft}">Awaiting approval</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects/timesheets(status='APPROVED')}" th:classappend="${status == 'APPROVED'} ? 'active'">
+            <span th:text="#{tsh.status.approved}">Approved</span> <span class="tab-count" th:text="${summary.approved}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects/timesheets(status='INVOICED')}" th:classappend="${status == 'INVOICED'} ? 'active'">
+            <span th:text="#{tsh.status.invoiced}">Invoiced</span> <span class="tab-count" th:text="${summary.invoiced}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects/timesheets(status='REJECTED')}" th:classappend="${status == 'REJECTED'} ? 'active'">
+            <span th:text="#{tsh.status.rejected}">Rejected</span> <span class="tab-count" th:text="${summary.rejected}">0</span>
+        </a>
+    </div>
+
+    <form id="bulkApprove" method="post" th:action="@{/projects/timesheets/approve}"></form>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/projects/timesheets}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{tsh.searchPlaceholder}">
+            </div>
+            <select class="form-control form-control--sm" name="project">
+                <option value="" th:text="#{tsh.allProjects}">All projects</option>
+                <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}"
+                        th:selected="${projectId != null and projectId == p.id}">Project</option>
+            </select>
+            <select class="form-control form-control--sm" name="person">
+                <option value="" th:text="#{tsh.allPeople}">Everybody</option>
+                <option th:each="pp : ${people}" th:value="${pp}" th:text="${pp}"
+                        th:selected="${person == pp}">Person</option>
+            </select>
+            <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+            <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <button class="btn btn-secondary btn-sm" type="submit" form="bulkApprove" th:text="#{tsh.approveSelected}">Approve ticked</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(entries.content)}, ${entries.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'workDate', #{tsh.date}, ${sort}, ${dir})}">Day</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'projectCode', #{prj.title}, ${sort}, ${dir})}">Project</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'person', #{tsh.person}, ${sort}, ${dir})}">Who</th>
+                        <th th:text="#{tsh.task}">Task</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'hours', #{tsh.hours}, ${sort}, ${dir})}">Hours</th>
+                        <th th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'billableAmount', #{tsh.billableAmount}, ${sort}, ${dir})}">Billable</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${entries.content}">
+                        <td>
+                            <input type="checkbox" name="entryIds" th:value="${e.id}" form="bulkApprove"
+                                   th:disabled="${!e.draft}" th:aria-label="#{tsh.select}">
+                        </td>
+                        <td th:text="${#temporals.format(e.workDate, 'dd MMM yyyy')}">01 Jan</td>
+                        <td>
+                            <a class="cell-link" th:href="@{/projects/{id}(id=${e.projectId})}" th:text="${e.projectCode}">PRJ-0001</a>
+                            <span class="cell-secondary" th:text="${e.projectName}">Project</span>
+                        </td>
+                        <td th:text="${e.person}">Somebody</td>
+                        <td>
+                            <span th:if="${e.task != null}" th:text="${e.task}">Task</span>
+                            <span class="cell-secondary" th:if="${e.description != null}" th:text="${e.description}"></span>
+                            <span class="cell-secondary" th:if="${e.invoiceNo != null}" th:text="${e.invoiceNo}"></span>
+                            <span class="cell-secondary text-error" th:if="${e.rejectedReason != null}" th:text="${e.rejectedReason}"></span>
+                        </td>
+                        <td class="num" th:text="${#numbers.formatDecimal(e.hours, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money">
+                            <span th:if="${e.billable}" th:text="${#numbers.formatDecimal(e.billableAmount, 1, 'COMMA', 0, 'POINT')}">0</span>
+                            <span class="text-muted" th:unless="${e.billable}" th:text="#{tsh.notBillable}">Not billable</span>
+                        </td>
+                        <td th:with="es=${e.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${es == 'APPROVED' ? 'badge-active' : (es == 'INVOICED' ? 'badge-success' : (es == 'REJECTED' ? 'badge-void' : 'badge-muted'))}">
+                                <span class="badge-dot"></span><span th:text="${statusLabels.get(es)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:if="${e.editable}" th:href="@{/projects/timesheets/{id}/edit(id=${e.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:if="${e.draft}" th:action="@{/projects/timesheets/{id}/approve(id=${e.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{tsh.approve}">Approve</span></button>
+                                    </form>
+                                    <form th:if="${e.draft}" th:action="@{/projects/timesheets/{id}/reject(id=${e.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-x-circle"/></svg><span th:text="#{tsh.reject}">Reject</span></button>
+                                    </form>
+                                    <form th:if="${e.approved or e.rejected}" th:action="@{/projects/timesheets/{id}/reopen(id=${e.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-rotate"/></svg><span th:text="#{tsh.reopen}">Back to draft</span></button>
+                                    </form>
+                                    <form th:if="${e.editable}" th:action="@{/projects/timesheets/{id}/delete(id=${e.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                    </form>
+                                    <a class="dropdown-item" th:if="${e.invoiceId != null}" th:href="@{/invoices/{id}(id=${e.invoiceId})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{tsh.viewInvoice}">View the invoice</span></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(entries.content)}">
+                        <td class="table-empty" colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-clock"/></svg></div>
+                                <p class="text-secondary" th:text="#{tsh.none}">No time booked yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/projects/timesheets/new}" th:text="#{tsh.book}">Book time</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${entries.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(entries.content)}, ${entries.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${entries.number + 1}, ${entries.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{tsh.approvalHint}">Only approved hours can be billed, and only a job that charges by the hour turns them into money. Nothing here reaches the ledger.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

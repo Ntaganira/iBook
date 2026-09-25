@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{prj.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{prj.title}">Projects</h1>
+            <p class="page-subtitle" th:text="#{prj.subtitle}">The jobs time and cost are booked against.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/projects/timesheets}">
+                <svg class="ebook-icon"><use href="#icon-clock"/></svg>
+                <span th:text="#{tsh.title}">Timesheets</span>
+            </a>
+            <a class="btn btn-secondary" th:href="@{/projects/billable}">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{bil.title}">Billable Time</span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/projects/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{prj.new}">New project</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/projects}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{prj.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{prj.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects(status='ACTIVE')}" th:classappend="${status == 'ACTIVE'} ? 'active'">
+            <span th:text="#{prj.status.active}">Running</span> <span class="tab-count" th:text="${summary.active}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects(status='ON_HOLD')}" th:classappend="${status == 'ON_HOLD'} ? 'active'">
+            <span th:text="#{prj.status.on_hold}">On hold</span> <span class="tab-count" th:text="${summary.onHold}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects(status='COMPLETED')}" th:classappend="${status == 'COMPLETED'} ? 'active'">
+            <span th:text="#{prj.status.completed}">Complete</span> <span class="tab-count" th:text="${summary.completed}">0</span>
+        </a>
+        <a class="tab" th:href="@{/projects(status='CANCELLED')}" th:classappend="${status == 'CANCELLED'} ? 'active'">
+            <span th:text="#{prj.status.cancelled}">Cancelled</span> <span class="tab-count" th:text="${summary.cancelled}">0</span>
+        </a>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{prj.status.active}">Running</div>
+            <div class="stat-tile-value" th:text="${summary.active}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tsh.awaitingApproval}">Hours awaiting approval</div>
+            <div class="stat-tile-value" th:text="${#numbers.formatDecimal(timeSummary.draftHours, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{tsh.entryCount(${timeSummary.draft})}">0 entries</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tsh.approvedHours}">Approved, not yet billed</div>
+            <div class="stat-tile-value" th:text="${#numbers.formatDecimal(timeSummary.approvedHours, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{tsh.entryCount(${timeSummary.approved})}">0 entries</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{tsh.status.invoiced}">Invoiced</div>
+            <div class="stat-tile-value" th:text="${timeSummary.invoiced}">0</div>
+            <div class="cell-secondary" th:text="#{tsh.entryLabel}">time entries</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/projects}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{prj.searchPlaceholder}">
+            </div>
+            <select class="form-control form-control--sm" name="customer">
+                <option value="" th:text="#{prj.allCustomers}">All customers</option>
+                <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}"
+                        th:selected="${customerId != null and customerId == c.id}">Customer</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <a class="btn btn-ghost btn-sm" th:href="@{/projects}" th:title="#{common.ariaRefresh}">
+                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-rotate"/></svg>
+            </a>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(projects.content)}, ${projects.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'code', #{prj.code}, ${sort}, ${dir})}">Code</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{common.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'customerName', #{prj.customer}, ${sort}, ${dir})}">Customer</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'billingType', #{prj.billingLabel}, ${sort}, ${dir})}">Billing</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'endDate', #{prj.due}, ${sort}, ${dir})}">Due</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${projects.content}">
+                        <td class="mono"><a class="cell-link" th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.code}">PRJ-0001</a></td>
+                        <td>
+                            <span th:text="${p.name}">Project</span>
+                            <span class="cell-secondary" th:if="${p.manager != null}" th:text="${p.manager}"></span>
+                        </td>
+                        <td>
+                            <span th:if="${p.customerName != null}" th:text="${p.customerName}">Customer</span>
+                            <span class="text-muted" th:if="${p.customerName == null}" th:text="#{prj.internal}">Internal</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${billingLabels.get(p.billingType.name())}">Time and materials</td>
+                        <td>
+                            <span th:if="${p.endDate != null}" th:text="${#temporals.format(p.endDate, 'dd MMM yyyy')}">—</span>
+                            <span class="text-muted" th:if="${p.endDate == null}">—</span>
+                            <span class="badge badge-error" th:if="${p.overdue}" th:text="#{prj.late}">Late</span>
+                        </td>
+                        <td th:with="st=${p.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'ACTIVE' ? 'badge-active' : (st == 'COMPLETED' ? 'badge-success' : (st == 'CANCELLED' ? 'badge-void' : (st == 'ON_HOLD' ? 'badge-warning' : 'badge-muted')))}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/projects/{id}(id=${p.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:if="${p.openForTime}" th:href="@{/projects/timesheets/new(project=${p.id})}"><svg class="ebook-icon"><use href="#icon-clock"/></svg><span th:text="#{tsh.book}">Book time</span></a>
+                                    <a class="dropdown-item" th:unless="${p.cancelled}" th:href="@{/projects/{id}/edit(id=${p.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:if="${p.draft}" th:action="@{/projects/{id}/activate(id=${p.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-check-circle"/></svg><span th:text="#{prj.activate}">Start</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(projects.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-target"/></svg></div>
+                                <p class="text-secondary" th:text="#{prj.none}">No projects yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/projects/new}" th:text="#{prj.new}">New project</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${projects.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(projects.content)}, ${projects.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${projects.number + 1}, ${projects.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{prj.ledgerHint}">Booking time never reaches the ledger. The wages behind those hours already get there through payroll, so charging them again from a timesheet would count the same cost twice. Time turns into money in one place only: an invoice raised from approved billable hours, which posts when that invoice is posted.</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
