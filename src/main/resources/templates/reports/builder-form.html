@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rbd.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/reports/builder}" th:text="#{rbd.title}">Report builder</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{rbd.form.editCrumb} : #{rbd.form.breadcrumb}">New report</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{rbd.form.editTitle} : #{rbd.form.title}">New Report</h1>
+            <p class="page-subtitle" th:text="#{rbd.form.subtitle}">Which accounts appear, under which headings, in which order.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/reports/builder}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="rbdForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="rbdForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/reports/builder/{id}(id=${editingId})} : @{/reports/builder}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{rbd.detailsTitle}">What the report is</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rName" name="name" type="text" th:value="${form.name}" required>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="rDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rBasis" th:text="#{rbd.basis}">Measures</label>
+                        <select class="form-control" id="rBasis" name="basis">
+                            <option th:each="b : ${basisLabels}" th:value="${b.key}" th:text="${b.value}"
+                                    th:selected="${form.basis == b.key}">Over a period</option>
+                        </select>
+                        <div class="form-hint" th:text="#{rbd.basisHint}">A movement asks what happened between two dates, which is the only sensible question for revenue and expense. A balance asks what an account stood at on a date, which is meaningless for a trading account.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rComp" th:text="#{rbd.comparison}">Compares with</label>
+                        <select class="form-control" id="rComp" name="comparison">
+                            <option th:each="c : ${comparisonLabels}" th:value="${c.key}" th:text="${c.value}"
+                                    th:selected="${form.comparison == c.key}">Nothing</option>
+                        </select>
+                        <div class="form-hint" th:text="#{rbd.comparisonHint}">The prior period is the same number of days immediately before, not the same dates a month back — that would silently drop a day on a 31-day month.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="showEmptyRows" value="true" th:checked="${form.showEmptyRows}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{rbd.showEmpty}">Print rows the ledger has nothing for</span>
+                        </label>
+                        <div class="form-hint" th:text="#{rbd.showEmptyHint}">Off by default: forty rows of which thirty-five are zero hide the five that matter. Turn it on when the shape of the report is the point, such as a return whose lines must all appear.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{rbd.rowsTitle}">The rows</h3>
+                <span class="text-sm text-muted" th:text="#{rbd.rowsHint}">Accounts are selected by type and code range, never by naming them one at a time.</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{rbd.rowType}">Row</th>
+                            <th th:text="#{rbd.label}">Label</th>
+                            <th th:text="#{common.type}">Account type</th>
+                            <th th:text="#{rbd.codeFrom}">Code from</th>
+                            <th th:text="#{rbd.codeTo}">Code to</th>
+                            <th th:text="#{rbd.expanded}">Itemise</th>
+                            <th th:text="#{rbd.invert}">Flip sign</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="row, st : ${form.rows}">
+                            <td>
+                                <select class="form-control" th:name="'rows[' + ${st.index} + '].rowType'">
+                                    <option value="" th:text="#{rbd.rowUnused}">—</option>
+                                    <option th:each="t : ${rowTypeLabels}" th:value="${t.key}" th:text="${t.value}"
+                                            th:selected="${row.rowType == t.key}">Accounts</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input class="form-control" type="text"
+                                       th:name="'rows[' + ${st.index} + '].label'" th:value="${row.label}">
+                            </td>
+                            <td>
+                                <select class="form-control" th:name="'rows[' + ${st.index} + '].accountType'">
+                                    <option value="" th:text="#{rbd.anyType}">Any</option>
+                                    <option th:each="a : ${accountTypeLabels}" th:value="${a.key}" th:text="${a.value}"
+                                            th:selected="${row.accountType == a.key}">Revenue</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input class="form-control" type="text" maxlength="20"
+                                       th:name="'rows[' + ${st.index} + '].codeFrom'" th:value="${row.codeFrom}"
+                                       placeholder="4000">
+                            </td>
+                            <td>
+                                <input class="form-control" type="text" maxlength="20"
+                                       th:name="'rows[' + ${st.index} + '].codeTo'" th:value="${row.codeTo}"
+                                       placeholder="4999">
+                            </td>
+                            <td>
+                                <label class="checkbox">
+                                    <input type="checkbox" value="true"
+                                           th:name="'rows[' + ${st.index} + '].expanded'"
+                                           th:checked="${row.expanded}">
+                                    <span class="checkbox-box"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <label class="checkbox">
+                                    <input type="checkbox" value="true"
+                                           th:name="'rows[' + ${st.index} + '].invertSign'"
+                                           th:checked="${row.invertSign}">
+                                    <span class="checkbox-box"></span>
+                                </label>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{rbd.rowKindsHint}">An Accounts row selects; a Heading prints a label; a Subtotal adds up every Accounts row since the last subtotal and then starts again; a Spacer leaves a gap.</div>
+                <div class="form-hint mt-2" th:text="#{rbd.itemiseHint}">Itemise lists each account on its own line. Turn it off and the row prints as a single figure under its label — the same selection either way.</div>
+                <div class="form-hint mt-2" th:text="#{rbd.invertHint}">Flip sign is for an account that sits with its neighbours but works against them, such as a contra-revenue account that reduces income rather than adding to it.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

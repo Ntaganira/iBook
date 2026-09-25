@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rbd.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{rbd.title}">Report Builder</h1>
+            <p class="page-subtitle" th:text="#{rbd.subtitle}">Reports you define once and run whenever you like.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/reports}" th:text="#{rbd.standardReports}">Standard reports</a>
+            <a class="btn btn-primary" th:href="@{/reports/builder/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{rbd.new}">New report</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{rbd.ledgerTitle}">A definition, not a snapshot</div>
+            <span th:text="#{rbd.ledgerHint}">A saved report holds no figures — only which accounts appear, under which headings, in which order. The numbers are read from the ledger every time it runs, through the same two methods the profit and loss and the balance sheet use, so a custom report cannot quietly disagree with them. A report written in March and opened in October shows October's books.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{prj.all}">All</div>
+            <div class="stat-tile-value" th:text="${summary.all}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rbd.basis.movement}">Over a period</div>
+            <div class="stat-tile-value" th:text="${summary.movementBased}">0</div>
+            <div class="cell-secondary" th:text="#{rbd.movementHint}">What happened between two dates.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{rbd.basis.balance}">As at a date</div>
+            <div class="stat-tile-value" th:text="${summary.balanceBased}">0</div>
+            <div class="cell-secondary" th:text="#{rbd.balanceHint}">What an account stood at.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/reports/builder}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{rbd.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="basis">
+                <option value="" th:text="#{prj.all}">All</option>
+                <option th:each="b : ${basisLabels}" th:value="${b.key}" th:text="${b.value}"
+                        th:selected="${basis == b.key}">Over a period</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(definitions.content)}, ${definitions.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{common.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'basis', #{rbd.basis}, ${sort}, ${dir})}">Measures</th>
+                        <th th:text="#{rbd.comparison}">Compares with</th>
+                        <th class="num" th:text="#{rbd.rowCount}">Rows</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'lastRunAt', #{rbd.lastRun}, ${sort}, ${dir})}">Last run</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${definitions.content}">
+                        <td>
+                            <a class="cell-link" th:href="@{/reports/builder/{id}(id=${d.id})}" th:text="${d.name}">Report</a>
+                            <span class="cell-secondary" th:if="${d.description != null}" th:text="${d.description}"></span>
+                        </td>
+                        <td>
+                            <span class="badge badge-muted" th:text="${basisLabels.get(d.basis.name())}">Over a period</span>
+                        </td>
+                        <td class="cell-secondary" th:text="${comparisonLabels.get(d.comparison.name())}">Nothing</td>
+                        <td class="num" th:text="${#lists.size(d.lines)}">0</td>
+                        <td>
+                            <span th:if="${d.lastRunAt != null}" th:text="${#temporals.format(d.lastRunAt, 'dd MMM yyyy')}">01 Jan</span>
+                            <span class="text-muted" th:if="${d.lastRunAt == null}" th:text="#{rbd.neverRun}">Never</span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/reports/builder/{id}(id=${d.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{rbd.run}">Run it</span></a>
+                                    <a class="dropdown-item" th:href="@{/reports/builder/{id}/edit(id=${d.id})}"><svg class="ebook-icon"><use href="#icon-edit"/></svg><span th:text="#{common.edit}">Edit</span></a>
+                                    <form th:action="@{/reports/builder/{id}/delete(id=${d.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-trash"/></svg><span th:text="#{common.delete}">Delete</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(definitions.content)}">
+                        <td class="table-empty" colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-bar-chart"/></svg></div>
+                                <p class="text-secondary" th:text="#{rbd.none}">No saved reports yet.</p>
+                                <p class="form-hint mt-2" th:text="#{rbd.noneHint}">Useful for a management pack, a departmental summary, or a statutory return whose shape differs from the standard profit and loss.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/reports/builder/new}" th:text="#{rbd.new}">New report</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${definitions.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(definitions.content)}, ${definitions.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${definitions.number + 1}, ${definitions.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

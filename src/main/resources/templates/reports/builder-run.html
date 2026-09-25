@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rbd.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/reports/builder}" th:text="#{rbd.title}">Report builder</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${definition.name}">Report</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${definition.name}">Report</h1>
+            <p class="page-subtitle" th:if="${definition.description != null}" th:text="${definition.description}">Description</p>
+            <span class="badge badge-muted" th:text="${basisLabels.get(definition.basis.name())}">Over a period</span>
+            <span class="badge badge-muted" th:if="${definition.comparing}"
+                  th:text="${comparisonLabels.get(definition.comparison.name())}">Prior period</span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/reports/builder/{id}/edit(id=${definition.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{common.edit}">Edit</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <form class="table-toolbar" method="get" th:action="@{/reports/builder/{id}(id=${definition.id})}">
+            <label class="form-label" for="bFrom" th:text="#{common.from}">From</label>
+            <input class="form-control" id="bFrom" type="date" name="from" th:value="${from}"
+                   th:disabled="${!definition.movementBased}">
+            <label class="form-label" for="bTo" th:text="${definition.movementBased} ? #{common.to} : #{rbd.asAt}">To</label>
+            <input class="form-control" id="bTo" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{rbd.run}">Run it</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted" th:unless="${definition.movementBased}"
+                  th:text="#{rbd.balanceIgnoresFrom}">A balance is a position on a date, so the start date is ignored.</span>
+        </form>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${result.hasUnassigned()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{rbd.unassignedTitle}">Some accounts with activity appear nowhere on this report</div>
+            <span th:text="#{rbd.unassignedHint}">A custom report is a selection, and a selection can silently drop money. These accounts moved in the period but match no row, so nothing on this page includes them.</span>
+            <div class="table-wrap mt-3">
+                <table class="table">
+                    <tbody>
+                        <tr th:each="u : ${result.unassigned}">
+                            <td><span class="font-mono" th:text="${u.code}">5010</span></td>
+                            <td th:text="${u.name}">Account</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(u.amount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${result.hasDoubleCounted()}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{rbd.doubledTitle}">Some accounts are counted more than once</div>
+            <span th:text="#{rbd.doubledHint}">These accounts match more than one row, so their figures appear twice and every subtotal that includes both is overstated. Narrow the code ranges so each account belongs to exactly one row.</span>
+            <div class="table-wrap mt-3">
+                <table class="table">
+                    <tbody>
+                        <tr th:each="u : ${result.doubleCounted}">
+                            <td><span class="font-mono" th:text="${u.code}">4001</span></td>
+                            <td th:text="${u.name}">Account</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(u.amount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="${definition.name}">Report</h3>
+            <span class="text-sm text-muted" th:if="${definition.movementBased}"
+                  th:text="#{rbd.periodLabel(${#temporals.format(result.from, 'dd MMM yyyy')}, ${#temporals.format(result.to, 'dd MMM yyyy')})}">Period</span>
+            <span class="text-sm text-muted" th:unless="${definition.movementBased}"
+                  th:text="#{rbd.asAtLabel(${#temporals.format(result.to, 'dd MMM yyyy')})}">As at</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.account}">Account</th>
+                        <th class="num" th:text="#{rbd.thisPeriod}">This period</th>
+                        <th class="num" th:if="${definition.comparing}"
+                            th:text="#{rbd.priorPeriod(${#temporals.format(result.priorFrom, 'dd MMM')}, ${#temporals.format(result.priorTo, 'dd MMM yyyy')})}">Prior</th>
+                        <th class="num" th:if="${definition.comparing}" th:text="#{rbd.variance}">Change</th>
+                        <th class="num" th:if="${definition.comparing}" th:text="#{rbd.variancePercent}">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${result.rows}"
+                        th:classappend="${r.subtotal} ? 'font-bold' : ''">
+                        <td th:if="${r.spacer}" colspan="5">&nbsp;</td>
+                        <th:block th:unless="${r.spacer}">
+                            <td>
+                                <span class="font-semibold" th:if="${r.heading}" th:text="${r.label}">Heading</span>
+                                <span th:unless="${r.heading}">
+                                    <span class="font-mono" th:if="${r.code != null}" th:text="${r.code}">4001</span>
+                                    <span th:text="${r.label}">Account</span>
+                                </span>
+                            </td>
+                            <td class="num money" th:text="${r.amount == null} ? '' : ${#numbers.formatDecimal(r.amount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money" th:if="${definition.comparing}"
+                                th:text="${r.priorAmount == null} ? '' : ${#numbers.formatDecimal(r.priorAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money" th:if="${definition.comparing}"
+                                th:classappend="${r.variance != null and r.variance.signum() < 0} ? 'text-error' : (${r.variance != null and r.variance.signum() > 0} ? 'text-success' : '')"
+                                th:text="${r.variance == null} ? '' : ${#numbers.formatDecimal(r.variance, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num" th:if="${definition.comparing}"
+                                th:text="${r.variancePercent == null} ? '—' : ${#numbers.formatDecimal(r.variancePercent, 1, 'COMMA', 1, 'POINT')} + '%'">—</td>
+                        </th:block>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(result.rows)}">
+                        <td class="table-empty" colspan="5">
+                            <p class="text-secondary" th:text="#{rbd.noRows}">This report produced no rows for these dates.</p>
+                            <p class="form-hint mt-2" th:text="#{rbd.noRowsHint}">Either nothing moved on the accounts it selects, or the selection matches none. Turn on printing empty rows to see the shape it is trying to draw.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{rbd.sourceHint}">Every figure is read through the same two methods the profit and loss and the balance sheet use, so this report cannot disagree with them.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
