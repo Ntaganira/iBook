@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**90 / 115 mapped · 25 remaining**
+**100 / 115 mapped · 15 remaining**
 
 How to check progress yourself:
 
@@ -103,11 +103,57 @@ Reads tables that already exist. All seven done.
       expiry flagging, agreed rate, bank details, optional link to a supplier record that surfaces
       the bills and expenses actually paid to them. Non-posting; withholding is reference only.
 
-### Payroll (7)
-`Employee`, `PayrollRun`, `Payslip`. Needs current RRA PAYE bands plus RSSB and maternity rates.
+### Payroll (7) — COMPLETE
+`PayrollSettings`, `PayeBand`, `Employee`, `PayrollComponent`, `PayrollRun`, `Payslip`,
+`Remittance`. **The rates are data, not code**, which is what unblocked this.
 
-- [ ] `/payroll/employees` · `/payroll/setup` · `/payroll/allowances` · `/payroll/deductions`
-- [ ] `/payroll/runs` · `/payroll/payslips` · `/payroll/remittances`
+- [x] `/payroll/setup` — every PAYE band and contribution rate lives in an editable table and ships
+      **unconfirmed**. A run *refuses to post* until somebody has read the figures against the
+      current RRA and RSSB schedules and pressed confirm; editing any figure withdraws the
+      confirmation, because approval attaches to figures rather than to a screen. Statutory rates
+      are the part of an accounting system most certain to change and least likely to be noticed
+      when stale, so this is a hard gate rather than a warning — a payroll computed from last
+      year's band goes on being wrong until the RRA asks for the difference with interest. The page
+      also detects chart-of-accounts codes this module expects but the database lacks, and says
+      which, rather than posting to something nearly right.
+- [x] `/payroll/employees` — the register. Nothing here posts: a record is a standing instruction
+      about how somebody is paid, so a raise changes what the next run computes and moves no figure
+      already in the ledger. Scheme membership is held **per person** rather than assumed, because
+      contributing on behalf of a non-member sends money to a fund that will not credit it.
+      Somebody who leaves is marked as having left, never deleted once they have a payslip —
+      payroll already posted has to go on saying who it paid.
+- [x] `/payroll/allowances` · `/payroll/deductions` — one entity filtered by kind, because an
+      allowance and a deduction are the same record with the sign reversed. Every component needs
+      an account: an allowance without one merges into general wages and nothing can say what it
+      cost; a deduction without one has nowhere to put money it took off somebody's pay, and the
+      entry would not balance. **Taxable and pensionable are decisions, not guesses** — both are
+      questions of law that vary by allowance and change over time, so nothing infers them from
+      the name and both default to *included*, the treatment that cannot under-declare.
+- [x] `/payroll/runs` — the calculation order is stated once, on `PayrollRunService`, and nowhere
+      else: gross is basic plus allowances; **one contributory base serves every scheme**, capped
+      at the ceiling if one is set; taxable pay is basic plus taxable allowances less the
+      employee's own pension and medical where the settings say those come off first; PAYE is the
+      band table applied **slice by slice**, so a raise into a higher band never leaves somebody
+      worse off; **CBHI is the last deduction and comes off net, not gross**. A draft is a
+      calculation nobody has committed to and recalculating throws it away. Posting writes **one
+      balanced entry for the whole run**, grouped by account rather than one entry per person, with
+      rounding drift on the last debit line. **Net pay is credited to a payable, not to the bank** —
+      posting recognises a wage bill, and the bank is only touched when the money actually leaves.
+      A second run over the same weeks is refused unless it names specific people, and a run where
+      anybody's deductions exceed their pay is refused by name and figure. Voiding writes a
+      reversing entry and leaves the payslips exactly as issued, because they were given to people.
+- [x] `/payroll/payslips` — every payslip across every run. **Everything on a payslip is copied on
+      at calculation time** — the name, the RSSB and TIN numbers, the basic salary, and whether
+      each allowance was taxable — so it goes on saying what it said after somebody gets a raise,
+      changes their bank or leaves, and so a later query can ask what the treatment *was*. The run
+      number and pay date are copied too, which is what keeps the list from being one query per row.
+- [x] `/payroll/remittances` — posting a run only recognises the **debt**; PAYE, RSSB and CBHI sit
+      on the balance sheet as liabilities until somebody pays them, which is right because it is
+      other people's money being held. This is the payment: it debits the liability and credits the
+      bank, and it is the entry that clears the payable. The amount is **typed in rather than
+      forced** to equal what the runs computed — a declaration is routinely filed for a different
+      figure, and a screen that refused to record what was actually paid would push the books
+      further from the truth. The difference is shown and flagged instead.
 
 ### Fixed assets (6) — COMPLETE
 `FixedAsset`, `DepreciationEntry`. Depreciation posts to the GL — mirrors the invoice posting pattern.
@@ -237,7 +283,7 @@ Reads tables that already exist. All seven done.
       lags push past the twelfth month is reported separately rather than dropped.
 - [ ] `/budgets/ai-forecasts` — drop unless genuinely wanted
 
-### Documents (5) — 4 of 5 done
+### Documents (5) — COMPLETE
 `Attachment`. **Storage decided: files on disk, metadata in the database.**
 
 - [x] `/documents` · `/documents/upload` · `/documents/attachments` · `/documents/templates` — files
@@ -257,7 +303,22 @@ Reads tables that already exist. All seven done.
       `/documents/templates` is blank forms somebody downloads and fills in, with a usage count;
       deliberately **not** the invoice and email templates under Settings, which format documents the
       app generates.
-- [ ] `/documents/ocr` — also needs an OCR service
+- [x] `/documents/ocr` — **there is no text-recognition service, and the page says so.** `OcrEngine`
+      is the seam one would plug into; the only implementation is `UnavailableOcrEngine`, named for
+      what it is, because a stand-in returning plausible blanks is indistinguishable on screen from
+      an engine that ran and found nothing — somebody would conclude their receipts were unreadable
+      rather than that nothing had read them. Reading a document is the half that can be bought.
+      The half that decides money is built and works either way. **Converting always produces a
+      draft**, never a posting: a figure read off a document is a claim about a piece of paper, not
+      a fact about the books. **The arithmetic is checked but never corrected** — if subtotal plus
+      tax does not reach the printed total it is flagged and conversion refused, because which of
+      the three figures is wrong is a question about the document, and silently deriving one from
+      the other two would bury the misread. **One document converts once**, with the draft's number
+      written back so the same receipt cannot become two expenses. The file is attached to the
+      expense it becomes, so the receipt is the *evidence* for the transaction rather than a file
+      sitting near it — which closes part of the gap recorded against expenses having nowhere to
+      attach one. The tax rate on the draft is worked back from the two amounts rather than looked
+      up, so an unusual rate reproduces as what was actually charged.
 
 ### Other single items
 - [x] `/accounting/recurring-journals` — a template for an entry that repeats. The schedule posts
@@ -268,7 +329,41 @@ Reads tables that already exist. All seven done.
       totals are re-added from the lines actually written as each entry is generated, so an account
       deleted between cycles is refused rather than having the sweep write a one-sided entry every
       month. Stopping a schedule leaves every entry it raised in place, posted ones included.
-- [ ] `/reports/builder` — `ReportDefinition`
+- [x] `/reports/builder` — a saved report holds **no figures**, only which accounts appear, under
+      which headings, in which order. Every number is read at run time through
+      `ReportService.signedMovementsBetween` and `signedBalancesUpTo` — the same two methods the
+      profit and loss, the balance sheet and budget-versus-actual already use — so a custom report
+      cannot quietly disagree with them, and one written in March shows October's books in October.
+      Accounts are selected **by type and code range**, never named one at a time: a report listing
+      account ids goes silently wrong the day somebody adds 5009. Two honesty checks run with every
+      report and are shown rather than buried — a selection can drop money, so accounts with
+      activity matching **no** row are listed, and accounts matched by **more than one** row are
+      listed too because every subtotal containing both is overstated. The first check is narrowed
+      to the account types the report actually reaches for, since a profit and loss never meant to
+      include the bank account and listing every balance sheet account as missing would bury the one
+      revenue account that really was. The prior-period comparison is the same number of days
+      immediately before, not the same dates a month back, which on a 31-day month would drop a day.
+
+- [x] `/banking/reconcile` — **moved out of Tier 3: its blocker was misread.** Statement lines and
+      match state are codebase work; only the automatic *feed* is external, and reconciliation has
+      always worked from the paper the bank sends. So the statement is typed in. **Nothing posts** —
+      reconciling changes no figure anywhere, it establishes that the ledger and the bank agree and
+      where they do not, why; a reconciliation that adjusted the books to match the bank would
+      destroy the disagreement it exists to find. Matches live on the statement side, so the ledger
+      is left exactly as it was found. The arithmetic is the standard two-sided proof: bank closing
+      plus deposits in transit less unpresented payments, against the book balance plus whatever the
+      statement shows that the books do not know of, and both sides must reach the same figure.
+      Four guards: a match is refused unless the amounts agree **exactly** (matching a 5,000 charge
+      to a 500,000 receipt would balance the reconciliation while leaving the books wrong by
+      495,000); a statement whose opening plus its own lines does not reach its closing is refused,
+      because comparing a mis-typed statement to the ledger proves nothing; **completing requires
+      every statement line matched, not merely explained** — the proof balances the moment an
+      unmatched line is carried into the book side as an adjustment, but signing off there would
+      agree a statement while the books are still missing the transaction and this statement would
+      never raise it again; and a ledger line agreed by a completed reconciliation is **never
+      offered again**. Bank charges and interest have to be entered as journal entries first and
+      nothing here enters them: posting on the strength of somebody else's document is precisely
+      what reconciliation prevents.
 
 ---
 
@@ -281,7 +376,6 @@ Building these without the external piece produces a page that cannot work.
 - [ ] `/integrations/banks` · `/integrations/payments` · `/integrations/webhooks` · `/integrations/api`
 - [ ] `/sales/payment-links` — payment gateway account
 - [ ] `/banking/feeds` — feed import must come first
-- [ ] `/banking/reconcile` — needs statement lines and match state
 - [ ] `/banking/uncategorized` — depends on feed import
 - [ ] `/taxes/withholding` — withholding fields on invoice/bill lines
 - [ ] `/taxes/excise` — excise fields on invoice/bill lines
@@ -290,6 +384,100 @@ Building these without the external piece produces a page that cannot work.
 
 ## Known issues
 
+- [ ] **The seeded payroll rates are placeholders and are almost certainly wrong.** The figures a
+      fresh installation starts with — pension 3/5, occupational hazards 2, maternity 0.3/0.3,
+      medical 7.5/7.5, CBHI 0.5, and PAYE bands of 0/10/20/30 per cent at 60,000, 100,000 and
+      200,000 — were typed from recollection of published Rwandan rates and have **not** been
+      checked against any current schedule. They exist so the module has a shape to edit, not
+      because they are believed correct. That is why the confirmation gate exists and why it is a
+      hard refusal rather than a warning: nothing posts until somebody who knows has read them.
+      Whether the employee's own pension and medical come off pay before PAYE is likewise a setting
+      defaulting to *yes* and is a question of tax law nobody here has verified. The live test in
+      this session confirmed only the **arithmetic** — that 300,000 basic plus a 30,000 taxable
+      allowance yields taxable pay of 320,100 and PAYE of 60,030 across those four bands — not that
+      the bands are the right ones.
+- [ ] **One contributory base serves every scheme, which is a simplification.** Pension, maternity,
+      occupational hazards and medical are all worked out on basic pay plus the allowances marked
+      pensionable, capped at the ceiling if one is set. Real schemes can and do use different bases,
+      and an allowance one scheme counts while another ignores cannot be expressed — the only lever
+      is to mark it not pensionable and lose it from all four. Medical in particular is commonly
+      assessed on basic alone rather than on basic plus allowances. The base used is printed on
+      every payslip so the assumption is visible rather than hidden.
+- [ ] **Payroll has no period lock, no approval separation and no proration.** A run can be dated
+      into a closed fiscal period, the same gap depreciation runs, disposals, transfers and
+      timesheets already have. Anybody who can reach the page can post a run; there is no
+      "different person approves" rule. Somebody who joins or leaves **mid-period is paid a whole
+      period** — the register's dates decide only whether they appear at all, never how much of the
+      month they are due, so a starter on the 20th is overpaid unless their basic is edited by hand.
+      Retiring an allowance silently reduces the pay of everybody carrying it from the next run on.
+      Nothing emails a payslip, and nothing pays the net: `2103 Net pay payable` is credited and
+      clearing it is a manual journal entry, so the bank side of wages is outside this module.
+      Amounts are held in the base currency with no conversion, the same app-wide gap.
+- [ ] **Payroll and remittances do not check each other.** A remittance is deliberately free to
+      differ from what the runs computed, and the difference is shown rather than refused — but
+      nothing stops the same period being remitted twice, and nothing warns when a period is never
+      remitted at all. The outstanding figure on the page is computed from posted runs less *paid*
+      remittances for overlapping dates, so two partial payments of the same liability look
+      identical to one payment and one duplicate. There is also no employer-side ledger check: the
+      register is never reconciled against `2102`, `2104` or `2105`, so a liability account can
+      drift from the payslips that created it the same way the asset register can drift from `1501`.
+- [ ] **New accounts and numbering sequences do not reach an existing database.** `DataSeeder` now
+      adds `2103 Net pay payable`, `2104 RSSB contributions payable`, `2105 CBHI payable` and
+      `5008 Employer social contributions`, plus `EMPLOYEE`/`EMP-`, `PAYROLL`/`PAY-` and
+      `REMITTANCE`/`REM-` sequences — but `seedAccounts` and `seedNumbering` both return early once
+      any row exists. Observed live on the dev database: all four codes missing until added by hand
+      at Chart of accounts, and numbers falling back to `EMP-2026-66745` and `PAY-2026-31270`
+      instead of `EMP-0001` and `PAY-0001`. Payroll settings detects the missing codes and names
+      them rather than posting to something nearly right; the sequences have no such guard. Same
+      class of drift as `ATR-`, `PRJ-`, `TRF-`, `SC-`, `FA-`, `DEP-`, `DIS-` and the missing 1402
+      and 5200.
+- [ ] **A payroll run posts as `ADJUSTMENT`, not as a payroll type of its own.** Hibernate wrote a
+      check constraint on `journal_entries.type` when the table was created and `ddl-auto: update`
+      never widens it, so a new enum value fails on every existing database — the same fault that
+      forced credit notes to post as `ADJUSTMENT`. Payroll entries are identified by the run number
+      in the reference instead. Widening this needs a Flyway migration, and note that
+      `baseline-on-migrate` baselines existing databases at version 1, so a first script must be
+      `V2__` or later to run.
+- [ ] **The report builder cannot express a calculation.** Rows select accounts and subtotals add up
+      the rows since the last subtotal; there is no way to write "gross margin as a percentage of
+      revenue", to divide one row by another, or to reference a subtotal further up. A report that
+      needs a ratio has to be finished by hand. Subtotals also reset on every subtotal, so a running
+      total across sections is not expressible, and there is no grand total row. Reports are shared
+      by everybody who can reach the page — there is no per-user or private report — and nothing
+      versions a definition, so editing one silently changes what every future run of it shows.
+- [ ] **Document capture has no engine, and the fields it captures are one line's worth.** There is
+      no text recognition at all: `UnavailableOcrEngine` is the only implementation and the page
+      says so plainly, so every figure is typed against the document. A capture produces a **single
+      expense line** — a receipt with four different categories on it becomes one line that has to
+      be split on the draft afterwards. Only expenses are produced; a supplier invoice that should
+      become a *bill* has to be entered separately, because a bill creates a payable and the capture
+      form asks which account the money left. The tax rate is worked back from subtotal and tax,
+      which reproduces what was charged but never links to a configured `TaxRate`, so a captured
+      receipt does not carry a tax treatment the VAT return can reason about. The oversized-upload
+      path is Spring's, so it still surfaces as an error page rather than a message on the form.
+- [ ] **Bank reconciliation matches one statement line to one ledger line.** A statement line that
+      the bank has aggregated — three cheques presented as one figure, or a card settlement covering
+      a day's takings — cannot be matched, because the amounts will not agree exactly and the guard
+      correctly refuses. Splitting a statement line, or matching many-to-one, is not supported, and
+      that is the most common real reason a reconciliation stalls. There is also no suggested
+      matching: every line is picked from a dropdown by hand, and the dropdown lists every
+      unreconciled line on the account rather than likely candidates. Nothing raises the adjusting
+      entry for a bank charge — deliberately, since posting from somebody else's document is what
+      reconciliation prevents — but it means the workflow leaves the page and comes back. A
+      reconciliation has no fiscal-period check on its statement date, and reopening a completed one
+      releases its matched lines with nothing recording that the agreement was withdrawn beyond the
+      audit log.
+- [ ] **Five families of CSS utility class are used across the app but defined nowhere.**
+      `ebook.css` is the only stylesheet, and it contains no `.mono`, `.justify-between`, `.w-full`,
+      `.form-control--sm` or `.table-total`. The real names are `.font-mono`,
+      `.justify-content-between` and `.w-100`; there is no small form-control variant and no
+      totals-row class at all. `class="mono"` alone appears **87 times across 30 templates**,
+      including `accounting/ledger.html`, `accounts/list.html` and `assets/asset-view.html`, so
+      monospace never applies anywhere in the application; `w-full` and `justify-between` mean
+      buttons that should be full width are not and rows that should be spread apart are not.
+      Pre-existing and widespread — the payroll, report builder, capture and reconciliation
+      templates added here use the correct names, which is why their layouts differ subtly from
+      neighbouring pages.
 - [ ] **Job costing is only as good as what somebody tagged, and nothing tags automatically.** No
       invoice, bill, expense or journal form carries a project picker, so every ledger line reaches
       a job only by being ticked on `/projects/job-costing` after the fact. A job nobody has tagged
@@ -616,7 +804,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 4,021 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 4,662 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.
