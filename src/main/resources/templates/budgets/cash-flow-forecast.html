@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{fc.cash.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{fc.cash.title}">Cash Flow Forecast</h1>
+            <p class="page-subtitle" th:text="#{fc.cash.subtitle}">What the bank balance does over the next twelve months, from what is owed and what is forecast.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/budgets/revenue-forecast}" th:text="#{fc.rev.title}">Revenue Forecast</a>
+            <a class="btn btn-secondary" th:href="@{/budgets/expense-forecast}" th:text="#{fc.exp.title}">Expense Forecast</a>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/budgets/cash-flow-forecast}">
+            <label class="text-sm text-muted" for="cfStart" th:text="#{fc.cash.from}">From</label>
+            <input class="form-control form-control--sm" id="cfStart" type="date" name="start" th:value="${start}">
+            <select class="form-control form-control--sm" name="revenue">
+                <option value="" th:text="#{fc.cash.noRevenue}">No revenue forecast</option>
+                <option th:each="f : ${revenueForecasts}" th:value="${f.id}"
+                        th:selected="${revenueId != null and revenueId == f.id}"
+                        th:text="${f.name + ' · ' + statusLabels.get(f.status.name())}">Forecast</option>
+            </select>
+            <select class="form-control form-control--sm" name="expense">
+                <option value="" th:text="#{fc.cash.noExpense}">No expense forecast</option>
+                <option th:each="f : ${expenseForecasts}" th:value="${f.id}"
+                        th:selected="${expenseId != null and expenseId == f.id}"
+                        th:text="${f.name + ' · ' + statusLabels.get(f.status.name())}">Forecast</option>
+            </select>
+            <label class="text-sm text-muted" for="cfCollect" th:text="#{fc.cash.collectLag}">Customers pay after</label>
+            <select class="form-control form-control--sm" id="cfCollect" name="collect">
+                <option th:each="n : ${lagChoices}" th:value="${n}" th:selected="${collectionLag == n}"
+                        th:text="${n == 0} ? #{fc.cash.sameMonth} : #{fc.cash.monthsLater(${n})}">1 month later</option>
+            </select>
+            <label class="text-sm text-muted" for="cfPay" th:text="#{fc.cash.payLag}">We pay after</label>
+            <select class="form-control form-control--sm" id="cfPay" name="pay">
+                <option th:each="n : ${lagChoices}" th:value="${n}" th:selected="${paymentLag == n}"
+                        th:text="${n == 0} ? #{fc.cash.sameMonth} : #{fc.cash.monthsLater(${n})}">1 month later</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Show</button>
+            <div class="toolbar-spacer"></div>
+        </form>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${cashFlow.goesShort()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fc.cash.shortTitle}">Cash runs out</div>
+            <span th:text="#{fc.cash.shortHint(${cashFlow.lowestMonth}, ${baseCurrency + ' ' + #numbers.formatDecimal(cashFlow.lowestBalance, 1, 'COMMA', 0, 'POINT')})}">The balance goes negative.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${!cashFlow.hasTradingForecast()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fc.cash.noForecastTitle}">Only what is already owed</div>
+            <span th:text="#{fc.cash.noForecastHint}">No trading forecast was chosen, so this shows the invoices and bills already on the books and nothing else. It is a collection schedule, not a forecast of the business.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fc.cash.opening}">Cash now</div>
+            <div class="stat-tile-value money"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashFlow.opening.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary"
+                 th:text="#{fc.cash.asOf(${#temporals.format(cashFlow.opening.asOf, 'dd MMM yyyy')})}">as at</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fc.cash.totalIn}">Expected in</div>
+            <div class="stat-tile-value money text-positive"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashFlow.totalIn, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fc.cash.totalOut}">Expected out</div>
+            <div class="stat-tile-value money text-error"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashFlow.totalOut, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fc.cash.closing}">Cash at the end</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${cashFlow.closing.signum() < 0} ? 'text-error' : 'text-positive'"
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashFlow.closing, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary"
+                 th:text="#{fc.cash.lowest(${baseCurrency + ' ' + #numbers.formatDecimal(cashFlow.lowestBalance, 1, 'COMMA', 0, 'POINT')}, ${cashFlow.lowestMonth})}">lowest</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{fc.cash.grid}">Month by month</h3>
+            <span class="text-sm text-muted"
+                  th:text="${#temporals.format(cashFlow.from, 'MMM yyyy') + ' — ' + #temporals.format(cashFlow.to, 'MMM yyyy')}">Jan 2026</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{fc.cash.month}">Month</th>
+                        <th class="num" th:text="#{fc.cash.opening}">Opening</th>
+                        <th class="num" th:text="#{fc.cash.fromDebtors}">From customers</th>
+                        <th class="num" th:text="#{fc.cash.fromTrading}">From forecast sales</th>
+                        <th class="num" th:text="#{fc.cash.toCreditors}">To suppliers</th>
+                        <th class="num" th:text="#{fc.cash.forTrading}">Forecast spend</th>
+                        <th class="num" th:text="#{fc.cash.net}">Net</th>
+                        <th class="num" th:text="#{fc.cash.closingShort}">Closing</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="m : ${cashFlow.months}">
+                        <td>
+                            <span th:text="${#temporals.format(m.monthStart, 'MMM yyyy')}">Jan 2026</span>
+                            <span class="badge badge-error" th:if="${m.cashShort}" th:text="#{fc.cash.shortBadge}">Short</span>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.opening, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money text-positive" th:text="${#numbers.formatDecimal(m.fromDebtors, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money text-positive" th:text="${#numbers.formatDecimal(m.fromTrading, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money text-error" th:text="${#numbers.formatDecimal(m.toCreditors, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money text-error" th:text="${#numbers.formatDecimal(m.forTrading, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money"
+                            th:classappend="${m.drawingDown} ? 'text-error' : 'text-positive'"
+                            th:text="${#numbers.formatDecimal(m.net, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money font-bold"
+                            th:classappend="${m.cashShort} ? 'text-error'"
+                            th:text="${#numbers.formatDecimal(m.closing, 1, 'COMMA', 0, 'POINT')}">0</td>
+                    </tr>
+                    <tr class="table-total">
+                        <td th:text="#{fc.total}">Total</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(cashFlow.opening.total, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" colspan="2"
+                            th:text="${#numbers.formatDecimal(cashFlow.totalIn, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money" colspan="2"
+                            th:text="${#numbers.formatDecimal(cashFlow.totalOut, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(cashFlow.netMovement, 1, 'COMMA', 0, 'POINT')}">0</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(cashFlow.closing, 1, 'COMMA', 0, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{fc.cash.lagHint}">A forecast says when a sale is earned, not when it is paid for, so the two lags above carry each month of trading into the month the money is expected to move. Everything already overdue is put in the first month rather than spread politely forward.</div>
+        </div>
+    </div>
+
+    <div class="grid grid-12">
+        <div class="col-span-12 d-flex flex-column gap-5">
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{fc.cash.openingBreakdown}">Where the opening cash is</h3></div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th th:text="#{fc.account}">Account</th>
+                                <th class="num" th:text="#{fc.cash.balance}">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="a : ${cashFlow.opening.accounts}">
+                                <td>
+                                    <span class="mono" th:text="${a.code}">1001</span>
+                                    <span class="cell-secondary" th:text="${a.name}">Cash</span>
+                                </td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(a.balance, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(cashFlow.opening.accounts)}">
+                                <td class="table-empty" colspan="2">
+                                    <p class="text-secondary" th:text="#{fc.cash.noCash}">No cash or bank account carries a balance.</p>
+                                </td>
+                            </tr>
+                            <tr class="table-total">
+                                <td th:text="#{fc.total}">Total</td>
+                                <td class="num money font-bold" th:text="${#numbers.formatDecimal(cashFlow.opening.total, 1, 'COMMA', 0, 'POINT')}">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{fc.cash.whatWentIn}">What this is built on</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{fc.rev.title}">Revenue forecast</span>
+                        <span th:text="${cashFlow.revenueForecast != null} ? ${cashFlow.revenueForecast.name} : '—'">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{fc.exp.title}">Expense forecast</span>
+                        <span th:text="${cashFlow.expenseForecast != null} ? ${cashFlow.expenseForecast.name} : '—'">—</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{fc.cash.debtorInvoices}">Unpaid invoices counted</span>
+                        <span th:text="${cashFlow.debtorInvoices}">0</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2">
+                        <span class="text-muted" th:text="#{fc.cash.creditorBills}">Unpaid bills counted</span>
+                        <span th:text="${cashFlow.creditorBills}">0</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${cashFlow.hasOverdue()}">
+                        <span class="text-muted" th:text="#{fc.cash.overdueIn}">Already overdue, owed to us</span>
+                        <span class="money" th:text="${#numbers.formatDecimal(cashFlow.overdueReceivable, 1, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${cashFlow.hasOverdue()}">
+                        <span class="text-muted" th:text="#{fc.cash.overdueOut}">Already overdue, owed by us</span>
+                        <span class="money" th:text="${#numbers.formatDecimal(cashFlow.overduePayable, 1, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="form-hint mt-3" th:if="${cashFlow.hasOverdue()}" th:text="#{fc.cash.overdueHint}">Anything already past its due date is shown as falling in the first month. Nothing here knows whether it will actually be collected.</div>
+                </div>
+            </div>
+
+            <div class="card" th:if="${cashFlow.hasBeyondHorizon()}">
+                <div class="card-header"><h3 th:text="#{fc.cash.beyond}">Falls outside these twelve months</h3></div>
+                <div class="card-body">
+                    <div class="d-flex justify-between mb-2" th:if="${cashFlow.receivableAfterHorizon.signum() != 0}">
+                        <span class="text-muted" th:text="#{fc.cash.beyondIn}">Invoices due later</span>
+                        <span class="money" th:text="${#numbers.formatDecimal(cashFlow.receivableAfterHorizon, 1, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${cashFlow.payableAfterHorizon.signum() != 0}">
+                        <span class="text-muted" th:text="#{fc.cash.beyondOut}">Bills due later</span>
+                        <span class="money" th:text="${#numbers.formatDecimal(cashFlow.payableAfterHorizon, 1, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${cashFlow.revenueAfterHorizon.signum() != 0}">
+                        <span class="text-muted" th:text="#{fc.cash.beyondRevenue}">Forecast sales collected later</span>
+                        <span class="money" th:text="${#numbers.formatDecimal(cashFlow.revenueAfterHorizon, 1, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="d-flex justify-between mb-2" th:if="${cashFlow.expenseAfterHorizon.signum() != 0}">
+                        <span class="text-muted" th:text="#{fc.cash.beyondExpense}">Forecast spend paid later</span>
+                        <span class="money" th:text="${#numbers.formatDecimal(cashFlow.expenseAfterHorizon, 1, 'COMMA', 0, 'POINT')}">0</span>
+                    </div>
+                    <div class="form-hint mt-3" th:text="#{fc.cash.beyondHint}">The lags push the last months of a forecast past the end of this window. The figures are shown here rather than dropped, so the projection is not flattered by money that simply fell off the edge.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3 th:text="#{fc.cash.limitsTitle}">What this does not know</h3></div>
+                <div class="card-body">
+                    <div class="form-hint" th:text="#{fc.cash.limitVat}">Forecast figures are net of VAT, because that is what reaches the profit and loss. Real receipts and payments carry VAT, so both columns understate the cash actually moving, and the VAT return itself is not scheduled here at all.</div>
+                    <div class="form-hint mt-2" th:text="#{fc.cash.limitCapital}">Only trading is projected. Buying an asset, taking or repaying a loan, drawings, tax payments and payroll outside the expense forecast are all absent.</div>
+                    <div class="form-hint mt-2" th:text="#{fc.cash.limitCurrency}">Invoice and bill balances are added up as they stand, without converting foreign currency. That is right for a single-currency ledger and wrong for any other.</div>
+                    <div class="form-hint mt-2" th:text="#{fc.cash.limitBehaviour}">The two lags are one assumption applied to every customer and every supplier alike. Nothing here reads how any of them has actually paid in the past.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

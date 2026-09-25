@@ -79,4 +79,12 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
             + "and b.status in (com.ntaganira.heritier.ibook.enums.DocumentStatus.OPEN, "
             + "com.ntaganira.heritier.ibook.enums.DocumentStatus.PARTIALLY_PAID)")
     BigDecimal vendorBalance(@Param("vendorId") Long vendorId);
+
+    /** Bills still owing money, oldest due date first, for scheduling expected payments. */
+    @Query("select b from Bill b "
+            + "where b.status in (com.ntaganira.heritier.ibook.enums.DocumentStatus.OPEN, "
+            + "com.ntaganira.heritier.ibook.enums.DocumentStatus.PARTIALLY_PAID, "
+            + "com.ntaganira.heritier.ibook.enums.DocumentStatus.OVERDUE) "
+            + "order by b.dueDate asc, b.id asc")
+    List<Bill> findOutstanding();
 }

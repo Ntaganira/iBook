@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**75 / 115 mapped · 40 remaining**
+**78 / 115 mapped · 37 remaining**
 
 How to check progress yourself:
 
@@ -172,7 +172,26 @@ Reads tables that already exist. All seven done.
       spending less than planned are both good and have opposite signs. Revenue and expense the
       ledger saw on accounts the budget never named are listed separately rather than folded into
       the variance.
-- [ ] `/budgets/revenue-forecast` · `/budgets/expense-forecast` · `/budgets/cash-flow-forecast`
+- [x] `/budgets/revenue-forecast` · `/budgets/expense-forecast` · `/budgets/cash-flow-forecast` — a
+      forecast is twelve months of expected revenue **or** expected spend, draft / publish / archive,
+      and like a budget it is **entirely non-posting**. Publishing only marks it as the set of
+      figures the cash flow should read, and only one of each kind is published at a time, so a cash
+      flow is never built on two sets of figures for the same months. Opening figures are worked out
+      from the posted ledger by a **visible** action — average of the last *n* months, a least-squares
+      trend carried forward, the same calendar month a year ago, or a copy of a budget — never
+      silently on save, and every figure stays editable afterwards; a line typed over is marked
+      **Adjusted** so a judgement can be told from a model output. Generation floors at zero and
+      says how many accounts it floored, because a negative forecast means the history is wrong
+      rather than that spend is expected to be negative. A copied budget is aligned by **calendar
+      month**, so a July budget lands correctly in a January forecast. Forecasts are shown against
+      history **scaled to twelve months**, since comparing a year against six months of basis would
+      report a doubling where nothing changed.
+      `/budgets/cash-flow-forecast` derives from three things already known: cash now (read through
+      `ReportService.signedBalancesUpTo`, so it is the balance sheet's own figure), unpaid invoices
+      and bills bucketed by due date, and the two trading forecasts carried into cash by a
+      **collection lag** and a **payment lag** — a forecast says when a sale is *earned*, not when
+      it is paid for. Anything already overdue lands in the first month and is flagged; anything the
+      lags push past the twelfth month is reported separately rather than dropped.
 - [ ] `/budgets/ai-forecasts` — drop unless genuinely wanted
 
 ### Documents (5)
@@ -205,6 +224,22 @@ Building these without the external piece produces a page that cannot work.
 
 ## Known issues
 
+- [ ] **A forecast is a guess with no accuracy record, and the cash flow is VAT-blind.** Nothing
+      compares a published forecast back against what the ledger then did, so no method is ever shown
+      to have been better than another — `/budgets/vs-actual` does that job for budgets and has no
+      forecast equivalent. The cash flow forecast has four gaps it states on the page but does not
+      fix: forecast figures are **net of VAT** because that is what reaches the profit and loss, so
+      both the receipts and the payments columns understate the cash actually moving and the VAT
+      return itself is never scheduled; only **trading** is projected, so asset purchases, loans and
+      their repayment, drawings, tax payments and any payroll outside the expense forecast are all
+      absent; invoice and bill balances are summed **without currency conversion**, the same app-wide
+      gap; and the collection and payment lags are **one assumption applied to every customer and
+      supplier alike** — nothing reads how any of them has actually paid before. The trend method
+      also fits a straight line through as few as two months and extends it twelve, which on sparse
+      data produces a confident number from almost nothing (measured live: four zero months and two
+      trading months extrapolated to 5,441,904.76 in month twelve). Generation floors negatives at
+      zero and reports the count, so an account whose history nets the wrong way is visible rather
+      than silently forecast as negative.
 - [ ] **Credit notes do not appear on customer statements.** `/sales/statements` builds its running
       balance from invoice totals and `InvoicePayment` rows only, so a credited invoice's statement
       closing balance overstates the debt by the credit. Aging, collections, outstanding totals and
@@ -437,7 +472,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 3,330 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 3,477 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.

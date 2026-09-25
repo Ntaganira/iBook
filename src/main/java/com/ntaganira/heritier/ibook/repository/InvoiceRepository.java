@@ -84,4 +84,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             + "and i.status in (com.ntaganira.heritier.ibook.enums.DocumentStatus.OPEN, "
             + "com.ntaganira.heritier.ibook.enums.DocumentStatus.PARTIALLY_PAID)")
     BigDecimal customerBalance(@Param("customerId") Long customerId);
+
+    /** Invoices still owing money, oldest due date first, for scheduling expected receipts. */
+    @Query("select i from Invoice i "
+            + "where i.status in (com.ntaganira.heritier.ibook.enums.DocumentStatus.OPEN, "
+            + "com.ntaganira.heritier.ibook.enums.DocumentStatus.PARTIALLY_PAID, "
+            + "com.ntaganira.heritier.ibook.enums.DocumentStatus.OVERDUE) "
+            + "order by i.dueDate asc, i.id asc")
+    List<Invoice> findOutstanding();
 }

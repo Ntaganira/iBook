@@ -92,6 +92,26 @@ public class ReportService {
         return signedByAccount;
     }
 
+    /**
+     * Balance per balance sheet account as of a date, opening balance included, in the same
+     * direction the balance sheet presents it. Exposed so a cash forecast opens at the figure the
+     * balance sheet would show rather than growing a second idea of what cash is worth.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> signedBalancesUpTo(LocalDate asOf) {
+        Map<Long, Movement> movements = movementsUpTo(asOf);
+        Map<Long, BigDecimal> balances = new LinkedHashMap<>();
+        for (Account account : accountRepository.findAllByOrderByCodeAsc()) {
+            AccountType type = account.getType();
+            if (type == AccountType.REVENUE || type == AccountType.EXPENSE) {
+                continue;
+            }
+            balances.put(account.getId(), zero(account.getOpeningBalance())
+                    .add(signed(type, movements.get(account.getId()))));
+        }
+        return balances;
+    }
+
     // ----- Profit and loss -----
 
     @Transactional(readOnly = true)
@@ -143,7 +163,7 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public BalanceSheet balanceSheet(LocalDate asOf) {
-        Map<Long, Movement> movements = movementsUpTo(asOf);
+        Map<Long, BigDecimal> balances = signedBalancesUpTo(asOf);
         List<ReportLine> assets = new ArrayList<>();
         List<ReportLine> liabilities = new ArrayList<>();
         List<ReportLine> equity = new ArrayList<>();
@@ -156,8 +176,7 @@ public class ReportService {
             if (type == AccountType.REVENUE || type == AccountType.EXPENSE) {
                 continue;
             }
-            BigDecimal balance = zero(account.getOpeningBalance())
-                    .add(signed(type, movements.get(account.getId())));
+            BigDecimal balance = zero(balances.get(account.getId()));
             if (balance.signum() == 0) {
                 continue;
             }

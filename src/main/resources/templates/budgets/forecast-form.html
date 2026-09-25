@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{fc.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{${selfPath}}" th:text="${revenueKind} ? #{fc.rev.title} : #{fc.exp.title}">Revenue Forecast</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{fc.form.editCrumb} : #{fc.form.breadcrumb}">New forecast</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{fc.form.editTitle} : #{fc.form.title}">New Forecast</h1>
+            <p class="page-subtitle" th:text="#{fc.form.subtitle}">Pick how the figures should be worked out, fill the grid from the ledger, then change anything you disagree with.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{${selfPath}}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="forecastForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{fc.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="forecastForm" name="publishNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{fc.savePublish}">Save and publish</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="forecastForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/budgets/forecasts/{id}(id=${editingId})} : @{/budgets/forecasts}">
+
+        <input type="hidden" name="kind" th:value="${kind}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="alert alert--info mb-4" th:if="${generation != null}">
+            <svg class="ebook-icon"><use href="#icon-info"/></svg>
+            <div class="alert-body">
+                <div class="alert-title"
+                     th:text="#{fc.generatedTitle(${methodLabel}, ${generation.accounts})}">Filled from the ledger</div>
+                <span th:text="#{fc.generatedRange(${#temporals.format(generation.historyFrom, 'MMM yyyy')}, ${#temporals.format(generation.historyTo, 'MMM yyyy')})}">Read from Jan 2026 to Jun 2026.</span>
+                <div class="mt-2" th:if="${generation.floored > 0}"
+                     th:text="#{fc.generatedFloored(${generation.floored})}">Some accounts were floored at zero.</div>
+                <div class="mt-2" th:if="${generation.withoutHistory > 0}"
+                     th:text="#{fc.generatedNoHistory(${generation.withoutHistory})}">Some accounts had no history.</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{fc.details}">What this forecast covers</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="fName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="fName" name="name" type="text" th:value="${form.name}"
+                               th:placeholder="#{fc.namePlaceholder}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fStart"><span th:text="#{fc.startsIn}">First month</span> <span class="required">*</span></label>
+                        <input class="form-control" id="fStart" name="startDate" type="date"
+                               th:value="${form.startDate}" required>
+                        <div class="form-hint" th:text="#{fc.startHint}">The twelve columns run from this month.</div>
+                        <div th:replace="~{layout/common :: fieldError('startDate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fMethod" th:text="#{fc.method}">Method</label>
+                        <select class="form-control" id="fMethod" name="method">
+                            <option th:each="entry : ${methodLabels}" th:value="${entry.key}"
+                                    th:text="${entry.value}"
+                                    th:selected="${form.method == entry.key}">Average</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fBasis" th:text="#{fc.basisMonths}">Months of history</label>
+                        <input class="form-control" id="fBasis" name="basisMonths" type="number" step="1" min="1" max="36"
+                               th:value="${form.basisMonths}">
+                        <div class="form-hint" th:text="#{fc.basisHint}">Used by the average and trend methods. The months run backwards from the month before the forecast starts.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fGrowth" th:text="#{fc.growth}">Growth to apply</label>
+                        <input class="form-control" id="fGrowth" name="growthPercent" type="number" step="0.01"
+                               th:value="${form.growthPercent}">
+                        <div class="form-hint" th:text="#{fc.growthHint}">A percentage added on top of whatever the method produced. Leave it at zero to forecast the past as it was.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fBudget" th:text="#{fc.sourceBudget}">Budget to copy</label>
+                        <select class="form-control" id="fBudget" name="sourceBudgetId">
+                            <option value="" th:text="#{fc.selectBudget}">Choose a budget…</option>
+                            <option th:each="b : ${budgets}" th:value="${b.id}"
+                                    th:text="${b.name + ' · ' + b.fiscalYear}"
+                                    th:selected="${form.sourceBudgetId != null and form.sourceBudgetId == b.id}">Budget</option>
+                        </select>
+                        <div class="form-hint" th:text="#{fc.sourceBudgetHint}">Only used by the "copy a budget" method. Figures are lined up by calendar month, so a July budget lands correctly in a January forecast.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="fDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="fDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="fNotes" th:text="#{fc.notes}">Notes</label>
+                        <input class="form-control" id="fNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-secondary" type="submit" name="action" value="generate">
+                        <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                        <span th:text="#{fc.generate}">Fill the grid from the ledger</span>
+                    </button>
+                </div>
+                <div class="form-hint mt-2" th:text="#{fc.generateHint}">This reads the posted ledger and writes the twelve months below. It replaces whatever is in the grid, so do it before making adjustments, not after.</div>
+                <div class="form-hint mt-2" th:each="entry : ${methodHints}"
+                     th:if="${form.method == entry.key}" th:text="${entry.value}"></div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="${revenueKind} ? #{fc.rev.lines} : #{fc.exp.lines}">What is forecast</h3>
+                <span class="text-sm text-muted" th:text="#{fc.linesHint}">Fill in a yearly figure, or the months, not both</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{fc.account}">Account</th>
+                            <th class="num" th:text="#{fc.annual}">Yearly</th>
+                            <th class="num" th:each="m : ${#numbers.sequence(1, 12)}" th:text="'M' + ${m}">M1</th>
+                            <th class="num" th:text="#{fc.history}">Before</th>
+                            <th th:text="#{fc.lineNotes}">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="line, st : ${form.lines}">
+                            <td>
+                                <select class="form-control form-control--sm"
+                                        th:name="'lines[' + ${st.index} + '].accountId'">
+                                    <option value="" th:text="#{fc.selectAccount}">Choose an account…</option>
+                                    <option th:each="a : ${accounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${line.accountId != null and line.accountId == a.id}">4000</option>
+                                </select>
+                                <input type="hidden" th:name="'lines[' + ${st.index} + '].generatedAmount'"
+                                       th:value="${line.generatedAmount}">
+                                <input type="hidden" th:name="'lines[' + ${st.index} + '].historyAmount'"
+                                       th:value="${line.historyAmount}">
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].annualAmount'"
+                                       th:value="${line.annualAmount}" placeholder="0">
+                            </td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m1'" th:value="${line.m1}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m2'" th:value="${line.m2}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m3'" th:value="${line.m3}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m4'" th:value="${line.m4}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m5'" th:value="${line.m5}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m6'" th:value="${line.m6}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m7'" th:value="${line.m7}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m8'" th:value="${line.m8}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m9'" th:value="${line.m9}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m10'" th:value="${line.m10}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m11'" th:value="${line.m11}"></td>
+                            <td><input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].m12'" th:value="${line.m12}"></td>
+                            <td class="num money text-muted"
+                                th:text="${line.historyAmount == null} ? '—' : ${#numbers.formatDecimal(line.historyAmount, 1, 'COMMA', 0, 'POINT')}">—</td>
+                            <td>
+                                <input class="form-control form-control--sm" type="text"
+                                       th:name="'lines[' + ${st.index} + '].notes'" th:value="${line.notes}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:replace="~{layout/common :: fieldError('lines')}"></div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{fc.spreadHint}">Leave the months empty and the yearly figure is spread evenly across the twelve, with the rounding put on the last month so they add back exactly. Fill any month in and the months are taken as given.</div>
+                <div class="form-hint mt-2" th:text="${revenueKind} ? #{fc.rev.accountsHint} : #{fc.exp.accountsHint}">Only revenue accounts belong on a revenue forecast.</div>
+                <div class="form-hint mt-2" th:text="#{fc.vatHint}">Figures are what reaches the profit and loss, so they carry no VAT. The cash actually banked on a sale is higher than the figure here by whatever VAT was charged on it.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>
