@@ -18,6 +18,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long> {
@@ -32,4 +33,6 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
     Page<JournalEntry> search(@Param("q") String q, @Param("status") JournalEntryStatus status, Pageable pageable);
 
     long countByStatus(JournalEntryStatus status);
+    /** Every entry a recurring schedule raised, found by the reference it stamps on them. */
+    List<JournalEntry> findByReferenceOrderByEntryDateDescIdDesc(String reference);
 }

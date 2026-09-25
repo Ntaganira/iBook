@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{rjn.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/accounting/recurring-journals}" th:text="#{rjn.title}">Recurring journals</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{rjn.form.editCrumb} : #{rjn.form.breadcrumb}">New schedule</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{rjn.form.editTitle} : #{rjn.form.title}">New Recurring Journal</h1>
+            <p class="page-subtitle" th:text="#{rjn.form.subtitle}">An entry that repeats on a cycle, written out each time it falls due.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/accounting/recurring-journals}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="rjnForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{rjn.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="rjnForm" name="activateNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{rjn.saveStart}">Save and start</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="rjnForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/accounting/recurring-journals/{id}(id=${editingId})} : @{/accounting/recurring-journals}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{rjn.details}">What repeats, and how often</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rName" name="name" type="text" th:value="${form.name}"
+                               th:placeholder="#{rjn.namePlaceholder}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rFreq" th:text="#{rjn.frequencyLabel}">How often</label>
+                        <select class="form-control" id="rFreq" name="frequency">
+                            <option th:each="f : ${frequencyLabels}" th:value="${f.key}" th:text="${f.value}"
+                                    th:selected="${form.frequency == f.key}">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rStart"><span th:text="#{rjn.startDate}">First entry falls on</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rStart" name="startDate" type="date" th:value="${form.startDate}" required>
+                        <div th:replace="~{layout/common :: fieldError('startDate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rEnd" th:text="#{rjn.endDate}">Stop after</label>
+                        <input class="form-control" id="rEnd" name="endDate" type="date" th:value="${form.endDate}">
+                        <div class="form-hint" th:text="#{rjn.endHint}">Optional. Left empty the schedule runs until it is stopped.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rMax" th:text="#{rjn.maxOccurrences}">At most this many entries</label>
+                        <input class="form-control" id="rMax" name="maxOccurrences" type="number" step="1" min="1"
+                               th:value="${form.maxOccurrences}">
+                        <div class="form-hint" th:text="#{rjn.maxHint}">Optional. Useful for an amortisation that runs a known number of periods.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rRef" th:text="#{common.reference}">Reference</label>
+                        <input class="form-control" id="rRef" name="reference" type="text" th:value="${form.reference}">
+                        <div class="form-hint" th:text="#{rjn.referenceHint}">Stamped on every entry raised, which is how this page finds them again. Left empty, one is made from the schedule.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rMemo" th:text="#{rjn.memo}">Memo on each entry</label>
+                        <input class="form-control" id="rMemo" name="memo" type="text" th:value="${form.memo}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="rDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="autoPost" value="true" th:checked="${form.autoPost}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{rjn.autoPost}">Post each entry to the ledger without asking</span>
+                        </label>
+                        <div class="form-hint" th:text="#{rjn.autoPostHint}">With auto-posting on, the nightly sweep writes to the ledger with nobody in the loop, and the only brake is a cap of 24 catch-up entries per schedule per night. Leave it off unless the entry is genuinely the same every cycle.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="rNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{rjn.lines}">The entry itself</h3>
+                <span class="text-sm text-muted"
+                      th:text="#{rjn.balanceState(${#numbers.formatDecimal(form.totalDebits(), 1, 'COMMA', 2, 'POINT')}, ${#numbers.formatDecimal(form.totalCredits(), 1, 'COMMA', 2, 'POINT')})}">Debits vs credits</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{common.account}">Account</th>
+                            <th th:text="#{jc.memo}">Memo</th>
+                            <th class="num" th:text="#{jc.debit}">Debit</th>
+                            <th class="num" th:text="#{jc.credit}">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="line, st : ${form.lines}">
+                            <td>
+                                <select class="form-control form-control--sm"
+                                        th:name="'lines[' + ${st.index} + '].accountId'">
+                                    <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                                    <option th:each="a : ${accounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${line.accountId != null and line.accountId == a.id}">4000</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm" type="text"
+                                       th:name="'lines[' + ${st.index} + '].memo'" th:value="${line.memo}">
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].debit'" th:value="${line.debit}" placeholder="0">
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].credit'" th:value="${line.credit}" placeholder="0">
+                            </td>
+                        </tr>
+                        <tr class="table-total">
+                            <td colspan="2" class="font-bold" th:text="#{fc.total}">Total</td>
+                            <td class="num money font-bold" th:text="${#numbers.formatDecimal(form.totalDebits(), 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money font-bold" th:text="${#numbers.formatDecimal(form.totalCredits(), 1, 'COMMA', 2, 'POINT')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{rjn.balanceHint}">Debits have to equal credits before a schedule can start, and the balance is checked again as each entry is written. A line is a debit or a credit, never both.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>
