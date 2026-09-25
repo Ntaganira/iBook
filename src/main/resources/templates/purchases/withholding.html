@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{wht.registerTitle}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{wht.registerTitle}">Withholding Certificates</h1>
+            <p class="page-subtitle" th:text="#{wht.registerSubtitle}">Tax withheld from supplier bills, and the certificates proving it.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/taxes/withholding}" th:text="#{wht.toRates}">Rates and return</a>
+            <a class="btn btn-primary" th:href="@{/purchases/withholding/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{wht.new}">Withhold from a bill</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${summary.ready}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{wht.notReadyTitle}">Nothing can be withheld yet</div>
+            <span th:text="#{wht.notReadyHint}">The rates have not been confirmed, or no liability account has been chosen for withheld money.</span>
+            <div class="mt-2">
+                <a class="btn btn-primary btn-sm" th:href="@{/taxes/withholding}" th:text="#{wht.toRates}">Rates and return</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{wht.registerLedgerTitle}">A part-payment of the bill, to the state instead of the supplier</div>
+            <span th:text="#{wht.registerLedgerHint}">Issuing a certificate records the withheld amount against the bill as a payment whose destination is the withholding liability rather than a bank account. That is exactly what it is, and it keeps the bill's balance, the aging report and the payables total all agreeing with the ledger instead of being out by the amount withheld. Only bills can be withheld from: a direct expense is already paid in full, so there is nothing left to hold back.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.status.issued}">Issued</div>
+            <div class="stat-tile-value" th:text="${summary.issued}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.status.draft}">Draft</div>
+            <div class="stat-tile-value" th:text="${summary.draft}">0</div>
+            <div class="cell-secondary" th:text="#{wht.draftHint}">Nothing withheld until issued.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.thisYear}">Withheld this year</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.withheldInPeriod, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.liability}">Still held</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.liability, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{wht.owedToRra}">Owed to the RRA.</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/purchases/withholding}" th:classappend="${status == null or status == ''} ? 'active'">
+            <span th:text="#{prj.all}">All</span> <span class="tab-count" th:text="${summary.all}">0</span>
+        </a>
+        <a class="tab" th:href="@{/purchases/withholding(status='DRAFT')}" th:classappend="${status == 'DRAFT'} ? 'active'">
+            <span th:text="#{wht.status.draft}">Draft</span> <span class="tab-count" th:text="${summary.draft}">0</span>
+        </a>
+        <a class="tab" th:href="@{/purchases/withholding(status='ISSUED')}" th:classappend="${status == 'ISSUED'} ? 'active'">
+            <span th:text="#{wht.status.issued}">Issued</span> <span class="tab-count" th:text="${summary.issued}">0</span>
+        </a>
+        <a class="tab" th:href="@{/purchases/withholding(status='VOID')}" th:classappend="${status == 'VOID'} ? 'active'">
+            <span th:text="#{wht.status.void}">Void</span> <span class="tab-count" th:text="${summary.voided}">0</span>
+        </a>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/purchases/withholding}">
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{wht.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="vendorId">
+                <option value="" th:text="#{doc.allLinks}">Every supplier</option>
+                <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"
+                        th:selected="${vendorId != null and vendorId == v.id}">Supplier</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(certificates.content)}, ${certificates.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'certificateNo', #{wht.certificateNo}, ${sort}, ${dir})}">Certificate</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'vendorName', #{ven.vendorHeader}, ${sort}, ${dir})}">Supplier</th>
+                        <th th:text="#{wht.bill}">Bill</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'certificateDate', #{common.date}, ${sort}, ${dir})}">Date</th>
+                        <th class="num" th:text="#{wht.base}">Base</th>
+                        <th class="num" th:text="#{wht.rate}">Rate</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'amount', #{wht.withheld}, ${sort}, ${dir})}">Withheld</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c : ${certificates.content}">
+                        <td><a class="cell-link font-mono" th:href="@{/purchases/withholding/{id}(id=${c.id})}" th:text="${c.certificateNo}">WHT-0001</a></td>
+                        <td>
+                            <span th:text="${c.vendorName}">Supplier</span>
+                            <span class="cell-secondary font-mono" th:if="${c.vendorTaxId != null}" th:text="${c.vendorTaxId}"></span>
+                        </td>
+                        <td><span class="font-mono cell-secondary" th:text="${c.billNo}">BILL-0001</span></td>
+                        <td th:text="${#temporals.format(c.certificateDate, 'dd MMM yyyy')}">01 Sep</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(c.baseAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(c.rate, 1, 'COMMA', 2, 'POINT')} + '%'">0%</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(c.amount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td th:with="st=${c.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'ISSUED' ? 'badge-success' : (st == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(certificates.content)}">
+                        <td class="table-empty" colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-percent"/></svg></div>
+                                <p class="text-secondary" th:text="#{wht.none}">Nothing has been withheld yet.</p>
+                                <p class="form-hint mt-2" th:text="#{wht.noneHint}">Withholding applies to a posted bill that still owes the supplier something.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/purchases/withholding/new}" th:text="#{wht.new}">Withhold from a bill</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${certificates.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(certificates.content)}, ${certificates.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${certificates.number + 1}, ${certificates.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

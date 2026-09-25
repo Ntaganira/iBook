@@ -391,6 +391,7 @@ SecuritySettingsRepository securitySettingsRepository,
         seq(repository, "Employees", "EMPLOYEE", "EMP-", null, 4, 1, false);
         seq(repository, "Payroll Runs", "PAYROLL", "PAY-", null, 4, 1, false);
         seq(repository, "Remittances", "REMITTANCE", "REM-", null, 4, 1, false);
+        seq(repository, "Withholding Certificates", "WITHHOLDING", "WHT-", null, 4, 1, false);
         seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }
 
@@ -510,6 +511,8 @@ SecuritySettingsRepository securitySettingsRepository,
         account(repository, "2103", "Net pay payable", AccountType.LIABILITY, null, "0", true);
         account(repository, "2104", "RSSB contributions payable", AccountType.LIABILITY, null, "0", true);
         account(repository, "2105", "CBHI payable", AccountType.LIABILITY, null, "0", true);
+        account(repository, "2106", "Withholding tax payable", AccountType.LIABILITY, null, "0", true);
+        account(repository, "2107", "Excise duty payable", AccountType.LIABILITY, null, "0", true);
         account(repository, "2301", "Short-term loans", AccountType.LIABILITY, null, "4000000", true);
         account(repository, "2401", "Long-term loan — bank", AccountType.LIABILITY, null, "8000000", true);
         account(repository, "3000", "Owner's equity", AccountType.EQUITY, null, "0", true);

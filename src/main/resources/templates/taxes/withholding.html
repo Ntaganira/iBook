@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{wht.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{wht.title}">Withholding Tax</h1>
+            <p class="page-subtitle" th:text="#{wht.subtitle}">Tax taken off what suppliers are paid, and handed over to the RRA.</p>
+            <span class="badge" th:classappend="${settings.confirmed} ? 'badge-success' : 'badge-warning'">
+                <span class="badge-dot"></span>
+                <span th:text="${settings.confirmed} ? #{wht.confirmedBadge} : #{wht.unconfirmedBadge}">Not confirmed</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/purchases/withholding}" th:text="#{wht.toRegister}">Certificates</a>
+            <button class="btn btn-primary" type="submit" form="whtForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${settings.confirmed}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{wht.gateTitle}">Nothing is withheld until these rates are confirmed</div>
+            <span th:text="#{wht.gateHint}">The rates below are a starting point, not an authority. Withholding takes money off a supplier's payment and owes it to the state, so a wrong rate shorts either the supplier or the RRA — and both find out eventually. Check them against the current RRA schedule and confirm them here.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${settings.confirmed}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{wht.confirmedTitle}">These rates have been confirmed</div>
+            <span th:text="#{wht.confirmedBy(${settings.confirmedBy}, ${#temporals.format(settings.confirmedAt, 'dd MMM yyyy')})}">Confirmed by somebody.</span>
+            <span th:if="${settings.rateSource != null}" th:text="#{wht.checkedAgainst(${settings.rateSource})}">Checked against.</span>
+            <div class="form-hint mt-2" th:text="#{wht.editWithdraws}">Changing any figure below withdraws the confirmation.</div>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${!#lists.isEmpty(missingAccounts)}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{wht.missingAccountTitle}">The chart of accounts is missing the code this module expects</div>
+            <span th:text="#{wht.missingAccountHint(${#strings.listJoin(missingAccounts, ', ')})}">Missing codes.</span>
+            <div class="mt-2">
+                <a class="btn btn-secondary btn-sm" th:href="@{/accounts}" th:text="#{pst.toChart}">Chart of accounts</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{wht.ledgerTitle}">Withholding is not a cost</div>
+            <span th:text="#{wht.ledgerHint}">The whole of the bill is still the company's expense; part of it is simply paid to the RRA rather than to the supplier. So issuing a certificate posts a debit to accounts payable and a credit to the withholding liability, and touches no expense account — it moves a debt from one creditor to another. It is recorded as a part-payment of the bill, which is what keeps the bill's balance, the aging report and the payables total all saying the same thing.</span>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <form class="table-toolbar" method="get" th:action="@{/taxes/withholding}">
+            <label class="form-label" for="wFrom" th:text="#{common.from}">From</label>
+            <input class="form-control" id="wFrom" type="date" name="from" th:value="${from}">
+            <label class="form-label" for="wTo" th:text="#{common.to}">To</label>
+            <input class="form-control" id="wTo" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+        </form>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.withheldInPeriod}">Withheld in the period</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.withheldInPeriod, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{wht.withheldHint}">Issued certificates only.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.remittedInPeriod}">Handed over in the period</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.remittedInPeriod, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.liability}">Still held</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${summary.liability.signum() > 0} ? 'text-error' : 'text-success'"
+                 th:text="${#numbers.formatDecimal(summary.liability, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{wht.liabilityHint}">Read from the liability account itself.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{wht.issuedCount}">Certificates issued</div>
+            <div class="stat-tile-value" th:text="${summary.issued}">0</div>
+        </div>
+    </div>
+
+    <form id="whtForm" method="post" novalidate th:object="${form}" th:action="@{/taxes/withholding}">
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{wht.ratesTitle}">The withholding rates</h3>
+                <span class="text-sm text-muted" th:text="#{wht.ratesHint}">Which rate applies to a payment is a judgement about the supply, so it is chosen per certificate rather than inferred from the supplier.</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{pcm.code}">Code</th>
+                            <th th:text="#{common.name}">Name</th>
+                            <th class="num" th:text="#{wht.rate}">Rate %</th>
+                            <th th:text="#{wht.appliesTo}">What it is for</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="row, st : ${form.rates}">
+                            <td>
+                                <input class="form-control" type="text" maxlength="40"
+                                       th:name="'rates[' + ${st.index} + '].code'" th:value="${row.code}">
+                            </td>
+                            <td>
+                                <input class="form-control" type="text"
+                                       th:name="'rates[' + ${st.index} + '].name'" th:value="${row.name}">
+                            </td>
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0" max="100"
+                                       th:name="'rates[' + ${st.index} + '].rate'" th:value="${row.rate}">
+                            </td>
+                            <td>
+                                <input class="form-control" type="text"
+                                       th:name="'rates[' + ${st.index} + '].appliesTo'" th:value="${row.appliesTo}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="wAcc"><span th:text="#{wht.payableAccount}">Withheld money is held in</span> <span class="required">*</span></label>
+                        <select class="form-control" id="wAcc" name="payableAccountId">
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.payableAccountId != null and form.payableAccountId == a.id}">2106</option>
+                        </select>
+                        <div class="form-hint" th:text="#{wht.payableAccountHint}">A liability, never an expense: it is the supplier's money held on the RRA's behalf, and it was never a cost of anything.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wSource" th:text="#{pst.rateSource}">What these were checked against</label>
+                        <input class="form-control" id="wSource" name="rateSource" type="text"
+                               th:value="${form.rateSource}" th:placeholder="#{wht.rateSourcePlaceholder}">
+                    </div>
+                </div>
+                <div class="form-hint mt-2" th:text="#{wht.blankRowHint}">A rate needs a code and a name. Blank rows are ignored.</div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card mb-5">
+        <div class="card-header"><h3 th:text="#{wht.confirmTitle}">Confirm these rates</h3></div>
+        <form method="post" th:action="@{/taxes/withholding/confirm}" th:unless="${settings.confirmed}">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="cSource" th:text="#{pst.rateSource}">What these were checked against</label>
+                    <input class="form-control" id="cSource" name="rateSource" type="text"
+                           th:value="${settings.rateSource}" th:placeholder="#{wht.rateSourcePlaceholder}">
+                </div>
+                <div class="form-hint mb-3" th:text="#{wht.confirmHint}">Save any changes first — saving withdraws the confirmation.</div>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-shield"/></svg>
+                    <span th:text="#{wht.confirm}">I have checked these against the current schedule</span>
+                </button>
+            </div>
+        </form>
+        <form method="post" th:action="@{/taxes/withholding/withdraw}" th:if="${settings.confirmed}">
+            <div class="card-body">
+                <div class="form-hint mb-3" th:text="#{wht.withdrawHint}">Withdrawing stops any further certificate being raised. Certificates already issued are untouched.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pst.withdraw}">Withdraw the confirmation</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{wht.returnTitle}">What was withheld, by supplier</h3>
+            <span class="text-sm text-muted" th:text="#{wht.returnHint}">This is what a return is made up of.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{ven.vendorHeader}">Supplier</th>
+                        <th th:text="#{wht.taxId}">TIN</th>
+                        <th class="num" th:text="#{wht.certificates}">Certificates</th>
+                        <th class="num" th:text="#{wht.base}">Base</th>
+                        <th class="num" th:text="#{wht.withheld}">Withheld</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="v : ${byVendor}">
+                        <td th:text="${v.vendorName}">Supplier</td>
+                        <td><span class="font-mono" th:text="${v.taxId != null} ? ${v.taxId} : '—'">—</span></td>
+                        <td class="num" th:text="${v.count}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(v.base, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(v.withheld, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(byVendor)}">
+                        <td class="table-empty" colspan="5">
+                            <p class="text-secondary" th:text="#{wht.noneInPeriod}">Nothing was withheld in these dates.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="#{wht.remitTitle}">Hand it over</h3>
+            <span class="text-sm text-muted" th:text="#{wht.remitHint}">Debits the liability and credits the account the money left.</span>
+        </div>
+        <form method="post" th:action="@{/taxes/withholding/remit}">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="rDate"><span th:text="#{rem.paymentDate}">Paid on</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rDate" name="paymentDate" type="date"
+                               th:value="${today}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rAmt"><span th:text="#{common.amount}">Amount</span> <span class="required">*</span></label>
+                        <input class="form-control amount-control" id="rAmt" name="amount" type="number" step="0.01" min="0"
+                               th:value="${summary.liability}" required>
+                        <div class="form-hint" th:text="#{wht.remitAmountHint}">Prefilled with what the liability account still holds, and editable — what was actually declared and paid is what belongs here.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rFrom2"><span th:text="#{rem.paymentAccount}">Paid from</span> <span class="required">*</span></label>
+                        <select class="form-control" id="rFrom2" name="paymentAccountId" required>
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${paymentAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}">1101</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rDecl" th:text="#{rem.declarationNo}">Declaration number</label>
+                        <input class="form-control" id="rDecl" name="declarationNo" type="text">
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit" th:disabled="${summary.liability.signum() <= 0}">
+                    <svg class="ebook-icon"><use href="#icon-send"/></svg>
+                    <span th:text="#{wht.remit}">Record the payment</span>
+                </button>
+                <div class="form-hint mt-2" th:text="#{wht.remitLedgerHint}">There is no separate record of remittances: the liability account is the record, so what has been handed over is read from the ledger rather than from a second tally that could disagree with it.</div>
+            </div>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>
