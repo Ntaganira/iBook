@@ -26,7 +26,15 @@ public record RemittanceForm(
         @NotNull(message = "{rem.paymentAccountRequired}") Long paymentAccountId,
         @Size(max = 60) String declarationNo,
         @Size(max = 1000) String notes,
-        boolean payNow) {
+        /*
+         * Boxed. The "save draft" button submits no payNow at all, and a record cannot bind null
+         * to a primitive boolean — the save would then silently do nothing.
+         */
+        Boolean payNow) {
+
+    public boolean payNowValue() {
+        return Boolean.TRUE.equals(payNow);
+    }
 
     public static RemittanceForm empty(String authority) {
         LocalDate today = LocalDate.now();
@@ -34,7 +42,7 @@ public record RemittanceForm(
         return new RemittanceForm(authority == null ? "RRA_PAYE" : authority,
                 lastMonth.withDayOfMonth(1),
                 lastMonth.withDayOfMonth(lastMonth.lengthOfMonth()),
-                today, BigDecimal.ZERO, null, null, null, false);
+                today, BigDecimal.ZERO, null, null, null, Boolean.FALSE);
     }
 
     public BigDecimal amountValue() {

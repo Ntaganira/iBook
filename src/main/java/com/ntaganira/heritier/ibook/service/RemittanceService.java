@@ -199,7 +199,7 @@ public class RemittanceService {
                 "remittance#" + saved.getId(), saved.getReference() + " — "
                         + authority.name() + " " + saved.getAmount().toPlainString());
 
-        if (form.payNow()) {
+        if (form.payNowValue()) {
             saved = pay(saved.getId(), username);
         }
         return saved;
@@ -332,7 +332,7 @@ public class RemittanceService {
     public RemittanceForm toForm(Remittance r) {
         return new RemittanceForm(r.getAuthority().name(), r.getPeriodStart(), r.getPeriodEnd(),
                 r.getPaymentDate(), r.getAmount(), r.getPaymentAccountId(), r.getDeclarationNo(),
-                r.getNotes(), false);
+                r.getNotes(), Boolean.FALSE);
     }
 
     private Account liabilityAccount(RemittanceAuthority authority, PayrollSettings settings) {
