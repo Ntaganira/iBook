@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bnr.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{bnr.title}">Bank Reconciliation</h1>
+            <p class="page-subtitle" th:text="#{bnr.subtitle}">Agreeing a bank statement with what the books say.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/banking/transactions}" th:text="#{bnr.toTransactions}">Bank transactions</a>
+            <a class="btn btn-primary" th:href="@{/banking/reconcile/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{bnr.new}">New reconciliation</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{bnr.ledgerTitle}">Reconciling posts nothing</div>
+            <span th:text="#{bnr.ledgerHint}">It changes no figure anywhere — it establishes that the ledger and the bank agree, and where they do not, why. A reconciliation that quietly adjusted the books to match the bank would destroy the exact disagreement it exists to find. The statement is typed in: an automatic feed is a convenience, not the mechanism, and reconciliation has always worked from the paper the bank sends.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bnr.status.draft}">In progress</div>
+            <div class="stat-tile-value" th:text="${summary.draft}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bnr.status.completed}">Agreed</div>
+            <div class="stat-tile-value" th:text="${summary.completed}">0</div>
+            <div class="cell-secondary" th:text="#{bnr.completedHint}">Books and bank matched exactly.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bnr.status.void}">Void</div>
+            <div class="stat-tile-value" th:text="${summary.voided}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{prj.all}">All</div>
+            <div class="stat-tile-value" th:text="${summary.all}">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/banking/reconcile}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{bnr.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="accountId">
+                <option value="" th:text="#{bnr.allAccounts}">Every account</option>
+                <option th:each="a : ${bankAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                        th:selected="${accountId != null and accountId == a.id}">1101</option>
+            </select>
+            <select class="form-control" name="status">
+                <option value="" th:text="#{prj.all}">All</option>
+                <option th:each="s : ${statusLabels}" th:value="${s.key}" th:text="${s.value}"
+                        th:selected="${status == s.key}">Agreed</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(reconciliations.content)}, ${reconciliations.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'reference', #{common.reference}, ${sort}, ${dir})}">Reference</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'accountCode', #{common.account}, ${sort}, ${dir})}">Account</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'statementDate', #{bnr.statementDate}, ${sort}, ${dir})}">Statement to</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'closingBalance', #{bnr.closingBalance}, ${sort}, ${dir})}">Per the bank</th>
+                        <th class="num" th:text="#{bnr.lineCount}">Lines</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'status', #{common.status}, ${sort}, ${dir})}">Status</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${reconciliations.content}">
+                        <td>
+                            <a class="cell-link font-mono" th:href="@{/banking/reconcile/{id}(id=${r.id})}" th:text="${r.reference}">REC-0001</a>
+                        </td>
+                        <td>
+                            <span class="font-mono" th:text="${r.accountCode}">1101</span>
+                            <span class="cell-secondary" th:text="${r.accountName}">Bank</span>
+                        </td>
+                        <td th:text="${#temporals.format(r.statementDate, 'dd MMM yyyy')}">30 Sep</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.closingBalance, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num" th:text="${#lists.size(r.lines)}">0</td>
+                        <td th:with="st=${r.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'COMPLETED' ? 'badge-success' : (st == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">In progress</span>
+                            </span>
+                            <span class="badge badge-error" th:unless="${r.statementConsistent}" th:text="#{bnr.statementOut}">Statement out</span>
+                        </td>
+                        <td class="actions-cell">
+                            <a class="btn btn-secondary btn-sm" th:href="@{/banking/reconcile/{id}(id=${r.id})}"
+                               th:text="${r.editable} ? #{bnr.continueIt} : #{common.view}">Continue</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(reconciliations.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-scale"/></svg></div>
+                                <p class="text-secondary" th:text="#{bnr.none}">No reconciliations yet.</p>
+                                <p class="form-hint mt-2" th:text="#{bnr.noneHint}">Take the statement the bank sent, type its lines in, and match them against the ledger.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/banking/reconcile/new}" th:text="#{bnr.new}">New reconciliation</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${reconciliations.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(reconciliations.content)}, ${reconciliations.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${reconciliations.number + 1}, ${reconciliations.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

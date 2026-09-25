@@ -31,6 +31,18 @@ public interface JournalLineRepository extends JpaRepository<JournalLine, Long> 
             "where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED group by l.accountId")
     List<Object[]> postedTotalsByAccount();
 
+    /**
+     * Posted movement on one account up to a date, oldest first. Bank reconciliation reads this:
+     * everything the books say went through the account by the statement date, which is the side
+     * the statement has to be matched against.
+     */
+    @Query("select l from JournalLine l "
+            + "where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED "
+            + "and l.accountId = :accountId and l.entry.entryDate <= :asOf "
+            + "order by l.entry.entryDate asc, l.entry.id asc, l.sortOrder asc")
+    List<JournalLine> postedByAccountUpTo(@Param("accountId") Long accountId,
+                                          @Param("asOf") LocalDate asOf);
+
     @Query("select l from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED " +
             "order by l.entry.entryDate asc, l.entry.id asc, l.sortOrder asc")
     List<JournalLine> postedLines();

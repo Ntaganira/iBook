@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bnr.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/banking/reconcile}" th:text="#{bnr.title}">Bank reconciliation</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{bnr.form.editCrumb} : #{bnr.form.breadcrumb}">New</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{bnr.form.editTitle} : #{bnr.form.title}">New Reconciliation</h1>
+            <p class="page-subtitle" th:text="#{bnr.form.subtitle}">Type the statement in as the bank sent it.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/banking/reconcile}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="recForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{bnr.saveAndMatch}">Save and start matching</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="recForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/banking/reconcile/{id}(id=${editingId})} : @{/banking/reconcile}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{bnr.statementTitle}">The statement</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="rAcc"><span th:text="#{common.account}">Account</span> <span class="required">*</span></label>
+                        <select class="form-control" id="rAcc" name="accountId" required>
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${bankAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.accountId != null and form.accountId == a.id}">1101</option>
+                        </select>
+                        <div class="form-hint" th:text="#{bnr.accountHint}">Cash and bank accounts only — 10xx and 11xx.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rDate"><span th:text="#{bnr.statementDate}">Statement runs to</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rDate" name="statementDate" type="date"
+                               th:value="${form.statementDate}" required>
+                        <div class="form-hint" th:text="#{bnr.statementDateHint}">Everything the books show on this account up to this date is in scope.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rOpen" th:text="#{bnr.openingBalance}">Opening balance per the bank</label>
+                        <input class="form-control amount-control" id="rOpen" name="openingBalance" type="number" step="0.01"
+                               th:value="${form.openingBalance}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rClose" th:text="#{bnr.closingBalance}">Closing balance per the bank</label>
+                        <input class="form-control amount-control" id="rClose" name="closingBalance" type="number" step="0.01"
+                               th:value="${form.closingBalance}">
+                        <div class="form-hint" th:text="#{bnr.closingBalanceHint}">The figure everything else is measured against.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="rNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="#{bnr.linesTitle}">The statement lines</h3>
+                <span class="text-sm text-muted" th:text="#{bnr.linesHint}">Money in is what arrived; money out is what left.</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{common.date}">Date</th>
+                            <th th:text="#{common.description}">Description</th>
+                            <th th:text="#{common.reference}">Reference</th>
+                            <th class="num" th:text="#{bnr.moneyIn}">Money in</th>
+                            <th class="num" th:text="#{bnr.moneyOut}">Money out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="line, st : ${form.lines}">
+                            <td>
+                                <input class="form-control" type="date"
+                                       th:name="'lines[' + ${st.index} + '].lineDate'" th:value="${line.lineDate}">
+                            </td>
+                            <td>
+                                <input class="form-control" type="text"
+                                       th:name="'lines[' + ${st.index} + '].description'" th:value="${line.description}">
+                            </td>
+                            <td>
+                                <input class="form-control" type="text"
+                                       th:name="'lines[' + ${st.index} + '].reference'" th:value="${line.reference}">
+                            </td>
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].moneyIn'" th:value="${line.moneyIn}" placeholder="0">
+                            </td>
+                            <td>
+                                <input class="form-control amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].moneyOut'" th:value="${line.moneyOut}" placeholder="0">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{bnr.consistencyHint}">The opening balance plus these lines has to reach the closing balance. If it does not, the statement has been typed in wrongly and there is no point comparing it to anything — that is checked before a reconciliation can be agreed.</div>
+                <div class="form-hint mt-2" th:text="#{bnr.emptyRowsHint}">Blank rows are ignored. Save and reopen to get more.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

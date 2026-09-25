@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{bnr.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/banking/reconcile}" th:text="#{bnr.title}">Bank reconciliation</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${reconciliation.reference}">REC-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${reconciliation.accountCode + ' — ' + reconciliation.accountName}">1101 — Bank</h1>
+            <p class="page-subtitle">
+                <span class="font-mono" th:text="${reconciliation.reference}">REC-0001</span>
+                <span th:text="' · ' + #{bnr.statementTo(${#temporals.format(reconciliation.statementDate, 'dd MMM yyyy')})}"></span>
+            </p>
+            <span class="badge" th:with="st=${reconciliation.status.name()}"
+                  th:classappend="${st == 'COMPLETED' ? 'badge-success' : (st == 'VOID' ? 'badge-void' : 'badge-warning')}">
+                <span class="badge-dot"></span>
+                <span th:text="${statusLabels.get(reconciliation.status.name())}">In progress</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:if="${reconciliation.editable}"
+               th:href="@{/banking/reconcile/{id}/edit(id=${reconciliation.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{bnr.editStatement}">Edit the statement</span>
+            </a>
+            <form th:if="${reconciliation.editable}" method="post"
+                  th:action="@{/banking/reconcile/{id}/complete(id=${reconciliation.id})}">
+                <button class="btn btn-primary" type="submit" th:disabled="${!position.reconciled or position.hasUnmatchedStatement()}">
+                    <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                    <span th:text="#{bnr.complete}">Agree it</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:unless="${reconciliation.statementConsistent}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{bnr.statementOutTitle}">The statement does not agree with itself</div>
+            <span th:text="#{bnr.statementOutHint(${#numbers.formatDecimal(reconciliation.statementDifference, 1, 'COMMA', 2, 'POINT')})}">Out by.</span>
+            <div class="form-hint mt-2" th:text="#{bnr.statementOutFix}">Opening plus the lines must reach closing. Check the typing against the paper before matching anything — comparing a wrongly typed statement to the ledger proves nothing.</div>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${position.reconciled and reconciliation.statementConsistent and !position.hasUnmatchedStatement()}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{bnr.balancedTitle}">The two sides agree</div>
+            <span th:text="#{bnr.balancedHint}">The bank side and the book side arrive at the same figure, so this can be agreed.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${position.reconciled and !position.hasUnmatchedStatement()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{bnr.differenceTitle}">This does not reconcile yet</div>
+            <span th:text="#{bnr.differenceHint(${#numbers.formatDecimal(position.difference, 1, 'COMMA', 2, 'POINT')})}">Difference.</span>
+            <div class="form-hint mt-2" th:if="${position.hasUnmatchedStatement()}" th:text="#{bnr.enterFirstHint}">Statement lines the books know nothing about — bank charges, interest, a direct debit nobody entered — have to be entered as journal entries first. Nothing here will enter them for you: posting to the ledger on the strength of somebody else's document is exactly what reconciliation exists to prevent.</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{bnr.proofTitle}">The proof</h3>
+            <span class="text-sm text-muted" th:text="#{bnr.proofHint}">Both sides have to arrive at the same figure.</span>
+        </div>
+        <div class="grid-2">
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{bnr.perBank}">Closing balance per the bank</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(reconciliation.closingBalance, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{bnr.inTransit}">Add: received but not yet on the statement</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(position.inTransit, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted" th:text="#{bnr.unpresented}">Less: paid out but not yet on the statement</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(position.unpresented, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="font-semibold" th:text="#{bnr.adjustedBank}">Adjusted bank balance</span>
+                    <span class="money font-bold" th:text="${#numbers.formatDecimal(position.adjustedBank, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" th:text="#{bnr.perBooks}">Balance per the books</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(position.bookBalance, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted" th:text="#{bnr.notInBooks}">Add: on the statement, not in the books</span>
+                    <span class="money" th:text="${#numbers.formatDecimal(position.notInBooks, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="font-semibold" th:text="#{bnr.adjustedBook}">Adjusted book balance</span>
+                    <span class="money font-bold" th:text="${#numbers.formatDecimal(position.adjustedBook, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="font-semibold" th:text="#{bnr.difference}">Difference</span>
+                    <span class="money font-bold"
+                          th:classappend="${position.reconciled} ? 'text-success' : 'text-error'"
+                          th:text="${#numbers.formatDecimal(position.difference, 1, 'COMMA', 2, 'POINT')}">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{bnr.matchTitle}">Match the statement against the books</h3>
+            <span class="text-sm text-muted" th:text="#{bnr.matchHint}">A match asserts the two are the same movement, and is refused unless the amounts agree exactly.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{common.description}">Description</th>
+                        <th class="num" th:text="#{bnr.moneyIn}">In</th>
+                        <th class="num" th:text="#{bnr.moneyOut}">Out</th>
+                        <th th:text="#{bnr.matchedTo}">Matched to</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${position.statementLines}">
+                        <td th:text="${#temporals.format(l.lineDate, 'dd MMM yyyy')}">01 Sep</td>
+                        <td>
+                            <span th:text="${l.description != null} ? ${l.description} : '—'">Description</span>
+                            <span class="cell-secondary font-mono" th:if="${l.reference != null}" th:text="${l.reference}"></span>
+                        </td>
+                        <td class="num money" th:text="${l.moneyInValue.signum() == 0} ? '—' : ${#numbers.formatDecimal(l.moneyInValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${l.moneyOutValue.signum() == 0} ? '—' : ${#numbers.formatDecimal(l.moneyOutValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td>
+                            <form method="post" th:action="@{/banking/reconcile/{id}/match(id=${reconciliation.id})}"
+                                  th:if="${reconciliation.editable}">
+                                <input type="hidden" name="statementLineId" th:value="${l.id}">
+                                <select class="form-control" name="journalLineId" onchange="this.form.submit()">
+                                    <option value="" th:text="#{bnr.notMatched}">Not matched</option>
+                                    <option th:if="${l.matched}" th:value="${l.matchedLineId}" selected
+                                            th:text="${l.matchedEntryNo}">JE-00001</option>
+                                    <option th:each="c : ${position.available}" th:value="${c.lineId}"
+                                            th:text="${c.entryNo + ' · ' + #temporals.format(c.date, 'dd MMM') + ' · ' + #numbers.formatDecimal(c.net, 1, 'COMMA', 2, 'POINT')}">JE-00002</option>
+                                </select>
+                            </form>
+                            <span th:unless="${reconciliation.editable}">
+                                <span class="font-mono" th:if="${l.matched}" th:text="${l.matchedEntryNo}">JE-00001</span>
+                                <span class="text-muted" th:unless="${l.matched}" th:text="#{bnr.notMatched}">Not matched</span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(position.statementLines)}">
+                        <td class="table-empty" colspan="5">
+                            <p class="text-secondary" th:text="#{bnr.noLines}">This statement has no lines yet.</p>
+                            <a class="btn btn-secondary btn-sm mt-3" th:if="${reconciliation.editable}"
+                               th:href="@{/banking/reconcile/{id}/edit(id=${reconciliation.id})}"
+                               th:text="#{bnr.editStatement}">Edit the statement</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${position.hasUnmatchedLedger()}">
+        <div class="card-header">
+            <h3 th:text="#{bnr.unmatchedLedgerTitle}">In the books, not on the statement</h3>
+            <span class="text-sm text-muted" th:text="#{bnr.unmatchedLedgerHint}">Deposits in transit and payments the bank has not presented.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{jc.entry}">Entry</th>
+                        <th th:text="#{jc.memo}">Memo</th>
+                        <th class="num" th:text="#{common.amount}">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="i : ${position.unmatchedLedger}">
+                        <td th:text="${#temporals.format(i.date, 'dd MMM yyyy')}">01 Sep</td>
+                        <td><a class="cell-link font-mono" th:href="@{/journals/{id}(id=${i.entryId})}" th:text="${i.entryNo}">JE-00001</a></td>
+                        <td class="cell-secondary" th:text="${i.memo}">Memo</td>
+                        <td class="num money"
+                            th:classappend="${i.moneyIn} ? 'text-success' : 'text-error'"
+                            th:text="${#numbers.formatDecimal(i.net, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${position.hasUnmatchedStatement()}">
+        <div class="card-header">
+            <h3 th:text="#{bnr.unmatchedStatementTitle}">On the statement, not in the books</h3>
+            <span class="text-sm text-muted" th:text="#{bnr.unmatchedStatementHint}">These have to be entered as journal entries before this will reconcile.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{common.description}">Description</th>
+                        <th class="num" th:text="#{common.amount}">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${position.unmatchedStatement}">
+                        <td th:text="${#temporals.format(l.lineDate, 'dd MMM yyyy')}">01 Sep</td>
+                        <td th:text="${l.description != null} ? ${l.description} : '—'">Bank charge</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.net, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{bnr.enterFirstHint}">Nothing here will enter them for you.</div>
+            <a class="btn btn-secondary btn-sm mt-2" th:href="@{/journals/new}" th:text="#{bnr.newJournal}">New journal entry</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+        <div class="card-body">
+            <form method="post" th:action="@{/banking/reconcile/{id}/reopen(id=${reconciliation.id})}"
+                  th:if="${reconciliation.completed}">
+                <div class="form-hint mb-3" th:text="#{bnr.reopenHint}">Reopening lets the statement and its matches be changed again. Nothing in the ledger moves, because nothing moved when it was agreed.</div>
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-rotate"/></svg>
+                    <span th:text="#{bnr.reopen}">Reopen it</span>
+                </button>
+            </form>
+            <form class="mt-4" method="post" th:action="@{/banking/reconcile/{id}/void(id=${reconciliation.id})}"
+                  th:unless="${reconciliation.voided}">
+                <div class="form-group">
+                    <label class="form-label" for="vReason" th:text="#{pry.voidReason}">Why</label>
+                    <input class="form-control" id="vReason" name="reason" type="text">
+                    <div class="form-hint" th:text="#{bnr.voidHint}">Voiding releases every entry this had agreed, so they come back on the next statement.</div>
+                </div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pry.void}">Void it</span>
+                </button>
+            </form>
+            <form class="mt-4" method="post" th:action="@{/banking/reconcile/{id}/delete(id=${reconciliation.id})}"
+                  th:if="${reconciliation.editable}">
+                <div class="form-hint mb-3" th:text="#{bnr.deleteHint}">A draft has agreed nothing, so deleting it leaves no trace.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
