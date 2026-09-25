@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+# Uploaded documents live on disk; the database holds only their metadata.
+data/documents/

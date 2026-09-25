@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{doc.attachments.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{doc.attachments.title}">Attachments</h1>
+            <p class="page-subtitle" th:text="#{doc.attachments.subtitle}">The same files, read by the record they support.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/documents}" th:text="#{doc.title}">Documents</a>
+            <a class="btn btn-primary" th:href="@{/documents/upload}">
+                <svg class="ebook-icon"><use href="#icon-cloud-upload"/></svg>
+                <span th:text="#{doc.upload}">Upload</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${view.hasLoose()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{doc.looseTitle}">Paper filed against nothing</div>
+            <span th:text="#{doc.looseHint(${#lists.size(view.loose)})}">Files attached to no record.</span>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${view.isEmpty()}">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-paperclip"/></svg></div>
+                <p class="text-secondary" th:text="#{doc.attachments.none}">Nothing is attached to anything yet.</p>
+                <p class="form-hint mt-2" th:text="#{doc.attachments.noneHint}">Upload a file and say which customer, invoice, bill, expense, project, asset or journal entry it belongs to.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:each="g : ${view.groups}">
+        <div class="card-header">
+            <h3>
+                <a class="cell-link" th:if="${g.href != null}" th:href="${g.href}" th:text="${g.label}">INV-0001</a>
+                <span th:if="${g.href == null}" th:text="${g.label}">Record</span>
+            </h3>
+            <span class="text-sm text-muted">
+                <span th:text="${linkTypeLabels.get(g.linkType.name())}">Invoice</span>
+                · <span th:text="#{doc.fileCount(${g.count()})}">1 file</span>
+            </span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{doc.fileName}">File</th>
+                        <th th:text="#{common.category}">Kind</th>
+                        <th class="num" th:text="#{doc.size}">Size</th>
+                        <th th:text="#{doc.uploaded}">Uploaded</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${g.files}">
+                        <td>
+                            <a class="cell-link" th:href="@{/documents/{id}(id=${d.id})}" th:text="${d.originalName}">receipt.pdf</a>
+                            <span class="cell-secondary" th:if="${d.description != null}" th:text="${d.description}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${categoryLabels.get(d.category.name())}">Receipt</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(d.sizeKb, 1, 'COMMA', 1, 'POINT') + ' KB'}">0 KB</td>
+                        <td th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy')}">01 Jan</td>
+                        <td class="actions-cell">
+                            <a class="btn btn-ghost btn-sm" th:href="@{/documents/{id}/download(id=${d.id})}" th:title="#{common.download}">
+                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-download"/></svg>
+                            </a>
+                            <form th:action="@{/documents/{id}/detach(id=${d.id})}" method="post" style="display:inline">
+                                <button class="btn btn-ghost btn-sm" type="submit" th:title="#{doc.detach}">
+                                    <svg class="ebook-icon ebook-icon--sm"><use href="#icon-x-circle"/></svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:if="${view.hasLoose()}">
+        <div class="card-header">
+            <h3 th:text="#{doc.looseTitle}">Paper filed against nothing</h3>
+            <span class="text-sm text-muted" th:text="#{doc.looseSectionHint}">Open one and say which record it belongs to.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{doc.fileName}">File</th>
+                        <th th:text="#{common.category}">Kind</th>
+                        <th class="num" th:text="#{doc.size}">Size</th>
+                        <th th:text="#{doc.uploaded}">Uploaded</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${view.loose}">
+                        <td>
+                            <a class="cell-link" th:href="@{/documents/{id}(id=${d.id})}" th:text="${d.originalName}">receipt.pdf</a>
+                            <span class="cell-secondary" th:if="${d.description != null}" th:text="${d.description}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${categoryLabels.get(d.category.name())}">Receipt</td>
+                        <td class="num" th:text="${#numbers.formatDecimal(d.sizeKb, 1, 'COMMA', 1, 'POINT') + ' KB'}">0 KB</td>
+                        <td th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy')}">01 Jan</td>
+                        <td class="actions-cell">
+                            <a class="btn btn-ghost btn-sm" th:href="@{/documents/{id}(id=${d.id})}" th:text="#{doc.fileIt}">File it</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

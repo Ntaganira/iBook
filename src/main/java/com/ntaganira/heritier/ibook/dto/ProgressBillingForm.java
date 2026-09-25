@@ -22,11 +22,6 @@ public record ProgressBillingForm(Long projectId,
                                   String description,
                                   String notes) {
 
-    public static ProgressBillingForm empty() {
-        return new ProgressBillingForm(null, LocalDate.now(), "PERCENT_COMPLETE",
-                null, null, null, null, null);
-    }
-
     public BigDecimal percentCompleteValue() {
         return percentComplete == null ? BigDecimal.ZERO : percentComplete;
     }

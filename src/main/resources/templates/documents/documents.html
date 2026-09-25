@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{doc.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{doc.title}">Documents</h1>
+            <p class="page-subtitle" th:text="#{doc.subtitle}">Every file the business has stored, and what it belongs to.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/documents/attachments}">
+                <svg class="ebook-icon"><use href="#icon-paperclip"/></svg>
+                <span th:text="#{doc.attachments.title}">Attachments</span>
+            </a>
+            <a class="btn btn-secondary" th:href="@{/documents/templates}">
+                <svg class="ebook-icon"><use href="#icon-template"/></svg>
+                <span th:text="#{doc.templates.title}">Templates</span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/documents/upload}">
+                <svg class="ebook-icon"><use href="#icon-cloud-upload"/></svg>
+                <span th:text="#{doc.upload}">Upload</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{doc.storageTitle}">Where these files live</div>
+            <span th:text="#{doc.storageHint(${summary.location})}">Files are written to a folder on this machine.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.countLabel}">Documents</div>
+            <div class="stat-tile-value" th:text="${summary.documents}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.unattached}">Attached to nothing</div>
+            <div class="stat-tile-value" th:text="${summary.unattached}">0</div>
+            <div class="cell-secondary" th:text="#{doc.unattachedHint}">Paper nobody has filed against a record.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.templates.title}">Templates</div>
+            <div class="stat-tile-value" th:text="${summary.templates}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.stored}">Stored</div>
+            <div class="stat-tile-value" th:text="${#numbers.formatDecimal(summary.megabytes, 1, 'COMMA', 1, 'POINT') + ' MB'}">0 MB</div>
+            <div class="cell-secondary" th:text="#{doc.archivedCount(${summary.archived})}">0 archived</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a class="tab" th:href="@{/documents}" th:classappend="${!archived} ? 'active'"
+           th:text="#{doc.tabLive}">In use</a>
+        <a class="tab" th:href="@{/documents(archived='true')}" th:classappend="${archived} ? 'active'">
+            <span th:text="#{doc.tabArchived}">Archived</span>
+            <span class="tab-count" th:text="${summary.archived}">0</span>
+        </a>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/documents}">
+            <input type="hidden" name="archived" th:value="${archived}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{doc.searchPlaceholder}">
+            </div>
+            <select class="form-control form-control--sm" name="category">
+                <option value="" th:text="#{doc.allCategories}">All kinds</option>
+                <option th:each="c : ${categoryLabels}" th:value="${c.key}" th:text="${c.value}"
+                        th:selected="${category == c.key}">Receipt</option>
+            </select>
+            <select class="form-control form-control--sm" name="link">
+                <option value="" th:text="#{doc.allLinks}">Attached to anything</option>
+                <option th:each="t : ${linkTypeLabels}" th:value="${t.key}" th:text="${t.value}"
+                        th:selected="${linkType == t.key}">Invoice</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(documents.content)}, ${documents.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'originalName', #{doc.fileName}, ${sort}, ${dir})}">File</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'category', #{common.category}, ${sort}, ${dir})}">Kind</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'linkLabel', #{doc.attachedTo}, ${sort}, ${dir})}">Attached to</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'sizeBytes', #{doc.size}, ${sort}, ${dir})}">Size</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'createdAt', #{doc.uploaded}, ${sort}, ${dir})}">Uploaded</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${documents.content}">
+                        <td>
+                            <a class="cell-link" th:href="@{/documents/{id}(id=${d.id})}" th:text="${d.originalName}">receipt.pdf</a>
+                            <span class="cell-secondary" th:if="${d.description != null}" th:text="${d.description}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${categoryLabels.get(d.category.name())}">Receipt</td>
+                        <td>
+                            <a class="cell-link" th:if="${d.attached}" th:href="${d.linkHref}" th:text="${d.linkLabel}">INV-0001</a>
+                            <span class="badge badge-warning" th:unless="${d.attached}" th:text="#{doc.loose}">Filed against nothing</span>
+                            <span class="cell-secondary" th:if="${d.attached}" th:text="${linkTypeLabels.get(d.linkType.name())}">Invoice</span>
+                        </td>
+                        <td class="num" th:text="${#numbers.formatDecimal(d.sizeKb, 1, 'COMMA', 1, 'POINT') + ' KB'}">0 KB</td>
+                        <td>
+                            <span th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy')}">01 Jan</span>
+                            <span class="cell-secondary" th:if="${d.uploadedBy != null}" th:text="${d.uploadedBy}"></span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="row-actions dropdown">
+                                <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" th:href="@{/documents/{id}(id=${d.id})}"><svg class="ebook-icon"><use href="#icon-eye"/></svg><span th:text="#{common.view}">View</span></a>
+                                    <a class="dropdown-item" th:href="@{/documents/{id}/download(id=${d.id})}"><svg class="ebook-icon"><use href="#icon-download"/></svg><span th:text="#{common.download}">Download</span></a>
+                                    <form th:unless="${d.archived}" th:action="@{/documents/{id}/archive(id=${d.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-archive"/></svg><span th:text="#{doc.archive}">Archive</span></button>
+                                    </form>
+                                    <form th:if="${d.archived}" th:action="@{/documents/{id}/restore(id=${d.id})}" method="post">
+                                        <button class="dropdown-item" type="submit"><svg class="ebook-icon"><use href="#icon-rotate"/></svg><span th:text="#{doc.restore}">Restore</span></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(documents.content)}">
+                        <td class="table-empty" colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-folder"/></svg></div>
+                                <p class="text-secondary" th:text="#{doc.none}">Nothing stored yet.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/documents/upload}" th:text="#{doc.upload}">Upload</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${documents.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(documents.content)}, ${documents.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${documents.number + 1}, ${documents.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card mt-5">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{doc.evidenceHint}">A stored file is evidence for a transaction, never a transaction: attaching a receipt to an expense changes no figure anywhere. A file attached to a record cannot be deleted until it is detached, because destroying it would remove the evidence for something the books still claim.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

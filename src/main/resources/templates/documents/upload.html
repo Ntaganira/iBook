@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{doc.upload.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/documents}" th:text="#{doc.title}">Documents</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="#{doc.upload}">Upload</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{doc.upload.title}">Upload Documents</h1>
+            <p class="page-subtitle" th:text="#{doc.upload.subtitle}">Store a file and say what it belongs to.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/documents}" th:text="#{common.cancel}">Cancel</a>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{doc.attachTo}">What are these files for?</h3>
+            <span class="text-sm text-muted" th:text="#{doc.attachToHint}">Pick the kind of record first — the list of records loads with it.</span>
+        </div>
+        <form class="card-body" method="get" th:action="@{/documents/upload}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="uKind" th:text="#{doc.recordKind}">Kind of record</label>
+                    <select class="form-control" id="uKind" name="link">
+                        <option th:each="t : ${linkTypeLabels}" th:value="${t.key}" th:text="${t.value}"
+                                th:selected="${chosenType == t.key}">Nothing</option>
+                    </select>
+                </div>
+                <div class="form-group d-flex align-end">
+                    <button class="btn btn-secondary" type="submit" th:text="#{doc.loadRecords}">Load the records</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" th:action="@{/documents/upload}">
+        <input type="hidden" name="linkType" th:value="${chosenType}">
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{doc.theFiles}">The files</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="uFiles"><span th:text="#{doc.chooseFiles}">Choose files</span> <span class="required">*</span></label>
+                        <input class="form-control" id="uFiles" name="files" type="file" multiple required>
+                        <div class="form-hint" th:text="#{doc.sizeHint}">Up to 5 MB per file and 6 MB per upload. Anything larger is refused by the server before it reaches this page.</div>
+                    </div>
+                    <div class="form-group" th:if="${chosenType != 'NONE'}">
+                        <label class="form-label" for="uRecord"><span th:text="#{doc.theRecord}">Which record</span> <span class="required">*</span></label>
+                        <select class="form-control" id="uRecord" name="linkId">
+                            <option value="" th:text="#{doc.chooseRecord}">Choose a record…</option>
+                            <option th:each="c : ${choices}" th:value="${c.id}" th:text="${c.label}"
+                                    th:selected="${form.linkId != null and form.linkId == c.id}">Record</option>
+                        </select>
+                        <div class="form-hint" th:if="${#lists.isEmpty(choices)}" th:text="#{doc.noRecords}">There are no records of that kind yet.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="uCategory" th:text="#{doc.whatKind}">What kind of paperwork</label>
+                        <select class="form-control" id="uCategory" name="category">
+                            <option th:each="c : ${categoryLabels}" th:value="${c.key}" th:text="${c.value}"
+                                    th:selected="${form.category == c.key}">Receipt</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="uDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="uDesc" name="description" type="text"
+                               th:value="${form.description}" th:placeholder="#{doc.descPlaceholder}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="uTags" th:text="#{doc.tags}">Tags</label>
+                        <input class="form-control" id="uTags" name="tags" type="text"
+                               th:value="${form.tags}" th:placeholder="#{doc.tagsPlaceholder}">
+                        <div class="form-hint" th:text="#{doc.tagsHint}">Free text, searched alongside the file name and description.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="template" value="true">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{doc.isTemplate}">These are blank templates, not records of anything</span>
+                        </label>
+                        <div class="form-hint" th:text="#{doc.isTemplateHint}">A template is a blank form the business reuses — a contract skeleton, a letterhead. It is listed separately and never counted as filed paperwork.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body d-flex justify-between align-center">
+                <div class="form-hint" th:text="#{doc.storageHint(${summary.location})}">Files are written to a folder on this machine.</div>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-cloud-upload"/></svg>
+                    <span th:text="#{doc.upload}">Upload</span>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-hint" th:text="#{doc.duplicateHint}">A file whose contents match one already stored is still saved — the same receipt can legitimately support two records — but the upload says so, so an accidental second copy is visible.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

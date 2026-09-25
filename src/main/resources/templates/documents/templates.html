@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{doc.templates.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{doc.templates.title}">Document Templates</h1>
+            <p class="page-subtitle" th:text="#{doc.templates.subtitle}">Blank forms the business reuses.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/documents}" th:text="#{doc.title}">Documents</a>
+            <a class="btn btn-primary" th:href="@{/documents/upload}">
+                <svg class="ebook-icon"><use href="#icon-cloud-upload"/></svg>
+                <span th:text="#{doc.upload}">Upload</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{doc.templates.notSettingsTitle}">Not the same as the templates under Settings</div>
+            <span th:text="#{doc.templates.notSettingsHint}">These are files somebody downloads and fills in — a contract skeleton, a letterhead, a blank timesheet. The invoice and email templates under Settings are a different thing: they format documents this application generates, and nobody downloads them.</span>
+            <a class="cell-link" th:href="@{/settings/invoice-templates}" th:text="#{doc.templates.settingsLink}">Open Settings templates</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/documents/templates}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{doc.searchPlaceholder}">
+            </div>
+            <select class="form-control form-control--sm" name="category">
+                <option value="" th:text="#{doc.allCategories}">All kinds</option>
+                <option th:each="c : ${categoryLabels}" th:value="${c.key}" th:text="${c.value}"
+                        th:selected="${category == c.key}">Contract</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(documents.content)}, ${documents.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'originalName', #{doc.fileName}, ${sort}, ${dir})}">File</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'category', #{common.category}, ${sort}, ${dir})}">Kind</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'downloadCount', #{doc.timesTaken}, ${sort}, ${dir})}">Copies taken</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'createdAt', #{doc.uploaded}, ${sort}, ${dir})}">Uploaded</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${documents.content}">
+                        <td>
+                            <a class="cell-link" th:href="@{/documents/{id}(id=${d.id})}" th:text="${d.originalName}">contract.docx</a>
+                            <span class="cell-secondary" th:if="${d.description != null}" th:text="${d.description}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${categoryLabels.get(d.category.name())}">Contract</td>
+                        <td class="num" th:text="${d.downloadCount}">0</td>
+                        <td th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy')}">01 Jan</td>
+                        <td class="actions-cell">
+                            <a class="btn btn-secondary btn-sm" th:href="@{/documents/{id}/download(id=${d.id})}">
+                                <svg class="ebook-icon ebook-icon--sm"><use href="#icon-download"/></svg>
+                                <span th:text="#{doc.takeCopy}">Take a copy</span>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(documents.content)}">
+                        <td class="table-empty" colspan="5">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-template"/></svg></div>
+                                <p class="text-secondary" th:text="#{doc.templates.none}">No templates yet.</p>
+                                <p class="form-hint mt-2" th:text="#{doc.templates.noneHint}">Upload a file and tick "these are blank templates".</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${documents.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(documents.content)}, ${documents.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${documents.number + 1}, ${documents.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{doc.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/documents}" th:text="#{doc.title}">Documents</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${document.originalName}">receipt.pdf</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${document.originalName}">receipt.pdf</h1>
+            <p class="page-subtitle" th:if="${document.description != null}" th:text="${document.description}">Description</p>
+            <span class="badge badge-muted" th:if="${document.archived}" th:text="#{doc.archivedBadge}">Archived</span>
+            <span class="badge badge-active" th:if="${document.template}" th:text="#{doc.templateBadge}">Template</span>
+            <span class="badge badge-warning" th:unless="${document.attached}" th:text="#{doc.loose}">Filed against nothing</span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:if="${fileExists and document.viewableInline}"
+               th:href="@{/documents/{id}/download(id=${document.id}, inline='true')}" target="_blank" rel="noopener">
+                <svg class="ebook-icon"><use href="#icon-eye"/></svg>
+                <span th:text="#{doc.open}">Open it</span>
+            </a>
+            <a class="btn btn-primary" th:if="${fileExists}" th:href="@{/documents/{id}/download(id=${document.id})}">
+                <svg class="ebook-icon"><use href="#icon-download"/></svg>
+                <span th:text="#{common.download}">Download</span>
+            </a>
+            <form th:unless="${document.archived}" th:action="@{/documents/{id}/archive(id=${document.id})}" method="post">
+                <button class="btn btn-secondary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-archive"/></svg>
+                    <span th:text="#{doc.archive}">Archive</span>
+                </button>
+            </form>
+            <form th:if="${document.archived}" th:action="@{/documents/{id}/restore(id=${document.id})}" method="post">
+                <button class="btn btn-secondary" type="submit" th:text="#{doc.restore}">Restore</button>
+            </form>
+            <form th:unless="${document.attached}" th:action="@{/documents/{id}/delete(id=${document.id})}" method="post">
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:unless="${fileExists}">
+        <svg class="ebook-icon"><use href="#icon-alert-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{doc.missingTitle}">The file is recorded but not in the store</div>
+            <span th:text="#{doc.missingHint(${summary.location})}">The row is here but the file is not.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.size}">Size</div>
+            <div class="stat-tile-value" th:text="${#numbers.formatDecimal(document.sizeKb, 1, 'COMMA', 1, 'POINT') + ' KB'}">0 KB</div>
+            <div class="cell-secondary" th:if="${document.contentType != null}" th:text="${document.contentType}"></div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.uploaded}">Uploaded</div>
+            <div class="stat-tile-value" th:text="${#temporals.format(document.createdAt, 'dd MMM yyyy')}">01 Jan</div>
+            <div class="cell-secondary" th:if="${document.uploadedBy != null}" th:text="${document.uploadedBy}"></div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.timesTaken}">Copies taken</div>
+            <div class="stat-tile-value" th:text="${document.downloadCount}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{doc.attachedTo}">Attached to</div>
+            <div class="stat-tile-value">
+                <a class="cell-link" th:if="${document.attached}" th:href="${document.linkHref}" th:text="${document.linkLabel}">INV-0001</a>
+                <span class="text-muted" th:unless="${document.attached}" th:text="#{doc.link.none}">Nothing</span>
+            </div>
+            <div class="cell-secondary" th:if="${document.attached}" th:text="${linkTypeLabels.get(document.linkType.name())}">Invoice</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{doc.details}">What this file is</h3>
+            <span class="text-sm text-muted" th:text="#{doc.changeLinkHint}">Changing the kind of record reloads the list below it when you save.</span>
+        </div>
+        <form method="post" th:action="@{/documents/{id}(id=${document.id})}">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="dKind" th:text="#{doc.recordKind}">Kind of record</label>
+                        <select class="form-control" id="dKind" name="linkType">
+                            <option th:each="t : ${linkTypeLabels}" th:value="${t.key}" th:text="${t.value}"
+                                    th:selected="${form.linkType == t.key}">Nothing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="dRecord" th:text="#{doc.theRecord}">Which record</label>
+                        <select class="form-control" id="dRecord" name="linkId">
+                            <option value="" th:text="#{doc.chooseRecord}">Choose a record…</option>
+                            <option th:each="c : ${choices}" th:value="${c.id}" th:text="${c.label}"
+                                    th:selected="${form.linkId != null and form.linkId == c.id}">Record</option>
+                        </select>
+                        <div class="form-hint" th:if="${#lists.isEmpty(choices)}" th:text="#{doc.chooseKindFirst}">Save the kind of record first, then come back and pick one.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="dCategory" th:text="#{doc.whatKind}">What kind of paperwork</label>
+                        <select class="form-control" id="dCategory" name="category">
+                            <option th:each="c : ${categoryLabels}" th:value="${c.key}" th:text="${c.value}"
+                                    th:selected="${form.category == c.key}">Receipt</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="dTags" th:text="#{doc.tags}">Tags</label>
+                        <input class="form-control" id="dTags" name="tags" type="text" th:value="${form.tags}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="dDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="dDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="template" value="true" th:checked="${form.template}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{doc.isTemplate}">This is a blank template, not a record of anything</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body d-flex justify-between align-center">
+                <div class="form-hint" th:text="#{doc.deleteHint}">A file attached to a record cannot be deleted until it is detached — destroying it would remove the evidence for something the books still claim. Archiving keeps both the record and the file.</div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-secondary" type="submit"
+                            th:if="${document.attached}" th:formaction="@{/documents/{id}/detach(id=${document.id})}">
+                        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                        <span th:text="#{doc.detach}">Detach it</span>
+                    </button>
+                    <button class="btn btn-primary" type="submit" th:text="#{common.save}">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 th:text="#{doc.fileFacts}">The file itself</h3></div>
+        <div class="table-wrap">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td th:text="#{doc.fileName}">File name</td>
+                        <td th:text="${document.originalName}">receipt.pdf</td>
+                    </tr>
+                    <tr>
+                        <td th:text="#{doc.contentType}">Declared type</td>
+                        <td>
+                            <span th:text="${document.contentType != null ? document.contentType : '—'}">application/pdf</span>
+                            <span class="cell-secondary" th:unless="${document.viewableInline}" th:text="#{doc.downloadOnly}">Handed over as a download, never shown in the page.</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td th:text="#{doc.checksum}">Checksum (SHA-256)</td>
+                        <td class="mono" th:text="${document.checksum != null ? document.checksum : '—'}">—</td>
+                    </tr>
+                    <tr>
+                        <td th:text="#{doc.storageKey}">Stored as</td>
+                        <td class="mono" th:text="${document.storageKey}">2026/09/uuid.pdf</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{doc.inlineHint}">Only PDFs, images and plain text are ever shown in the browser. Anything else is handed over as a download, because a file that runs its own script would do so on this application's origin with your session.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
