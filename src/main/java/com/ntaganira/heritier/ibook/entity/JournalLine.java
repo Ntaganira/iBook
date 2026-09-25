@@ -47,6 +47,17 @@ public class JournalLine implements Serializable {
     @Column(name = "memo")
     private String memo;
 
+    /**
+     * Job costing tags a posted line to a project. It is an analysis dimension, not a posting:
+     * the account, the date and the amount are untouched, so no report that reads the ledger can
+     * move because somebody tagged a line.
+     */
+    @Column(name = "project_id")
+    private Long projectId;
+
+    @Column(name = "project_code")
+    private String projectCode;
+
     @Column(name = "debit", precision = 16, scale = 2)
     private BigDecimal debit;
 

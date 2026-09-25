@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pgb.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/projects/progress-billing}" th:text="#{pgb.title}">Progress billing</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{pgb.form.editCrumb} : #{pgb.form.breadcrumb}">New claim</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{pgb.form.editTitle} : #{pgb.form.title}">New Claim</h1>
+            <p class="page-subtitle" th:text="#{pgb.form.subtitle}">A share of an agreed price, claimed as the work progresses.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/projects/progress-billing}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="claimForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{pgb.saveDraft}">Save the claim</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="claimForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/projects/progress-billing/{id}(id=${editingId})} : @{/projects/progress-billing}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5" th:if="${!#lists.isEmpty(positions)}">
+            <div class="card-header">
+                <h3 th:text="#{pgb.contracts}">Where each fixed-price job stands</h3>
+                <span class="text-sm text-muted" th:text="#{pgb.contractsHint}">A claim is cumulative, so this is what it is added on top of.</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{prj.title}">Project</th>
+                            <th class="num" th:text="#{pgb.contractValue}">Agreed price</th>
+                            <th class="num" th:text="#{pgb.billed}">Claimed so far</th>
+                            <th class="num" th:text="#{pgb.remaining}">Left to claim</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${positions}">
+                            <td>
+                                <span class="mono" th:text="${p.project.code}">PRJ-0001</span>
+                                <span class="cell-secondary" th:text="${p.project.name}">Project</span>
+                            </td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(p.contractValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money">
+                                <span th:text="${#numbers.formatDecimal(p.billed, 1, 'COMMA', 2, 'POINT')}">0</span>
+                                <span class="cell-secondary" th:text="${#numbers.formatDecimal(p.percentBilled, 1, 'COMMA', 1, 'POINT') + ' %'}">0 %</span>
+                            </td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(p.remaining, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{pgb.details}">The claim</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="cProject"><span th:text="#{prj.title}">Project</span> <span class="required">*</span></label>
+                        <select class="form-control" id="cProject" name="projectId" required>
+                            <option value="" th:text="#{tsh.selectProject}">Choose a project…</option>
+                            <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}"
+                                    th:selected="${form.projectId != null and form.projectId == p.id}">Project</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pgb.projectHint}">Only a fixed-price job with a customer and an agreed price above zero can be claimed against.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cDate"><span th:text="#{pgb.claimDate}">Claim date</span> <span class="required">*</span></label>
+                        <input class="form-control" id="cDate" name="claimDate" type="date" th:value="${form.claimDate}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cMethod" th:text="#{pgb.methodLabel}">How this claim is worked out</label>
+                        <select class="form-control" id="cMethod" name="method">
+                            <option th:each="m : ${methodLabels}" th:value="${m.key}" th:text="${m.value}"
+                                    th:selected="${form.method == m.key}">Percentage</option>
+                        </select>
+                        <div class="form-hint" th:each="h : ${methodHints}" th:if="${form.method == h.key}" th:text="${h.value}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cPercent" th:text="#{pgb.percentComplete}">Percentage complete to date</label>
+                        <input class="form-control" id="cPercent" name="percentComplete" type="number"
+                               step="0.01" min="0" max="100" th:value="${form.percentComplete}" placeholder="0">
+                        <div class="form-hint" th:text="#{pgb.percentHint}">Cumulative, not this claim's share. Forty per cent after a twenty-five per cent claim asks for the fifteen in between.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cAmount" th:text="#{pgb.amount}">Flat amount</label>
+                        <input class="form-control" id="cAmount" name="amount" type="number"
+                               step="0.01" min="0" th:value="${form.amount}" placeholder="0">
+                        <div class="form-hint" th:text="#{pgb.amountHint}">Used by the flat-amount method only: a milestone payment, a deposit, or a release of retention.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cRetention" th:text="#{pgb.retentionPercent}">Retention held back</label>
+                        <input class="form-control" id="cRetention" name="retentionPercent" type="number"
+                               step="0.01" min="0" max="100" th:value="${form.retentionPercent}" placeholder="0">
+                        <div class="form-hint" th:text="#{pgb.retentionPercentHint}">Taken off what this claim invoices. Nothing posts a retention receivable.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cDesc" th:text="#{common.description}">What the claim covers</label>
+                        <input class="form-control" id="cDesc" name="description" type="text"
+                               th:value="${form.description}" th:placeholder="#{pgb.descPlaceholder}">
+                        <div class="form-hint" th:text="#{pgb.descHint}">This wording goes onto the invoice line, so write it for the customer.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="cNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="cNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{pgb.ledgerHint}">Only a fixed-price job is billed this way — a job charged by the hour bills its approved time instead, and the two can never both apply. A claim is cumulative: "40% complete" means forty per cent of the contract has been earned in total, so this claim asks for forty per cent less everything already claimed. Raising it writes a draft invoice, and nothing reaches the ledger until that invoice is posted.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

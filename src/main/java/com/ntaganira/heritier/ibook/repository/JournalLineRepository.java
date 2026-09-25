@@ -11,11 +11,14 @@
 package com.ntaganira.heritier.ibook.repository;
 
 import com.ntaganira.heritier.ibook.entity.JournalLine;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 public interface JournalLineRepository extends JpaRepository<JournalLine, Long> {
@@ -46,4 +49,42 @@ public interface JournalLineRepository extends JpaRepository<JournalLine, Long> 
             "and l.entry.entryDate >= :from and l.entry.entryDate <= :to " +
             "order by l.accountId asc, l.entry.entryDate asc, l.entry.id asc, l.sortOrder asc")
     List<JournalLine> postedLinesBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    // ----- Job costing -----
+
+    @Query("select l from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED "
+            + "and l.entry.entryDate >= :from and l.entry.entryDate <= :to "
+            + "and l.accountId in :tradingAccountIds "
+            + "and (:accountId is null or l.accountId = :accountId) "
+            + "and (:projectId is null or l.projectId = :projectId)")
+    Page<JournalLine> costingLines(@Param("from") LocalDate from, @Param("to") LocalDate to,
+                                   @Param("tradingAccountIds") Collection<Long> tradingAccountIds,
+                                   @Param("accountId") Long accountId,
+                                   @Param("projectId") Long projectId, Pageable pageable);
+
+    @Query("select l from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED "
+            + "and l.entry.entryDate >= :from and l.entry.entryDate <= :to "
+            + "and l.accountId in :tradingAccountIds "
+            + "and (:accountId is null or l.accountId = :accountId) "
+            + "and l.projectId is null")
+    Page<JournalLine> untaggedLines(@Param("from") LocalDate from, @Param("to") LocalDate to,
+                                    @Param("tradingAccountIds") Collection<Long> tradingAccountIds,
+                                    @Param("accountId") Long accountId, Pageable pageable);
+
+    @Query("select l.projectId, l.accountId, coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0) "
+            + "from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED "
+            + "and l.projectId is not null "
+            + "and l.entry.entryDate >= :from and l.entry.entryDate <= :to "
+            + "group by l.projectId, l.accountId")
+    List<Object[]> taggedTotalsBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select l.accountId, coalesce(sum(l.debit), 0), coalesce(sum(l.credit), 0) "
+            + "from JournalLine l where l.entry.status = com.ntaganira.heritier.ibook.enums.JournalEntryStatus.POSTED "
+            + "and l.projectId = :projectId "
+            + "and l.entry.entryDate >= :from and l.entry.entryDate <= :to "
+            + "group by l.accountId")
+    List<Object[]> taggedTotalsForProject(@Param("projectId") Long projectId,
+                                          @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    long countByProjectId(Long projectId);
 }

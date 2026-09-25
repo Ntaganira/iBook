@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pbg.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/projects/budgets}" th:text="#{pbg.title}">Project budgets</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{pbg.form.editCrumb} : #{pbg.form.breadcrumb}">New budget</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{pbg.form.editTitle} : #{pbg.form.title}">New Project Budget</h1>
+            <p class="page-subtitle" th:text="#{pbg.form.subtitle}">What this job is expected to earn and cost, by account.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/projects/budgets}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-secondary" type="submit" form="pbgForm">
+                <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                <span th:text="#{pbg.saveDraft}">Save draft</span>
+            </button>
+            <button class="btn btn-primary" type="submit" form="pbgForm" name="approveNow" value="true">
+                <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+                <span th:text="#{pbg.saveApprove}">Save and approve</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="pbgForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/projects/budgets/{id}(id=${editingId})} : @{/projects/budgets}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{pbg.details}">Which job this is for</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pbProject"><span th:text="#{prj.title}">Project</span> <span class="required">*</span></label>
+                        <select class="form-control" id="pbProject" name="projectId" required>
+                            <option value="" th:text="#{tsh.selectProject}">Choose a project…</option>
+                            <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}"
+                                    th:selected="${form.projectId != null and form.projectId == p.id}">Project</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pbg.projectHint}">A job that already has a budget is left out. One budget per job, so every variance says which plan it measured against.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pbHours" th:text="#{pbg.budgetedHours}">Expected hours</label>
+                        <input class="form-control" id="pbHours" name="budgetedHours" type="number" step="0.01" min="0"
+                               th:value="${form.budgetedHours}" placeholder="0">
+                        <div class="form-hint" th:text="#{pbg.budgetedHoursHint}">Compared against the hours actually booked on timesheets, which never reach the ledger.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pbDesc" th:text="#{common.description}">Description</label>
+                        <input class="form-control" id="pbDesc" name="description" type="text" th:value="${form.description}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="pbNotes" th:text="#{prj.notes}">Notes</label>
+                        <input class="form-control" id="pbNotes" name="notes" type="text" th:value="${form.notes}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 th:text="#{pbg.lines}">What is planned</h3>
+                <span class="text-sm text-muted" th:text="#{pbg.linesHint}">One figure per account for the whole job</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{common.account}">Account</th>
+                            <th class="num" th:text="#{common.amount}">Amount</th>
+                            <th th:text="#{bud.lineNotes}">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="line, st : ${form.lines}">
+                            <td>
+                                <select class="form-control form-control--sm"
+                                        th:name="'lines[' + ${st.index} + '].accountId'">
+                                    <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                                    <option th:each="a : ${accounts}" th:value="${a.id}"
+                                            th:text="${a.code + ' — ' + a.name}"
+                                            th:selected="${line.accountId != null and line.accountId == a.id}">4000</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm amount-control" type="number" step="0.01" min="0"
+                                       th:name="'lines[' + ${st.index} + '].amount'"
+                                       th:value="${line.amount}" placeholder="0">
+                            </td>
+                            <td>
+                                <input class="form-control form-control--sm" type="text"
+                                       th:name="'lines[' + ${st.index} + '].notes'" th:value="${line.notes}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div class="form-hint" th:text="#{pbg.accountsHint}">Only revenue and expense accounts can be budgeted on a job. Every figure is entered as a positive number — an account's own type says whether it is money coming in or going out.</div>
+                <div class="form-hint mt-2" th:text="#{pbg.actualHint}">Actual is read from the ledger lines tagged to this job on Job Costing, so a job with nothing tagged will compare against zero.</div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

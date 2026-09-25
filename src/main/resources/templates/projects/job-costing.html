@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{jc.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{jc.title}">Job Costing</h1>
+            <p class="page-subtitle" th:text="#{jc.subtitle}">Which job each posted revenue and expense line belongs to.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/projects/profitability}">
+                <svg class="ebook-icon"><use href="#icon-trending-up"/></svg>
+                <span th:text="#{prf.title}">Profitability</span>
+            </a>
+            <a class="btn btn-secondary" th:href="@{/projects}" th:text="#{prj.title}">Projects</a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{jc.ledgerTitle}">Tagging is not a posting</div>
+            <span th:text="#{jc.ledgerHint}">A tag says which job a line belongs to. The account, the date and the amount stay exactly as the document wrote them, so no trial balance, profit and loss or VAT return moves because a line was tagged. Only revenue and expense lines carry a job: the bank side of a payment is money moving between two of your own pockets, not the cost of anything.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{jc.tradingLines}">Trading lines in this period</div>
+            <div class="stat-tile-value" th:text="${coverage.tradingLines}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{jc.taggedLines}">Carrying a job</div>
+            <div class="stat-tile-value" th:text="${coverage.taggedLines}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{jc.untaggedLines}">Not on any job</div>
+            <div class="stat-tile-value" th:text="${coverage.untaggedLines}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{jc.coverage}">Tagged</div>
+            <div class="stat-tile-value"
+                 th:text="${#numbers.formatDecimal(coverage.taggedPercent, 1, 'COMMA', 1, 'POINT') + ' %'}">0 %</div>
+            <div class="cell-secondary" th:text="#{jc.coverageHint}">Anything untagged is missing from every job's figures.</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/projects/job-costing}">
+            <input class="form-control form-control--sm" type="date" name="from" th:value="${from}">
+            <input class="form-control form-control--sm" type="date" name="to" th:value="${to}">
+            <select class="form-control form-control--sm" name="account">
+                <option value="" th:text="#{jc.allAccounts}">All trading accounts</option>
+                <option th:each="a : ${accounts}" th:value="${a.id}"
+                        th:text="${a.code + ' — ' + a.name}"
+                        th:selected="${accountId != null and accountId == a.id}">Account</option>
+            </select>
+            <select class="form-control form-control--sm" name="project">
+                <option value="" th:text="#{tsh.allProjects}">All projects</option>
+                <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}"
+                        th:selected="${projectId != null and projectId == p.id}">Project</option>
+            </select>
+            <label class="switch">
+                <input type="checkbox" name="untagged" value="true" th:checked="${untagged}">
+                <span class="switch-track"></span>
+                <span class="switch-label" th:text="#{jc.untaggedOnly}">Untagged only</span>
+            </label>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(lines.content)}, ${lines.totalElements})}">Showing 0 of 0</span>
+        </form>
+    </div>
+
+    <form method="post" th:action="@{/projects/job-costing/tag}">
+        <input type="hidden" name="back" th:value="${basePath + filterQuery}">
+
+        <div class="card mb-5">
+            <div class="card-body d-flex justify-between align-center">
+                <div class="form-group mb-0">
+                    <label class="form-label" for="jcProject" th:text="#{jc.tagTo}">Tag the ticked lines to</label>
+                    <select class="form-control" id="jcProject" name="projectId">
+                        <option value="" th:text="#{jc.chooseProject}">Choose a project…</option>
+                        <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.displayName}">Project</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-secondary" type="submit"
+                            th:formaction="@{/projects/job-costing/untag}">
+                        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                        <span th:text="#{jc.untag}">Take the job off</span>
+                    </button>
+                    <button class="btn btn-primary" type="submit">
+                        <svg class="ebook-icon"><use href="#icon-tag"/></svg>
+                        <span th:text="#{jc.tag}">Tag to this job</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'entry.entryDate', #{common.date}, ${sort}, ${dir})}">Date</th>
+                            <th th:text="#{jc.entry}">Entry</th>
+                            <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'accountCode', #{common.account}, ${sort}, ${dir})}">Account</th>
+                            <th th:text="#{jc.memo}">Memo</th>
+                            <th class="num" th:text="#{jc.debit}">Debit</th>
+                            <th class="num" th:text="#{jc.credit}">Credit</th>
+                            <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'projectCode', #{prj.title}, ${sort}, ${dir})}">Job</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="l : ${lines.content}">
+                            <td><input type="checkbox" name="lineIds" th:value="${l.id}"
+                                       th:aria-label="#{jc.selectLine}"></td>
+                            <td th:text="${#temporals.format(l.entryDate, 'dd MMM yyyy')}">01 Jan</td>
+                            <td>
+                                <a class="cell-link mono" th:href="@{/journals/{id}(id=${l.entryId})}"
+                                   th:text="${l.entryNo}">JE-00001</a>
+                                <span class="cell-secondary" th:if="${l.reference != null}" th:text="${l.reference}"></span>
+                            </td>
+                            <td>
+                                <span class="mono" th:text="${l.accountCode}">4000</span>
+                                <span class="cell-secondary" th:text="${l.accountName}">Income</span>
+                            </td>
+                            <td class="cell-secondary" th:text="${l.memo}">Memo</td>
+                            <td class="num money" th:text="${l.debit.signum() == 0 ? '—' : #numbers.formatDecimal(l.debit, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money" th:text="${l.credit.signum() == 0 ? '—' : #numbers.formatDecimal(l.credit, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td>
+                                <span class="badge badge-active" th:if="${l.projectCode != null}">
+                                    <span class="badge-dot"></span>
+                                    <span th:text="${l.projectCode}">PRJ-0001</span>
+                                </span>
+                                <span class="text-muted" th:if="${l.projectCode == null}" th:text="#{jc.noJob}">—</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(lines.content)}">
+                            <td class="table-empty" colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-search"/></svg></div>
+                                    <p class="text-secondary" th:text="#{jc.none}">No posted trading lines in this period.</p>
+                                    <p class="form-hint mt-2" th:text="#{jc.noneHint}">Job costing reads posted entries only. A draft journal, an unposted invoice or a bill still waiting carries nothing yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer" th:if="${lines.totalPages > 1}">
+                <span th:text="#{common.showing(${#lists.size(lines.content)}, ${lines.totalElements})}">Showing 0 of 0</span>
+                <div th:replace="~{layout/pagination :: pagination(${lines.number + 1}, ${lines.totalPages}, ${basePath + filterQuery + '&amp;sort=' + sort + '&amp;dir=' + dir})}"></div>
+            </div>
+        </div>
+    </form>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{pgb.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/projects/progress-billing}" th:text="#{pgb.title}">Progress billing</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${claim.claimLabel}">PRJ-0001 · 1</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{pgb.claimNo(${claim.claimNumber})}">Claim 1</h1>
+            <p class="page-subtitle" th:text="${claim.projectCode + ' — ' + claim.projectName}">Project</p>
+            <span class="badge" th:with="st=${claim.status.name()}"
+                  th:classappend="${st == 'INVOICED' ? 'badge-success' : (st == 'CANCELLED' ? 'badge-void' : 'badge-warning')}">
+                <span class="badge-dot"></span>
+                <span th:text="${statusLabels.get(claim.status.name())}">Draft</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/projects/{id}(id=${claim.projectId})}" th:text="#{pbg.openProject}">Open the project</a>
+            <a class="btn btn-secondary" th:if="${claim.invoiceNo != null}" th:href="@{/invoices/{id}(id=${claim.invoiceId})}">
+                <svg class="ebook-icon"><use href="#icon-file-text"/></svg>
+                <span th:text="#{tsh.viewInvoice}">View the invoice</span>
+            </a>
+            <a class="btn btn-secondary" th:if="${claim.editable}" th:href="@{/projects/progress-billing/{id}/edit(id=${claim.id})}">
+                <svg class="ebook-icon"><use href="#icon-edit"/></svg>
+                <span th:text="#{common.edit}">Edit</span>
+            </a>
+            <form th:if="${claim.draft}" th:action="@{/projects/progress-billing/{id}/delete(id=${claim.id})}" method="post">
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pgb.contractValue}">Agreed price</div>
+            <div class="stat-tile-value money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(claim.contractValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pgb.previouslyBilled}">Claimed before this</div>
+            <div class="stat-tile-value money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(claim.previouslyBilled, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pgb.cumulative}">Cumulative after this</div>
+            <div class="stat-tile-value money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(claim.cumulativeBilled, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary" th:text="${#numbers.formatDecimal(claim.percentComplete, 1, 'COMMA', 2, 'POINT') + ' %'}">0 %</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{pgb.net}">This claim invoices</div>
+            <div class="stat-tile-value money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(claim.netAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
+            <div class="cell-secondary" th:if="${claim.holdingRetention}"
+                 th:text="#{pgb.retentionHeld(${#numbers.formatDecimal(claim.retentionAmount, 1, 'COMMA', 2, 'POINT')})}">Retention held</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header"><h3 th:text="#{pgb.howItAddsUp}">How this claim adds up</h3></div>
+        <div class="table-wrap">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td th:text="#{pgb.contractValue}">Agreed price</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(claim.contractValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr>
+                        <td th:text="#{pgb.cumulative}">Cumulative after this claim</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(claim.cumulativeBilled, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr>
+                        <td th:text="#{pgb.previouslyBilled}">Less claimed before this</td>
+                        <td class="num money" th:text="'− ' + ${#numbers.formatDecimal(claim.previouslyBilled, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr class="table-total">
+                        <td class="font-bold" th:text="#{pgb.gross}">This claim</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(claim.grossAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span th:text="#{pgb.retention}">Retention held back</span>
+                            <span class="cell-secondary" th:text="${#numbers.formatDecimal(claim.retentionPercent, 1, 'COMMA', 2, 'POINT') + ' %'}">0 %</span>
+                        </td>
+                        <td class="num money" th:text="'− ' + ${#numbers.formatDecimal(claim.retentionAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                    <tr class="table-total">
+                        <td class="font-bold" th:text="#{pgb.net}">Invoiced now</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(claim.netAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:if="${claim.description != null}" th:text="${claim.description}">Description</div>
+            <div class="form-hint mt-2" th:if="${claim.notes != null}" th:text="${claim.notes}">Notes</div>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${claim.draft}">
+        <div class="card-header">
+            <h3 th:text="#{pgb.raiseTitle}">Turn this claim into a draft invoice</h3>
+        </div>
+        <form method="post" th:action="@{/projects/progress-billing/{id}/raise(id=${claim.id})}">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="rIssue" th:text="#{bil.issueDate}">Issued</label>
+                        <input class="form-control" id="rIssue" name="issueDate" type="date" th:value="${today}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rDue" th:text="#{bil.dueDate}">Due</label>
+                        <input class="form-control" id="rDue" name="dueDate" type="date" th:value="${dueDefault}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rTax" th:text="#{bil.taxRate}">VAT</label>
+                        <select class="form-control" id="rTax" name="taxRateId">
+                            <option value="" th:text="#{bil.noTax}">No VAT on these lines</option>
+                            <option th:each="t : ${taxRates}" th:value="${t.id}"
+                                    th:text="${t.code + ' — ' + t.name}">VAT 18%</option>
+                        </select>
+                        <div class="form-hint" th:text="#{bil.taxHint}">Nothing is assumed here. Left empty, the draft carries no VAT at all — check it before posting.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rAccount" th:text="#{pgb.revenueAccount}">Revenue account</label>
+                        <select class="form-control" id="rAccount" name="revenueAccountId">
+                            <option value="" th:text="#{pgb.defaultAccount}">Whatever the invoice defaults to</option>
+                            <option th:each="a : ${revenueAccounts}" th:value="${a.id}"
+                                    th:text="${a.code + ' — ' + a.name}">4000</option>
+                        </select>
+                        <div class="form-hint" th:text="#{pgb.revenueAccountHint}">Pick it here rather than correcting the draft afterwards — the default is whatever the invoice module falls back to, which is rarely right for contract work.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rRef" th:text="#{bil.reference}">Reference</label>
+                        <input class="form-control" id="rRef" name="reference" type="text" th:value="${claim.projectCode}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rMsg" th:text="#{bil.message}">Message to the customer</label>
+                        <input class="form-control" id="rMsg" name="customerMessage" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body d-flex justify-between align-center">
+                <div class="form-hint" th:text="#{pgb.raiseHint}">The claim is checked again as the invoice is written, so a claim left open while somebody else billed the same job is refused rather than billing twice.</div>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-file-plus"/></svg>
+                    <span th:text="#{pgb.raise}">Raise the draft invoice</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card mb-5" th:if="${claim.draft}">
+        <div class="card-header"><h3 th:text="#{pgb.cancelTitle}">Stop this claim</h3></div>
+        <form method="post" th:action="@{/projects/progress-billing/{id}/cancel(id=${claim.id})}">
+            <div class="card-body d-flex justify-between align-center">
+                <div class="form-group mb-0" style="flex:1">
+                    <label class="form-label" for="cxReason" th:text="#{pgb.cancelReason}">Why it stopped</label>
+                    <input class="form-control" id="cxReason" name="reason" type="text">
+                </div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pgb.cancel}">Cancel the claim</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="#{pgb.history}">Every claim on this job</h3>
+            <span class="text-sm text-muted" th:if="${position != null}"
+                  th:text="#{pgb.remainingOf(${#numbers.formatDecimal(position.remaining, 1, 'COMMA', 2, 'POINT')}, ${#numbers.formatDecimal(position.contractValue, 1, 'COMMA', 2, 'POINT')})}">Left to claim</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{pgb.claimNumber}">No.</th>
+                        <th th:text="#{pgb.claimDate}">Date</th>
+                        <th th:text="#{pgb.methodLabel}">How</th>
+                        <th class="num" th:text="#{pgb.gross}">Claim</th>
+                        <th class="num" th:text="#{pgb.retention}">Retention</th>
+                        <th class="num" th:text="#{pgb.net}">Invoiced</th>
+                        <th th:text="#{common.status}">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="h : ${history}" th:classappend="${h.id == claim.id} ? 'table-total'">
+                        <td>
+                            <a class="cell-link" th:href="@{/projects/progress-billing/{id}(id=${h.id})}"
+                               th:text="${h.claimNumber}">1</a>
+                        </td>
+                        <td th:text="${#temporals.format(h.claimDate, 'dd MMM yyyy')}">01 Jan</td>
+                        <td class="cell-secondary" th:text="${methodLabels.get(h.method.name())}">Percentage</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(h.grossAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(h.retentionAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(h.netAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td th:with="st=${h.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'INVOICED' ? 'badge-success' : (st == 'CANCELLED' ? 'badge-void' : 'badge-warning')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Draft</span>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:text="#{pgb.historyHint}">Only invoiced claims count towards what has been claimed. A cancelled claim leaves the contract exactly where it was.</div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
