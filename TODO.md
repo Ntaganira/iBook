@@ -3,7 +3,7 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**81 / 115 mapped · 34 remaining**
+**90 / 115 mapped · 25 remaining**
 
 How to check progress yourself:
 
@@ -150,7 +150,7 @@ Reads tables that already exist. All seven done.
       while a later completed move of the same asset exists. `FixedAsset` gains a `custodian` field
       and `DataSeeder` an `ASSET_TRANSFER` / `ATR-` sequence.
 
-### Projects (7) — 3 of 7 done
+### Projects (7) — COMPLETE
 `Project`, `TimeEntry`. Job costing tags existing journal lines to a project.
 
 - [x] `/projects` · `/projects/timesheets` · `/projects/billable` — a project is a job that hours and
@@ -173,8 +173,31 @@ Reads tables that already exist. All seven done.
       "Earned" on a job is **what has actually been invoiced**, not what has been approved, so an
       unbilled job honestly shows a loss; a fixed-price job shows the agreed price instead. Hours
       awaiting billing are reported separately rather than counted as income nobody has asked for.
-- [ ] `/projects/budgets`
-- [ ] `/projects/job-costing` · `/projects/profitability` · `/projects/progress-billing`
+- [x] `/projects/budgets` — one budget per job, held **per account rather than per month**: a job runs
+      for as long as it runs, and forcing it onto a calendar year would invent a split of figures
+      nobody planned that way. Entirely non-posting; approving only freezes the figures so a
+      comparison measures against something that has stopped moving. Actual comes from the tagged
+      ledger, and variance reads as **favourable or adverse** rather than raw arithmetic. Every
+      comparison reports how much of the ledger has actually been tagged, because a job with
+      nothing tagged compares against zero and looks triumphantly under budget.
+- [x] `/projects/job-costing` · `/projects/profitability` · `/projects/progress-billing` — job
+      costing tags posted revenue and expense lines to a job. **Tagging is not a posting**: the
+      account, date and amount are untouched, so no trial balance, profit and loss or VAT return
+      can move because a line was tagged — verified by hashing the P&L before and after. That is
+      why it is allowed on a posted entry where editing one would not be. Only trading lines carry
+      a job: tagging the receivable side of an invoice would make "cost of this job" include money
+      moving between two of the company's own pockets.
+      `/projects/profitability` reports the **ledger** measure and the **timesheet** measure side by
+      side and never adds them — the wages behind booked hours already reach the books through
+      payroll, so adding the cost of time on top would count them twice.
+      `/projects/progress-billing` bills a **fixed price** before the job is finished, and is the
+      counterpart of `/projects/billable`, which only ever applies to hourly work. Claims are
+      **cumulative**, so rounding on each one cannot drift the total away from the contract price,
+      and the running total can never exceed it. **Retention** reduces what the claim invoices and
+      is totalled per job; no retention receivable is posted, since inventing one on the invoice
+      would misstate what is owed — getting it back is a later flat-amount claim. Raising a claim
+      writes a draft invoice through `InvoiceService` and lets the **revenue account be picked**,
+      rather than inheriting the wrong default the way timesheet billing does.
 
 ### Budgets (6)
 `Budget`, `BudgetLine`. Budget-vs-actual is a join against GL data that already exists.
@@ -214,14 +237,37 @@ Reads tables that already exist. All seven done.
       lags push past the twelfth month is reported separately rather than dropped.
 - [ ] `/budgets/ai-forecasts` — drop unless genuinely wanted
 
-### Documents (5)
-`Attachment`. **Needs a storage decision first: disk, S3, or database.**
+### Documents (5) — 4 of 5 done
+`Attachment`. **Storage decided: files on disk, metadata in the database.**
 
-- [ ] `/documents` · `/documents/upload` · `/documents/attachments` · `/documents/templates`
+- [x] `/documents` · `/documents/upload` · `/documents/attachments` · `/documents/templates` — files
+      go on disk under `documents.storage.root` (default `./data/documents`) and the database holds
+      only metadata plus a storage key. Bytes in a column would put every scanned receipt into every
+      backup of the books; MinIO is on the classpath and configured but nothing starts or checks it,
+      and a library that errors whenever a second service is down is worse than one writing to a
+      directory. `DocumentStorage` keeps that door open — a MinIO implementation is a drop-in with no
+      schema change. **Nothing here posts**: a stored file is evidence for a transaction, never a
+      transaction. A file attached to a record cannot be deleted until it is detached, because
+      destroying it removes the evidence for something the books still claim; archiving keeps both
+      the row and the bytes. Stored names are generated UUIDs foldered by month, never the browser's
+      filename, and every path is rebuilt from the root and checked to be inside it. Only PDFs,
+      images and plain text may be served inline — everything else downloads as
+      `application/octet-stream` with `nosniff`, because an uploaded HTML or SVG served inline would
+      run its own script on this application's origin with the viewer's session.
+      `/documents/templates` is blank forms somebody downloads and fills in, with a usage count;
+      deliberately **not** the invoice and email templates under Settings, which format documents the
+      app generates.
 - [ ] `/documents/ocr` — also needs an OCR service
 
 ### Other single items
-- [ ] `/accounting/recurring-journals` — `RecurringJournal` + scheduler
+- [x] `/accounting/recurring-journals` — a template for an entry that repeats. The schedule posts
+      nothing itself; each occurrence is a real journal entry dated the day it was owed, swept
+      nightly and also raisable by hand. Occurrences are **drafts unless auto-posting is turned on**,
+      because an entry that repeats unchanged is the kind that goes on being wrong for a year.
+      **Balance is enforced twice**: a schedule cannot start unless debits equal credits, and the
+      totals are re-added from the lines actually written as each entry is generated, so an account
+      deleted between cycles is refused rather than having the sweep write a one-sided entry every
+      month. Stopping a schedule leaves every entry it raised in place, posted ones included.
 - [ ] `/reports/builder` — `ReportDefinition`
 
 ---
@@ -243,6 +289,61 @@ Building these without the external piece produces a page that cannot work.
 ---
 
 ## Known issues
+
+- [ ] **Job costing is only as good as what somebody tagged, and nothing tags automatically.** No
+      invoice, bill, expense or journal form carries a project picker, so every ledger line reaches
+      a job only by being ticked on `/projects/job-costing` after the fact. A job nobody has tagged
+      shows zero cost and zero revenue and therefore reads as costless rather than as unmeasured —
+      both `/projects/profitability` and every project budget comparison report the tagged
+      percentage for that reason, but the figure is easy to post past. Tagging also has **no period
+      lock**: a line inside a closed fiscal period can be tagged and untagged freely. That is
+      defensible, since a tag moves no figure — verified by hashing the profit and loss before and
+      after tagging, which came back byte-identical — but it means an analysis of a closed year is
+      not frozen either. Untagging is likewise unrestricted and leaves no trace on the line beyond
+      the audit log.
+- [ ] **A project budget has no revisions and no currency.** One budget per job, deliberately, so
+      every variance says which plan it measured against — but that means a re-planned job has its
+      original figures overwritten with no record of what was first agreed. Approving freezes the
+      figures; reopening unfreezes them and nothing records that it happened beyond the audit log.
+      Budgeted hours are compared against timesheet hours, which never reach the ledger, so that one
+      row mixes a management measure into an otherwise ledger-based page. Figures are entered in the
+      base currency with no conversion, the same app-wide gap.
+- [ ] **Progress claims cannot be unwound, and retention is a label not a balance.** Raising a claim
+      stamps it `INVOICED` for good: voiding or crediting the invoice does **not** put the claim
+      back, so the job still reads as that much claimed and the next claim is calculated from a
+      figure the customer no longer owes. Same one-way door as timesheet billing. Retention reduces
+      what a claim invoices and is totalled per job, but **no retention receivable is posted** — the
+      balance sheet never shows money held back, and releasing it is an ordinary flat-amount claim
+      that nothing reconciles against what was withheld. A claim also has no fiscal-period check on
+      its date, and the contract value is snapshotted per claim, so raising the agreed price mid-job
+      leaves earlier claims quoting the old percentage. The stale-claim guard at raising time is
+      real but was **not** exercised live: the one-draft-per-job rule makes it hard to reach.
+- [ ] **Documents live on one machine and the store is not reconciled against the database.** Files
+      are written under `documents.storage.root` (default `./data/documents`); nothing copies them
+      anywhere, a second application instance would not see them, and a backup that takes the
+      database without the directory restores rows pointing at files that are not there. The detail
+      page detects a missing file and says so, but there is no sweep that finds orphaned rows or
+      orphaned files, and no way to re-upload bytes against an existing row. The declared content
+      type is **taken from the browser and never sniffed**, which is why serving is locked to an
+      allow list rather than trusted. The 5 MB per-file limit is enforced by Spring before the page
+      sees it, so an oversized upload surfaces as a server error page rather than a message on the
+      form — that path was not tested. Deleting an unattached document destroys the file with no
+      confirmation step and no recycle bin, and nothing links attachments back from the invoice,
+      bill, expense or project pages they belong to.
+- [ ] **A recurring journal repeats a fixed amount and auto-posting has no guard rail.** The lines
+      are stored once: a rent rise, a new account or a changed amount is picked up only by editing
+      the schedule, and entries already raised keep the old figures. With `autoPost` on, the nightly
+      sweep posts to the ledger with nobody in the loop and the only brake is the 24-occurrence
+      catch-up cap. There is **no fiscal-period check** on the generated date, so a schedule left
+      paused across a year-end will happily raise and post entries into a closed period when it is
+      restarted. The balance re-check at generation time is real but was **not** exercised live — it
+      needs an account deleted out from under a running schedule, which the chart of accounts does
+      not readily allow. The nightly sweep itself was not observed firing; generation was driven
+      through the manual **Raise the next one now** action, which runs the same code.
+- [ ] **`text-positive` does not exist in the stylesheet.** `budgets/vs-actual.html` styles a
+      favourable variance with `text-positive`, which `ebook.css` never defines, so favourable
+      figures render unstyled while adverse ones correctly pick up `text-error`. Pre-existing; the
+      project pages added since use `text-success`, which does exist.
 
 - [ ] **Billed time is a one-way door, and the draft it raises needs checking before posting.**
       Voiding an invoice raised from timesheets does **not** put its hours back: the entries stay
@@ -515,7 +616,7 @@ Building these without the external piece produces a page that cannot work.
 ## Conventions to keep
 
 - Message keys must exist in **all three** bundles — `messages.properties`, `_fr`, `_rw`.
-  Currently 3,649 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
+  Currently 4,021 each, no drift. (`coa.optional` is defined twice in each file — pre-existing.)
 - Accounts `10xx` are cash on hand, `11xx` bank and mobile money — `BankingService` relies on this.
 - New modules follow the existing shape: entity → repository → form DTO → service → controller →
   templates. `InvoiceService` is the reference for anything that posts to the ledger.
