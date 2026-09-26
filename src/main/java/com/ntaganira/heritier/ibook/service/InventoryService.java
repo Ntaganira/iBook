@@ -153,6 +153,7 @@ public class InventoryService {
         product.setCostPrice(zero(form.costPrice()));
         product.setSellingPrice(zero(form.sellingPrice()));
         product.setTaxRateId(form.taxRateId());
+        product.setExciseDutyId(form.exciseDutyId());
         product.setReorderLevel(zero(form.reorderLevel()));
         // A service never carries stock, whatever the checkbox says.
         product.setTrackStock(type == ProductType.GOOD && form.trackStock());

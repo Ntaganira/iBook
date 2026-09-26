@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{exc.form.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/taxes/excise}" th:text="#{exc.title}">Excise duty</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${mode == 'edit'} ? #{exc.form.editCrumb} : #{exc.form.breadcrumb}">New duty</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mode == 'edit'} ? #{exc.form.editTitle} : #{exc.form.title}">New Excise Duty</h1>
+            <p class="page-subtitle" th:text="#{exc.form.subtitle}">A rate, what it is charged on, and the liability it is held in.</p>
+            <span class="badge" th:if="${mode == 'edit'}"
+                  th:classappend="${duty.confirmed} ? 'badge-success' : 'badge-warning'">
+                <span class="badge-dot"></span>
+                <span th:text="${duty.confirmed} ? #{exc.confirmedBadge} : #{exc.unconfirmedBadge}">Not confirmed</span>
+            </span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-ghost" th:href="@{/taxes/excise}" th:text="#{common.cancel}">Cancel</a>
+            <button class="btn btn-primary" type="submit" form="excForm">
+                <svg class="ebook-icon"><use href="#icon-check"/></svg>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${mode == 'edit' and !duty.confirmed}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{exc.notConfirmedTitle}">This duty is not charged on anything yet</div>
+            <span th:text="#{exc.notConfirmedHint}">It can be attached to products, but no invoice will charge it until somebody has read the rate against the current schedule and confirmed it below.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--success mb-4" th:if="${mode == 'edit' and duty.confirmed}">
+        <svg class="ebook-icon"><use href="#icon-check-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{exc.confirmedTitle}">This duty has been confirmed</div>
+            <span th:text="#{exc.confirmedBy(${duty.confirmedBy}, ${#temporals.format(duty.confirmedAt, 'dd MMM yyyy')})}">Confirmed by somebody.</span>
+            <span th:if="${duty.rateSource != null}" th:text="#{wht.checkedAgainst(${duty.rateSource})}">Checked against.</span>
+            <div class="form-hint mt-2" th:text="#{exc.editWithdraws}">Changing what it charges withdraws the confirmation. Renaming it does not.</div>
+        </div>
+    </div>
+
+    <form id="excForm" method="post" novalidate th:object="${form}"
+          th:action="${mode == 'edit'} ? @{/taxes/excise/{id}(id=${editingId})} : @{/taxes/excise}">
+
+        <div class="alert alert--error mb-4" th:if="${#fields.hasGlobalErrors()}">
+            <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+            <div class="alert-body">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Something went wrong</div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h3 th:text="#{exc.detailsTitle}">What the duty is</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="eCode"><span th:text="#{pcm.code}">Code</span> <span class="required">*</span></label>
+                        <input class="form-control" id="eCode" name="code" type="text" th:value="${form.code}" required>
+                        <div th:replace="~{layout/common :: fieldError('code')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eName"><span th:text="#{common.name}">Name</span> <span class="required">*</span></label>
+                        <input class="form-control" id="eName" name="name" type="text" th:value="${form.name}" required>
+                        <div th:replace="~{layout/common :: fieldError('name')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eBasis" th:text="#{exc.basis}">Charged on</label>
+                        <select class="form-control" id="eBasis" name="basis">
+                            <option th:each="b : ${basisLabels}" th:value="${b.key}" th:text="${b.value}"
+                                    th:selected="${form.basis == b.key}">A percentage of value</option>
+                        </select>
+                        <div class="form-hint" th:text="#{exc.basisHint}">Rwandan excise uses both a percentage of value and a fixed amount per unit depending on the good, so both are offered. Only the figure matching the basis is used.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eRate" th:text="#{exc.rateField}">Rate %</label>
+                        <input class="form-control amount-control" id="eRate" name="rate" type="number" step="0.0001" min="0"
+                               th:value="${form.rate}">
+                        <div th:replace="~{layout/common :: fieldError('rate')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eAmt" th:text="#{exc.amountPerUnit}">Amount per unit</label>
+                        <input class="form-control amount-control" id="eAmt" name="amountPerUnit" type="number" step="0.01" min="0"
+                               th:value="${form.amountPerUnit}">
+                        <div th:replace="~{layout/common :: fieldError('amountPerUnit')}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="eUnit" th:text="#{exc.unitLabel}">Unit</label>
+                        <input class="form-control" id="eUnit" name="unitLabel" type="text" th:value="${form.unitLabel}"
+                               th:placeholder="#{exc.unitPlaceholder}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="eApplies" th:text="#{exc.appliesTo}">What it applies to</label>
+                        <input class="form-control" id="eApplies" name="appliesTo" type="text" th:value="${form.appliesTo}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="eAcc"><span th:text="#{exc.heldIn}">Held in</span> <span class="required">*</span></label>
+                        <select class="form-control" id="eAcc" name="payableAccountId" required>
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                                    th:selected="${form.payableAccountId != null and form.payableAccountId == a.id}">2107</option>
+                        </select>
+                        <div class="form-hint" th:text="#{exc.heldInHint}">A liability only. The duty is collected from the customer on the state's behalf, so crediting it to income would report somebody else's money as earnings.</div>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="eSource" th:text="#{pst.rateSource}">What this was checked against</label>
+                        <input class="form-control" id="eSource" name="rateSource" type="text" th:value="${form.rateSource}">
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="active" value="true" th:checked="${form.active}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{exc.activeLabel}">In use</span>
+                        </label>
+                        <div class="form-hint" th:text="#{exc.activeHint}">Retiring a duty stops it being charged on new invoices and leaves every invoice that already charged it exactly as it was.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card mb-5" th:if="${mode == 'edit'}">
+        <div class="card-header">
+            <h3 th:text="#{exc.confirmTitle}">Confirm this rate</h3>
+            <span class="text-sm text-muted" th:text="#{exc.confirmSubtitle}">Nothing charges it until you do.</span>
+        </div>
+        <form method="post" th:action="@{/taxes/excise/{id}/confirm(id=${editingId})}" th:unless="${duty.confirmed}">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="cSource" th:text="#{pst.rateSource}">What this was checked against</label>
+                    <input class="form-control" id="cSource" name="rateSource" type="text" th:value="${duty.rateSource}">
+                </div>
+                <div class="form-hint mb-3" th:text="#{exc.confirmHint}">Save any changes to the rate first — saving a changed rate withdraws the confirmation.</div>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-shield"/></svg>
+                    <span th:text="#{exc.confirm}">I have checked this against the current schedule</span>
+                </button>
+            </div>
+        </form>
+        <form method="post" th:action="@{/taxes/excise/{id}/withdraw(id=${editingId})}" th:if="${duty.confirmed}">
+            <div class="card-body">
+                <div class="form-hint mb-3" th:text="#{exc.withdrawHint}">Withdrawing stops it being charged on new invoices. Invoices that already charged it are untouched.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+                    <span th:text="#{pst.withdraw}">Withdraw the confirmation</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card mb-5" th:if="${mode == 'edit'}">
+        <div class="card-header">
+            <h3 th:text="#{exc.productsTitle}">Products carrying this duty</h3>
+            <span class="text-sm text-muted" th:text="#{exc.productsHint(${productCount})}">How many products.</span>
+        </div>
+        <div class="table-wrap" th:if="${!#lists.isEmpty(products)}">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{inv.prod.sku}">SKU</th>
+                        <th th:text="#{common.name}">Name</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${products}">
+                        <td><span class="font-mono" th:text="${p.sku}">SKU</span></td>
+                        <td><a class="cell-link" th:href="@{/inventory/products/{id}/edit(id=${p.id})}" th:text="${p.name}">Product</a></td>
+                        <td class="actions-cell">
+                            <form method="post" th:action="@{/taxes/excise/assign}">
+                                <input type="hidden" name="productId" th:value="${p.id}">
+                                <input type="hidden" name="back" th:value="'/taxes/excise/' + ${editingId} + '/edit'">
+                                <button class="btn btn-ghost btn-sm" type="submit" th:text="#{exc.takeOff}">Take it off</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body" th:if="${#lists.isEmpty(products)}">
+            <p class="text-secondary" th:text="#{exc.noProducts}">No product carries this duty, so nothing charges it.</p>
+            <div class="mt-2">
+                <a class="btn btn-secondary btn-sm" th:href="@{/inventory/products}" th:text="#{exc.toProducts}">Products</a>
+            </div>
+            <div class="form-hint mt-2" th:text="#{exc.attachHint}">A duty reaches an invoice through the product. Attach it on the product itself.</div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${mode == 'edit' and productCount == 0}">
+        <div class="card-body">
+            <div class="form-hint mb-3" th:text="#{exc.deleteHint}">No product carries this duty, so deleting it leaves nothing behind. A duty that is on products must be retired instead, because invoices that charged it have to go on saying what they charged.</div>
+            <form method="post" th:action="@{/taxes/excise/{id}/delete(id=${editingId})}">
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{exc.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{exc.title}">Excise Duty</h1>
+            <p class="page-subtitle" th:text="#{exc.subtitle}">Duty charged on particular goods, collected from the customer for the state.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/taxes/vat}" th:text="#{exc.toVat}">VAT</a>
+            <a class="btn btn-primary" th:href="@{/taxes/excise/new}">
+                <svg class="ebook-icon"><use href="#icon-plus"/></svg>
+                <span th:text="#{exc.new}">New duty</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{exc.ledgerTitle}">Excise is not VAT and does not sit beside it</div>
+            <span th:text="#{exc.ledgerHint}">Excise forms part of the value VAT is then charged on, so on an invoice line the duty is added to the net first and VAT is worked out on the sum. Charging both on the net would understate VAT; charging excise on the VAT-inclusive figure would overstate the duty. The duty is credited to a liability and never to income — the company collects it from the customer on the state's behalf and it was never the company's to earn, so revenue is unaffected. A duty is attached to products, because excise is charged on particular goods rather than on trade in general.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{exc.gateTitle}">An unconfirmed duty is never charged</div>
+            <span th:text="#{exc.gateHint}">A duty can be created and edited freely, but it reaches no invoice until somebody has read its rate against the current schedule and confirmed it. Excise rates and the list of goods they cover change with each finance law, so a rate nobody has checked is worse than none. Changing what a duty charges withdraws its confirmation; renaming it does not.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--error mb-4" th:if="${!#lists.isEmpty(missingAccounts)}">
+        <svg class="ebook-icon"><use href="#icon-x-circle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{exc.missingAccountTitle}">The chart of accounts is missing the code this module expects</div>
+            <span th:text="#{exc.missingAccountHint(${#strings.listJoin(missingAccounts, ', ')})}">Missing codes.</span>
+            <div class="mt-2">
+                <a class="btn btn-secondary btn-sm" th:href="@{/accounts}" th:text="#{pst.toChart}">Chart of accounts</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <form class="table-toolbar" method="get" th:action="@{/taxes/excise}">
+            <label class="form-label" for="eFrom" th:text="#{common.from}">From</label>
+            <input class="form-control" id="eFrom" type="date" name="from" th:value="${from}">
+            <label class="form-label" for="eTo" th:text="#{common.to}">To</label>
+            <input class="form-control" id="eTo" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+        </form>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exc.chargedInPeriod}">Charged in the period</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.chargedInPeriod, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{exc.chargedHint}">From invoices that are not drafts or void.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exc.remittedInPeriod}">Handed over</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.remittedInPeriod, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exc.liability}">Still held</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${summary.liability.signum() > 0} ? 'text-error' : 'text-success'"
+                 th:text="${#numbers.formatDecimal(summary.liability, 1, 'COMMA', 2, 'POINT')}">0</div>
+            <div class="cell-secondary" th:text="#{exc.liabilityHint}">Read from the liability accounts themselves.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{exc.confirmedCount}">Confirmed duties</div>
+            <div class="stat-tile-value" th:text="${summary.confirmed} + ' / ' + ${summary.all}">0</div>
+            <div class="cell-secondary" th:text="#{exc.confirmedHint}">Only confirmed duties are charged.</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <form class="table-toolbar" method="get" th:action="@{/taxes/excise}">
+            <input type="hidden" name="from" th:value="${from}">
+            <input type="hidden" name="to" th:value="${to}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{exc.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="active">
+                <option value="" th:text="#{prj.all}">All</option>
+                <option value="true" th:text="#{exc.inUse}" th:selected="${active == 'true'}">In use</option>
+                <option value="false" th:text="#{exc.retired}" th:selected="${active == 'false'}">Retired</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(duties.content)}, ${duties.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'code', #{pcm.code}, ${sort}, ${dir})}">Code</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'name', #{common.name}, ${sort}, ${dir})}">Name</th>
+                        <th th:text="#{exc.basis}">Charged on</th>
+                        <th class="num" th:text="#{exc.charge}">Charge</th>
+                        <th th:text="#{exc.heldIn}">Held in</th>
+                        <th th:text="#{exc.confirmedColumn}">Confirmed</th>
+                        <th class="actions-cell" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${duties.content}">
+                        <td><span class="font-mono" th:text="${d.code}">EXC-BEER</span></td>
+                        <td>
+                            <a class="cell-link" th:href="@{/taxes/excise/{id}/edit(id=${d.id})}" th:text="${d.name}">Beer</a>
+                            <span class="cell-secondary" th:if="${d.appliesTo != null}" th:text="${d.appliesTo}"></span>
+                        </td>
+                        <td class="cell-secondary" th:text="${basisLabels.get(d.basis.name())}">Value</td>
+                        <td class="num">
+                            <span th:if="${d.percentBased}" th:text="${#numbers.formatDecimal(d.rate, 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
+                            <span class="money" th:unless="${d.percentBased}"
+                                  th:text="${#numbers.formatDecimal(d.amountPerUnit, 1, 'COMMA', 2, 'POINT')}">0</span>
+                            <span class="cell-secondary" th:if="${!d.percentBased and d.unitLabel != null}"
+                                  th:text="${d.unitLabel}">per litre</span>
+                        </td>
+                        <td>
+                            <span class="font-mono" th:text="${d.payableAccountCode != null} ? ${d.payableAccountCode} : '—'">2107</span>
+                        </td>
+                        <td>
+                            <span class="badge" th:classappend="${d.confirmed} ? 'badge-success' : 'badge-warning'">
+                                <span class="badge-dot"></span>
+                                <span th:text="${d.confirmed} ? #{exc.confirmedBadge} : #{exc.unconfirmedBadge}">Not confirmed</span>
+                            </span>
+                            <span class="badge badge-muted" th:unless="${d.active}" th:text="#{exc.retired}">Retired</span>
+                        </td>
+                        <td class="actions-cell">
+                            <a class="btn btn-secondary btn-sm" th:href="@{/taxes/excise/{id}/edit(id=${d.id})}"
+                               th:text="#{common.edit}">Edit</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(duties.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-percent"/></svg></div>
+                                <p class="text-secondary" th:text="#{exc.none}">No excise duties set up yet.</p>
+                                <p class="form-hint mt-2" th:text="#{exc.noneHint}">A duty is a rate plus the goods it applies to. Attach it to products, confirm it, and invoices for those products will charge it.</p>
+                                <a class="btn btn-primary btn-sm mt-3" th:href="@{/taxes/excise/new}" th:text="#{exc.new}">New duty</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${duties.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(duties.content)}, ${duties.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${duties.number + 1}, ${duties.totalPages}, ${basePath + filterQuery + '&amp;sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${!#lists.isEmpty(summary.byDuty)}">
+        <div class="card-header">
+            <h3 th:text="#{exc.chargedByDutyTitle}">What was charged, by duty</h3>
+            <span class="text-sm text-muted" th:text="#{exc.chargedByDutyHint}">Read off the invoice lines that carried it.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{pcm.code}">Duty</th>
+                        <th class="num" th:text="#{exc.linesCharged}">Lines</th>
+                        <th class="num" th:text="#{exc.charged}">Charged</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="d : ${summary.byDuty}">
+                        <td><span class="font-mono" th:text="${d.code}">EXC-BEER</span></td>
+                        <td class="num" th:text="${d.lines}">0</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(d.amount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="#{exc.remitTitle}">Hand it over</h3>
+            <span class="text-sm text-muted" th:text="#{exc.remitHint}">Debits the liability and credits the account the money left.</span>
+        </div>
+        <form method="post" th:action="@{/taxes/excise/remit}">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="rDuty"><span th:text="#{exc.duty}">Duty</span> <span class="required">*</span></label>
+                        <select class="form-control" id="rDuty" name="dutyId" required>
+                            <option value="" th:text="#{exc.chooseDuty}">Choose a duty…</option>
+                            <option th:each="d : ${activeDuties}" th:value="${d.id}"
+                                    th:text="${d.code + ' — ' + d.name}">EXC-BEER</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rDate"><span th:text="#{rem.paymentDate}">Paid on</span> <span class="required">*</span></label>
+                        <input class="form-control" id="rDate" name="paymentDate" type="date" th:value="${today}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rAmt"><span th:text="#{common.amount}">Amount</span> <span class="required">*</span></label>
+                        <input class="form-control amount-control" id="rAmt" name="amount" type="number" step="0.01" min="0"
+                               th:value="${summary.liability}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="rAcc"><span th:text="#{rem.paymentAccount}">Paid from</span> <span class="required">*</span></label>
+                        <select class="form-control" id="rAcc" name="paymentAccountId" required>
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${paymentAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}">1101</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="rDecl" th:text="#{rem.declarationNo}">Declaration number</label>
+                        <input class="form-control" id="rDecl" name="declarationNo" type="text">
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit" th:disabled="${#lists.isEmpty(activeDuties)}">
+                    <svg class="ebook-icon"><use href="#icon-send"/></svg>
+                    <span th:text="#{exc.remit}">Record the payment</span>
+                </button>
+                <div class="form-hint mt-2" th:text="#{exc.remitLedgerHint}">There is no separate record of payments: the liability account is the record, so what has been handed over is read from the ledger rather than from a second tally that could disagree with it.</div>
+            </div>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>

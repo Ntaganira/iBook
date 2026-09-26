@@ -53,6 +53,13 @@ public class Product implements Serializable {
     @Column(name = "category_name")
     private String categoryName;
 
+    /**
+     * The excise duty this product carries, if any. Excise is charged on particular goods rather
+     * than on trade in general, so it belongs to the product and not to a customer or a document.
+     */
+    @Column(name = "excise_duty_id")
+    private Long exciseDutyId;
+
     @Column(name = "brand_id")
     private Long brandId;
 

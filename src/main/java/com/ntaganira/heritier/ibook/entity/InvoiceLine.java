@@ -59,6 +59,22 @@ public class InvoiceLine implements Serializable {
     @Builder.Default
     private BigDecimal lineTax = BigDecimal.ZERO;
 
+    /**
+     * Excise duty on this line. Excise is not VAT and does not behave like it: it forms part of
+     * the value VAT is then charged on, so the order matters and is applied where the totals are
+     * worked out. Zero on every line that carries no duty, which is every line that existed before
+     * excise did.
+     */
+    @Column(name = "excise_duty_id")
+    private Long exciseDutyId;
+
+    @Column(name = "excise_code")
+    private String exciseCode;
+
+    @Column(name = "excise_amount", precision = 16, scale = 2)
+    @Builder.Default
+    private BigDecimal exciseAmount = BigDecimal.ZERO;
+
     @Column(name = "line_total", precision = 16, scale = 2)
     @Builder.Default
     private BigDecimal lineTotal = BigDecimal.ZERO;

@@ -111,6 +111,16 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label class="form-label" for="pExcise" th:text="#{exc.duty}">Excise duty</label>
+                        <select class="form-control" id="pExcise" name="exciseDutyId">
+                            <option value="" th:text="#{exc.noDuty}">No excise duty</option>
+                            <option th:each="d : ${exciseDuties}" th:value="${d.id}"
+                                    th:text="${d.code + ' — ' + d.name}"
+                                    th:selected="${form.exciseDutyId != null and form.exciseDutyId == d.id}">EXC-BEER</option>
+                        </select>
+                        <div class="form-hint" th:text="#{exc.productHint}">Excise is charged on the goods themselves. It is added to the line before VAT, and an unconfirmed duty is never charged.</div>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label" for="pReorder" th:text="#{inv.prod.reorder}">Reorder level</label>
                         <input class="form-control amount-control" id="pReorder" name="reorderLevel" type="number"
                                step="0.01" min="0" th:value="${form.reorderLevel}">

@@ -80,6 +80,10 @@ public class Invoice implements Serializable {
     @Builder.Default
     private BigDecimal taxAmount = BigDecimal.ZERO;
 
+    @Column(name = "excise_total", precision = 16, scale = 2)
+    @Builder.Default
+    private BigDecimal exciseTotal = BigDecimal.ZERO;
+
     @Column(name = "total", precision = 16, scale = 2)
     @Builder.Default
     private BigDecimal total = BigDecimal.ZERO;

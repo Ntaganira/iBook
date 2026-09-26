@@ -23,6 +23,7 @@ import com.ntaganira.heritier.ibook.enums.ProductType;
 import com.ntaganira.heritier.ibook.repository.CompanyRepository;
 import com.ntaganira.heritier.ibook.service.AuditService;
 import com.ntaganira.heritier.ibook.service.BrandService;
+import com.ntaganira.heritier.ibook.service.ExciseService;
 import com.ntaganira.heritier.ibook.service.InventoryService;
 import com.ntaganira.heritier.ibook.service.TaxRateService;
 import jakarta.validation.Valid;
@@ -52,17 +53,20 @@ public class InventoryController {
     private final InventoryService inventoryService;
     private final BrandService brandService;
     private final TaxRateService taxRateService;
+    private final ExciseService exciseService;
     private final CompanyRepository companyRepository;
     private final MessageSource messageSource;
 
     public InventoryController(InventoryService inventoryService,
                                BrandService brandService,
                                TaxRateService taxRateService,
+                               ExciseService exciseService,
                                CompanyRepository companyRepository,
                                MessageSource messageSource) {
         this.inventoryService = inventoryService;
         this.brandService = brandService;
         this.taxRateService = taxRateService;
+        this.exciseService = exciseService;
         this.companyRepository = companyRepository;
         this.messageSource = messageSource;
     }
@@ -153,7 +157,7 @@ public class InventoryController {
         addProductContext(model, "edit", id);
         model.addAttribute("form", new ProductForm(p.getSku(), p.getName(), p.getDescription(),
                 p.getType().name(), p.getCategoryId(), p.getBrandId(), p.getUnit(),
-                p.getCostPrice(), p.getSellingPrice(), p.getTaxRateId(), p.getReorderLevel(),
+                p.getCostPrice(), p.getSellingPrice(), p.getTaxRateId(), p.getExciseDutyId(), p.getReorderLevel(),
                 p.isTrackStock(), p.isActive()));
         model.addAttribute("onHandQty", inventoryService.onHand(id));
         return "inventory/product-form";
@@ -165,6 +169,7 @@ public class InventoryController {
         model.addAttribute("categories", inventoryService.listActiveCategories());
         model.addAttribute("brands", brandService.listActive());
         model.addAttribute("taxRates", taxRateService.listActive());
+        model.addAttribute("exciseDuties", exciseService.active());
         model.addAttribute("typeLabels", typeLabels());
         model.addAttribute("baseCurrency", baseCurrency());
     }

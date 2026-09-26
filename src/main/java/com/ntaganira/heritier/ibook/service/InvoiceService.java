@@ -61,6 +61,7 @@ public class InvoiceService {
     private final TaxRateRepository taxRateRepository;
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final ExciseDutyRepository exciseDutyRepository;
     private final AuditService auditService;
 
     public InvoiceService(InvoiceRepository invoiceRepository,
@@ -73,6 +74,7 @@ public class InvoiceService {
                           TaxRateRepository taxRateRepository,
                           ProductRepository productRepository,
                           StockMovementRepository stockMovementRepository,
+                          ExciseDutyRepository exciseDutyRepository,
                           AuditService auditService) {
         this.invoiceRepository = invoiceRepository;
         this.paymentRepository = paymentRepository;
@@ -84,6 +86,7 @@ public class InvoiceService {
         this.taxRateRepository = taxRateRepository;
         this.productRepository = productRepository;
         this.stockMovementRepository = stockMovementRepository;
+        this.exciseDutyRepository = exciseDutyRepository;
         this.auditService = auditService;
     }
 
@@ -340,6 +343,21 @@ public class InvoiceService {
             ResolvedTax resolved = resolveTax(lineForm.getTaxRateId(), lineForm.taxRateValue());
             Product linked = lineForm.getProductId() == null ? null
                     : productRepository.findById(lineForm.getProductId()).orElse(null);
+
+            /*
+             * Excise, where the product carries a confirmed duty. It is added to the net BEFORE
+             * VAT, because excise forms part of the value VAT is charged on: charging both on the
+             * net would understate VAT, and charging excise on the VAT-inclusive figure would
+             * overstate the duty. An unconfirmed duty is never applied, so a rate nobody has read
+             * against the current schedule cannot reach an invoice.
+             */
+            ExciseDuty duty = linked == null || linked.getExciseDutyId() == null ? null
+                    : exciseDutyRepository.findById(linked.getExciseDutyId()).orElse(null);
+            BigDecimal excise = duty == null || !duty.isUsable()
+                    ? BigDecimal.ZERO
+                    : duty.on(lineForm.lineSubtotal(), lineForm.quantityValue());
+            BigDecimal taxBase = lineForm.lineSubtotal().add(excise);
+
             InvoiceLine line = InvoiceLine.builder()
                     .description(lineForm.getDescription().trim())
                     .quantity(lineForm.quantityValue())
@@ -350,8 +368,11 @@ public class InvoiceService {
                     .productSku(linked == null ? null : linked.getSku())
                     .taxTreatment(resolved.treatment())
                     .lineSubtotal(lineForm.lineSubtotal())
-                    .lineTax(taxOf(lineForm.lineSubtotal(), resolved.rate()))
-                    .lineTotal(lineForm.lineSubtotal().add(taxOf(lineForm.lineSubtotal(), resolved.rate())))
+                    .exciseDutyId(excise.signum() == 0 ? null : duty.getId())
+                    .exciseCode(excise.signum() == 0 ? null : duty.getCode())
+                    .exciseAmount(excise)
+                    .lineTax(taxOf(taxBase, resolved.rate()))
+                    .lineTotal(taxBase.add(taxOf(taxBase, resolved.rate())))
                     .revenueAccountId(revenue == null ? null : revenue.getId())
                     .revenueAccountCode(revenue == null ? null : revenue.getCode())
                     .revenueAccountName(revenue == null ? null : revenue.getName())
@@ -369,20 +390,26 @@ public class InvoiceService {
             discount = subtotal;
         }
         BigDecimal taxTotal = BigDecimal.ZERO;
+        BigDecimal exciseTotal = BigDecimal.ZERO;
         for (var l : invoice.getLines()) {
             BigDecimal base = zero(l.getLineSubtotal());
-            if (base.signum() == 0) {
+            BigDecimal excise = zero(l.getExciseAmount());
+            exciseTotal = exciseTotal.add(excise);
+            if (base.signum() == 0 && excise.signum() == 0) {
                 continue;
             }
             BigDecimal share = (discount.signum() == 0 || subtotal.signum() == 0)
                     ? BigDecimal.ZERO
                     : discount.multiply(base).divide(subtotal, 2, RoundingMode.HALF_UP);
-            taxTotal = taxTotal.add(taxOf(base.subtract(share), zero(l.getTaxRate())));
+            // A discount reduces the value VAT is charged on; the duty does not move with it,
+            // because the duty was charged on the goods rather than on what was agreed for them.
+            taxTotal = taxTotal.add(taxOf(base.subtract(share).add(excise), zero(l.getTaxRate())));
         }
         invoice.setSubtotal(subtotal);
         invoice.setDiscountAmount(discount);
+        invoice.setExciseTotal(exciseTotal);
         invoice.setTaxAmount(taxTotal);
-        invoice.setTotal(subtotal.subtract(discount).add(taxTotal));
+        invoice.setTotal(subtotal.subtract(discount).add(exciseTotal).add(taxTotal));
 
         Invoice saved = invoiceRepository.save(invoice);
         auditService.log(MODULE, id == null ? "CREATE_INVOICE" : "UPDATE_INVOICE",
@@ -470,6 +497,41 @@ public class InvoiceService {
                     .build());
         }
 
+        /*
+         * Excise is credited to a LIABILITY, never to income: the company collects it from the
+         * customer on the state's behalf and it was never the company's to earn. Grouped by the
+         * account each duty names, so two duties held in different accounts stay apart.
+         */
+        BigDecimal creditedExcise = BigDecimal.ZERO;
+        Map<Long, BigDecimal> exciseByAccount = new LinkedHashMap<>();
+        for (InvoiceLine line : invoice.getLines()) {
+            BigDecimal amount = zero(line.getExciseAmount());
+            if (amount.signum() == 0 || line.getExciseDutyId() == null) {
+                continue;
+            }
+            ExciseDuty duty = exciseDutyRepository.findById(line.getExciseDutyId()).orElse(null);
+            if (duty == null || duty.getPayableAccountId() == null) {
+                continue;
+            }
+            exciseByAccount.merge(duty.getPayableAccountId(), amount, BigDecimal::add);
+        }
+        for (Map.Entry<Long, BigDecimal> excise : exciseByAccount.entrySet()) {
+            Account account = accountRepository.findById(excise.getKey()).orElse(null);
+            if (account == null || excise.getValue().signum() == 0) {
+                continue;
+            }
+            creditedExcise = creditedExcise.add(excise.getValue());
+            entry.addLine(JournalLine.builder()
+                    .accountId(account.getId())
+                    .accountCode(account.getCode())
+                    .accountName(account.getName())
+                    .memo("Excise duty on " + invoice.getInvoiceNo())
+                    .debit(BigDecimal.ZERO)
+                    .credit(excise.getValue())
+                    .sortOrder(order++)
+                    .build());
+        }
+
         BigDecimal tax = zero(invoice.getTaxAmount());
         if (tax.signum() != 0 && vatPayable != null) {
             entry.addLine(JournalLine.builder()
@@ -483,7 +545,8 @@ public class InvoiceService {
                     .build());
         }
 
-        BigDecimal rounding = invoice.getTotal().subtract(creditedRevenue).subtract(tax);
+        BigDecimal rounding = invoice.getTotal().subtract(creditedRevenue)
+                .subtract(creditedExcise).subtract(tax);
         if (rounding.signum() != 0 && !entry.getLines().isEmpty()) {
             JournalLine last = entry.getLines().get(entry.getLines().size() - 1);
             last.setCredit(last.getCreditValue().add(rounding));
