@@ -45,7 +45,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coll.totalOverdue}">Total overdue</div>
             <div class="stat-tile-value money text-error"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalOverdue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalOverdue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coll.invoiceCount}">Invoices to chase</div>
@@ -54,7 +54,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coll.largest}">Largest single debt</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.largest, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.largest, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coll.oldest}">Oldest debt</div>
@@ -102,7 +102,7 @@
                         <td class="cell-secondary"
                             th:text="${r.lastPaymentDate != null ? #temporals.format(r.lastPaymentDate, 'dd MMM yyyy') : '—'}">—</td>
                         <td class="num money font-semibold"
-                            th:text="${(r.currencyCode != null ? r.currencyCode : baseCurrency) + ' ' + #numbers.formatDecimal(r.balanceDue, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${(r.currencyCode != null ? r.currencyCode : baseCurrency) + ' ' + #numbers.formatDecimal(r.balanceDue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                     <tr th:if="${report.empty}">
                         <td class="table-empty" colspan="7">
@@ -117,7 +117,7 @@
                     <tr>
                         <td colspan="6" class="text-right font-bold" th:text="#{coll.totalOverdue}">Total overdue</td>
                         <td class="num money font-bold"
-                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalOverdue, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalOverdue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                 </tfoot>
             </table>

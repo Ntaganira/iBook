@@ -44,25 +44,25 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.view.totalBilled}">Total invoiced</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalBilled, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalBilled, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:text="#{ven.view.billCount(${stats.billCount})}">0 invoices</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.view.totalPaid}">Paid to date</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalPaid, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.totalPaid, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.outstanding}">Outstanding balance</div>
             <div class="stat-tile-value money" th:classappend="${stats.outstanding.signum() > 0} ? 'text-error'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(stats.outstanding, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:if="${stats.openBills > 0}"
                  th:text="#{ven.view.openBills(${stats.openBills})}">0 open</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.openingBalance}">Opening balance</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vendor.openingBalance != null ? vendor.openingBalance : 0, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vendor.openingBalance != null ? vendor.openingBalance : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -96,9 +96,9 @@
                                           th:text="#{bill.view.daysOverdue(${b.daysOverdue})}">0 days overdue</span>
                                 </td>
                                 <td class="num money"
-                                    th:text="${b.currencyCode + ' ' + #numbers.formatDecimal(b.total, 1, 0, 'COMMA')}">RWF 0</td>
+                                    th:text="${b.currencyCode + ' ' + #numbers.formatDecimal(b.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                                 <td class="num money"
-                                    th:text="${b.currencyCode + ' ' + #numbers.formatDecimal(b.balanceDue, 1, 0, 'COMMA')}">RWF 0</td>
+                                    th:text="${b.currencyCode + ' ' + #numbers.formatDecimal(b.balanceDue, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                                 <td th:with="ds=${b.displayStatus.name()}">
                                     <span class="badge" th:classappend="${ds == 'PAID' ? 'badge-active' : (ds == 'OVERDUE' ? 'badge-error' : (ds == 'DRAFT' or ds == 'VOID' ? 'badge-muted' : 'badge-warning'))}">
                                         <span class="badge-dot"></span>

@@ -27,23 +27,23 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.vat.outputVat}">Output VAT</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.outputVat, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.outputVat, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.vat.inputVat}">Input VAT</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.inputVat, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.inputVat, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:if="${vat.payable()}" th:text="#{tax.vat.netPayable}">VAT payable</div>
             <div class="stat-tile-label" th:unless="${vat.payable()}" th:text="#{tax.vat.netCredit}">VAT credit</div>
             <div class="stat-tile-value money" th:classappend="${vat.payable()} ? 'text-error' : 'text-positive'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.netVat.abs(), 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(vat.netVat.abs(), 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.liability.net}">Net tax position</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(liability.netPosition, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(liability.netPosition, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
                 <div class="report-name" th:text="#{tax.vat.title}">VAT Return</div>
                 <div class="report-desc" th:text="#{tax.vat.desc}">Output VAT less input VAT for the period</div>
                 <div class="report-meta"
-                     th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(vat.netVat, 1, 0, 'COMMA')}">RWF 0</div>
+                     th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(vat.netVat, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </a>
             <a class="report-card" th:href="@{/taxes/liability(asOf=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-scale"/></svg>
@@ -88,7 +88,7 @@
                             <a class="cell-link" th:href="@{/reports/general-ledger(account=${b.accountId})}"
                                th:text="${b.code} + ' — ' + ${b.name}">2101 VAT payable</a>
                         </td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(b.balance, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(b.balance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(liability.balances)}">
                         <td class="table-empty" colspan="2">

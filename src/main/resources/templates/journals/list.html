@@ -112,8 +112,8 @@
                             <span class="badge badge-success" th:if="${e.status.name() == 'POSTED'}" th:text="#{common.status.posted}">Posted</span>
                             <span class="badge badge-muted" th:unless="${e.status.name() == 'POSTED'}" th:text="#{common.status.draft}">Draft</span>
                         </td>
-                        <td data-col="amounts" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalDebits != null ? e.totalDebits : 0, 1, 0, 'COMMA')}">RWF 0</td>
-                        <td data-col="amounts" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalCredits != null ? e.totalCredits : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                        <td data-col="amounts" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalDebits != null ? e.totalDebits : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                        <td data-col="amounts" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(e.totalCredits != null ? e.totalCredits : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td class="actions-cell">
                             <div class="row-actions dropdown">
                                 <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>

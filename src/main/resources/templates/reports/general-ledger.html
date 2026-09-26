@@ -39,10 +39,10 @@
             <div>
                 <h3 th:text="${s.accountCode} + ' — ' + ${s.accountName}">1101 Bank</h3>
                 <p class="text-sm text-muted"
-                   th:text="#{rpt.openingBalance} + ': ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(s.openingBalance, 1, 2, 'COMMA')}"></p>
+                   th:text="#{rpt.openingBalance} + ': ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(s.openingBalance, 1, 'COMMA', 2, 'POINT')}"></p>
             </div>
             <span class="badge badge-muted">
-                <span th:text="#{rpt.closingBalance} + ': ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(s.closingBalance, 1, 2, 'COMMA')}"></span>
+                <span th:text="#{rpt.closingBalance} + ': ' + ${baseCurrency} + ' ' + ${#numbers.formatDecimal(s.closingBalance, 1, 'COMMA', 2, 'POINT')}"></span>
             </span>
         </div>
         <div class="table-wrap">
@@ -62,17 +62,17 @@
                         <td class="cell-secondary" th:text="${#temporals.format(r.date, 'dd MMM yyyy')}">01 Jan 2026</td>
                         <td th:text="${r.entryNo}">JE-00001</td>
                         <td class="cell-secondary" th:text="${r.reference != null ? r.reference : (r.memo != null ? r.memo : '—')}">—</td>
-                        <td class="num money" th:text="${r.debit.signum() == 0 ? '—' : #numbers.formatDecimal(r.debit, 1, 2, 'COMMA')}">—</td>
-                        <td class="num money" th:text="${r.credit.signum() == 0 ? '—' : #numbers.formatDecimal(r.credit, 1, 2, 'COMMA')}">—</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(r.balance, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${r.debit.signum() == 0 ? '—' : #numbers.formatDecimal(r.debit, 1, 'COMMA', 2, 'POINT')}">—</td>
+                        <td class="num money" th:text="${r.credit.signum() == 0 ? '—' : #numbers.formatDecimal(r.credit, 1, 'COMMA', 2, 'POINT')}">—</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.balance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-right font-semibold" th:text="#{rpt.periodTotals}">Period totals</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(s.totalDebits, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(s.totalCredits, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(s.closingBalance, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(s.totalDebits, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(s.totalCredits, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-bold" th:text="${#numbers.formatDecimal(s.closingBalance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                 </tfoot>
             </table>

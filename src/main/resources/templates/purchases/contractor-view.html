@@ -70,22 +70,22 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{con.totalSpend}">Total spend</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{con.billedTile}">On bills</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.billed, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.billed, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{con.outstandingTile}">Still owed</div>
             <div class="stat-tile-value money" th:classappend="${spend.outstanding.signum() > 0} ? 'text-warning'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.outstanding, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{con.rateAmount}">Agreed rate</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(contractor.rateAmount, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(contractor.rateAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="cell-secondary" th:text="${rateTypeLabels.get(contractor.rateType.name())}">Fixed</div>
         </div>
     </div>
@@ -125,9 +125,9 @@
                                 </td>
                                 <td class="cell-secondary" th:text="${r.description != null ? r.description : '—'}">—</td>
                                 <td class="num money"
-                                    th:text="${r.currencyCode + ' ' + #numbers.formatDecimal(r.amount, 1, 0, 'COMMA')}">RWF 0</td>
+                                    th:text="${r.currencyCode + ' ' + #numbers.formatDecimal(r.amount, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                                 <td class="num money"
-                                    th:text="${r.outstanding.signum() == 0 ? '—' : r.currencyCode + ' ' + #numbers.formatDecimal(r.outstanding, 1, 0, 'COMMA')}">—</td>
+                                    th:text="${r.outstanding.signum() == 0 ? '—' : r.currencyCode + ' ' + #numbers.formatDecimal(r.outstanding, 1, 'COMMA', 0, 'POINT')}">—</td>
                                 <td class="cell-secondary" th:text="${r.status}">POSTED</td>
                             </tr>
                             <tr th:if="${spend.empty}">
@@ -187,7 +187,7 @@
                     <div class="d-flex justify-between font-bold pt-3" style="border-top:1px solid var(--border)">
                         <span th:text="#{con.estimatedWithholding}">Would have been withheld</span>
                         <span class="money"
-                              th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.estimatedWithholding, 1, 2, 'COMMA')}">RWF 0.00</span>
+                              th:text="${baseCurrency + ' ' + #numbers.formatDecimal(spend.estimatedWithholding, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</span>
                     </div>
                     <div class="alert alert--info mt-3">
                         <svg class="ebook-icon"><use href="#icon-info"/></svg>

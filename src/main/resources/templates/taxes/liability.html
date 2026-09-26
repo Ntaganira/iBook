@@ -31,17 +31,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.liability.payable}">Taxes payable</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalPayable, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalPayable, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.liability.receivable}">Taxes recoverable</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalReceivable, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalReceivable, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.liability.net}">Net position</div>
             <div class="stat-tile-value money" th:classappend="${report.netPosition.signum() > 0} ? 'text-error' : 'text-positive'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netPosition, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netPosition, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.liability.accounts}">Tax accounts</div>
@@ -68,9 +68,9 @@
                                th:text="${b.code} + ' — ' + ${b.name}">2101 VAT payable</a>
                         </td>
                         <td class="cell-secondary" th:text="${b.type}">LIABILITY</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(b.debits, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(b.credits, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(b.balance, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(b.debits, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(b.credits, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(b.balance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(report.balances)}">
                         <td class="table-empty" colspan="5">

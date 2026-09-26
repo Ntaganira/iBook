@@ -51,7 +51,7 @@
         <div class="alert-body">
             <div class="alert-title" th:text="#{cn.appliedTitle}">Applied to an invoice</div>
             <a class="cell-link" th:href="@{/invoices/{id}(id=${invoice.id})}"
-               th:text="${invoice.invoiceNo + ' — ' + creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.appliedAmount, 1, 2, 'COMMA')}">INV-0001</a>
+               th:text="${invoice.invoiceNo + ' — ' + creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.appliedAmount, 1, 'COMMA', 2, 'POINT')}">INV-0001</a>
         </div>
     </div>
 
@@ -60,7 +60,7 @@
         <svg class="ebook-icon"><use href="#icon-info"/></svg>
         <div class="alert-body">
             <div class="alert-title" th:text="#{cn.unappliedTitle}">Unapplied credit</div>
-            <span th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.unappliedAmount, 1, 2, 'COMMA')} + ' · ' + #{cn.unappliedHint}">RWF 0.00</span>
+            <span th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.unappliedAmount, 1, 'COMMA', 2, 'POINT')} + ' · ' + #{cn.unappliedHint}">RWF 0.00</span>
         </div>
     </div>
 
@@ -68,22 +68,22 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.subtotal}">Subtotal</div>
             <div class="stat-tile-value money"
-                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.subtotal, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.discount}">Discount</div>
             <div class="stat-tile-value money"
-                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.discountAmount, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.discountAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.tax}">Tax</div>
             <div class="stat-tile-value money"
-                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.taxAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.creditTotal}">Credit total</div>
             <div class="stat-tile-value money"
-                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -117,9 +117,9 @@
                                 <td class="cell-secondary"
                                     th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">—</td>
                                 <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                                 <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(creditNote.lines)}">
                                 <td class="table-empty" colspan="6">
@@ -131,7 +131,7 @@
                             <tr>
                                 <td colspan="5" class="text-right font-bold" th:text="#{cn.creditTotal}">Credit total</td>
                                 <td class="num money font-bold"
-                                    th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${creditNote.currencyCode + ' ' + #numbers.formatDecimal(creditNote.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -169,8 +169,8 @@
                                         <span th:text="${l.accountCode}">1201</span>
                                         <span class="cell-secondary" th:text="${l.accountName}">Accounts receivable</span>
                                     </td>
-                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 2, 'COMMA')}">0.00</td>
-                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 2, 'COMMA')}">0.00</td>
+                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                                 </tr>
                             </tbody>
                         </table>

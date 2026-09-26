@@ -35,7 +35,7 @@
             <svg class="ebook-icon ebook-icon--sm">
                 <use th:href="${kpi.delta.signum() >= 0} ? '#icon-arrow-up' : '#icon-arrow-down'"/>
             </svg>
-            <span th:text="${#numbers.formatDecimal(kpi.delta, 1, 1, 'COMMA')}">12.4</span>%
+            <span th:text="${#numbers.formatDecimal(kpi.delta, 1, 'COMMA', 1, 'POINT')}">12.4</span>%
         </span>
     </th:block>
     <span class="kpi-delta flat" th:unless="${kpi.hasDelta and kpi.delta != null}">—</span>

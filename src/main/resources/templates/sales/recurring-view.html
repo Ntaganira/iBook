@@ -98,7 +98,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rec.invoiceTotal}">Invoice total</div>
             <div class="stat-tile-value money"
-                 th:text="${schedule.currencyCode + ' ' + #numbers.formatDecimal(schedule.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${schedule.currencyCode + ' ' + #numbers.formatDecimal(schedule.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rec.nextRun}">Next invoice</div>
@@ -147,9 +147,9 @@
                         <td class="cell-secondary"
                             th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">—</td>
                         <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(schedule.lines)}">
                         <td class="table-empty" colspan="6">
@@ -161,7 +161,7 @@
                     <tr>
                         <td colspan="5" class="text-right font-bold" th:text="#{rec.invoiceTotal}">Invoice total</td>
                         <td class="num money font-bold"
-                            th:text="${schedule.currencyCode + ' ' + #numbers.formatDecimal(schedule.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${schedule.currencyCode + ' ' + #numbers.formatDecimal(schedule.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                 </tfoot>
             </table>
@@ -200,9 +200,9 @@
                                 <td class="cell-secondary" th:text="${#temporals.format(i.issueDate, 'dd MMM yyyy')}">01 Jan 2026</td>
                                 <td class="cell-secondary" th:text="${#temporals.format(i.dueDate, 'dd MMM yyyy')}">31 Jan 2026</td>
                                 <td class="num money"
-                                    th:text="${i.currencyCode + ' ' + #numbers.formatDecimal(i.total, 1, 0, 'COMMA')}">RWF 0</td>
+                                    th:text="${i.currencyCode + ' ' + #numbers.formatDecimal(i.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                                 <td class="num money"
-                                    th:text="${i.currencyCode + ' ' + #numbers.formatDecimal(i.balanceDue, 1, 0, 'COMMA')}">RWF 0</td>
+                                    th:text="${i.currencyCode + ' ' + #numbers.formatDecimal(i.balanceDue, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                                 <td th:with="ds=${i.displayStatus.name()}">
                                     <span class="badge" th:classappend="${ds == 'PAID' ? 'badge-active' : (ds == 'OVERDUE' ? 'badge-error' : (ds == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
                                         <span class="badge-dot"></span>

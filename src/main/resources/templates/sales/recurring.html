@@ -53,13 +53,13 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rec.monthlyValue}">Committed per month</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.monthlyValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.monthlyValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="cell-secondary" th:text="#{rec.monthlyHint}">Active schedules restated monthly</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rec.activeValue}">Value per run</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.activeValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.activeValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rec.dueTile}">Due to run</div>
@@ -139,7 +139,7 @@
                             <span class="cell-secondary text-warning" th:if="${r.due}" th:text="#{rec.dueNow}">Due now</span>
                         </td>
                         <td class="num money"
-                            th:text="${r.currencyCode + ' ' + #numbers.formatDecimal(r.total, 1, 0, 'COMMA')}">RWF 0</td>
+                            th:text="${r.currencyCode + ' ' + #numbers.formatDecimal(r.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td th:with="st=${r.status.name()}">
                             <span class="badge" th:classappend="${st == 'ACTIVE' ? 'badge-active' : (st == 'CANCELLED' ? 'badge-error' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
                                 <span class="badge-dot"></span>

@@ -2222,3 +2222,53 @@ td.table-empty .empty-state { padding: var(--sp-6) var(--sp-4); }
 }
 .mobile-bottom-nav a.active { color: var(--primary-700); }
 .mobile-bottom-nav .ebook-icon { width: 20px; height: 20px; }
+
+
+/* ==========================================================================
+   Classes the templates have always used, which were never defined
+   --------------------------------------------------------------------------
+   These six were in use across the app - form-control--sm on 261 elements,
+   mono on 142, justify-between on 129 - while matching nothing in this
+   stylesheet, so every one of them did nothing at all.
+
+   Three are spelled differently from the real utility and are defined here as
+   aliases rather than renamed in the templates: the alias is one line, whereas
+   renaming touches fifty-odd files for no visual difference and every typo
+   would be a silently dead class again. The other three had no equivalent to
+   alias, so they are defined properly, in this stylesheet's own tokens rather
+   than hardcoded values.
+   ========================================================================== */
+
+/* Aliases. Same declarations as the canonical utility, deliberately duplicated
+   rather than chained, so deleting one name never silently kills the other. */
+.mono            { font-family: var(--font-mono); }
+.justify-between { justify-content: space-between; }
+.w-full          { width: 100%; }
+
+/* text-positive is used in budgets/vs-actual.html for a favourable variance,
+   which is what text-success already means. Same colour, kept as its own name
+   because "positive variance" reads better than "success" in that context. */
+.text-positive   { color: var(--success-600); }
+
+/* The compact input used in line-item grids, where a 40px control on every row
+   of an invoice makes the table taller than the screen. Always written
+   alongside .form-control, so this only overrides what has to change. */
+.form-control--sm {
+  height: 32px;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-sm);
+}
+textarea.form-control--sm { height: auto; min-height: 56px; padding: var(--sp-2); }
+select.form-control--sm { padding-right: 28px; background-position: right 8px center; }
+
+/* The totals row at the foot of a table. A rule above it and no hover, because
+   a total is a conclusion rather than another record to point at - hovering it
+   like a row invites somebody to click something that is not there. */
+.table-total td {
+  border-top: 2px solid var(--border-strong);
+  border-bottom: 0;
+  font-weight: 600;
+  background: var(--surface-muted);
+}
+.table tbody tr.table-total:hover { background: var(--surface-muted); }

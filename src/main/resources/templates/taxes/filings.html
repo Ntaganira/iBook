@@ -47,7 +47,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.fil.outstanding}">Outstanding</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.fil.overdueCount}">Overdue</div>
@@ -93,11 +93,11 @@
                             <span class="cell-secondary text-error" th:if="${f.daysOverdue > 0}"
                                   th:text="#{tax.fil.daysOverdue(${f.daysOverdue})}">0 days overdue</span>
                         </td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(f.declaredAmount, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(f.paidAmount, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(f.declaredAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(f.paidAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num money font-semibold"
                             th:classappend="${f.balanceDue.signum() > 0} ? 'text-error'"
-                            th:text="${#numbers.formatDecimal(f.balanceDue, 1, 2, 'COMMA')}">0.00</td>
+                            th:text="${#numbers.formatDecimal(f.balanceDue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td th:with="st=${f.status.name()}">
                             <span class="badge" th:classappend="${st == 'PAID' ? 'badge-active' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning')}">
                                 <span class="badge-dot"></span><span th:text="${statusLabels.get(st)}">Draft</span>

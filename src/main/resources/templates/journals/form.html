@@ -93,8 +93,8 @@
                                 <tr>
                                     <td colspan="2"></td>
                                     <td class="text-right font-semibold" th:text="#{je.totals}">Totals</td>
-                                    <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.totalDebits(), 1, 2, 'COMMA')}">RWF 0.00</td>
-                                    <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.totalCredits(), 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.totalDebits(), 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
+                                    <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.totalCredits(), 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -118,7 +118,7 @@
                         <div class="stat-tile mb-4" style="border:1px solid var(--border);padding:var(--sp-4)">
                             <div class="stat-tile-label" th:text="#{je.difference}">Difference</div>
                             <div class="stat-tile-value money"
-                                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.totalDebits().subtract(form.totalCredits()), 1, 2, 'COMMA')}">RWF 0.00</div>
+                                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(form.totalDebits().subtract(form.totalCredits()), 1, 'COMMA', 2, 'POINT')}">RWF 0.00</div>
                             <div class="stat-tile-sub">
                                 <span class="badge badge-success" th:if="${form.totalDebits().compareTo(form.totalCredits()) == 0}"><span class="badge-dot"></span><span th:text="#{je.balancedSmall}">Balanced</span></span>
                                 <span class="badge badge-error" th:unless="${form.totalDebits().compareTo(form.totalCredits()) == 0}"><span class="badge-dot"></span><span th:text="#{je.outOfBalanceSmall}">Out of balance</span></span>

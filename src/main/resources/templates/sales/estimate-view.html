@@ -76,22 +76,22 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.subtotal}">Subtotal</div>
             <div class="stat-tile-value money"
-                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.subtotal, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.discount}">Discount</div>
             <div class="stat-tile-value money"
-                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.discountAmount, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.discountAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.tax}">Tax</div>
             <div class="stat-tile-value money"
-                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.taxAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.total}">Total</div>
             <div class="stat-tile-value money"
-                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -122,9 +122,9 @@
                         <td class="cell-secondary"
                             th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">—</td>
                         <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(estimate.lines)}">
                         <td class="table-empty" colspan="6">
@@ -136,7 +136,7 @@
                     <tr>
                         <td colspan="5" class="text-right font-bold" th:text="#{est.total}">Total</td>
                         <td class="num money font-bold"
-                            th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${estimate.currencyCode + ' ' + #numbers.formatDecimal(estimate.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                 </tfoot>
             </table>

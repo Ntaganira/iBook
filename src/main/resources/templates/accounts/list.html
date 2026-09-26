@@ -32,7 +32,7 @@
     <div class="grid grid-6 mb-5">
         <div class="stat-tile" th:each="s : ${sections}">
             <div class="stat-tile-label" th:text="${s.typeLabel}">Assets</div>
-            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(s.total, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(s.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:text="#{coa.accountsLabel(${#lists.size(s.accounts)})}">0 accounts</div>
         </div>
     </div>
@@ -106,7 +106,7 @@
                         <tr class="coa-type-row">
                             <td colspan="7" class="coa-type-label">
                                 <span th:text="${section.typeLabel}">Assets</span>
-                                <span class="text-muted font-normal" th:text="${' — ' + #numbers.formatDecimal(section.total, 1, 0, 'COMMA')}">— 0</span>
+                                <span class="text-muted font-normal" th:text="${' — ' + #numbers.formatDecimal(section.total, 1, 'COMMA', 0, 'POINT')}">— 0</span>
                             </td>
                         </tr>
                         <tr th:each="account : ${section.accounts}">
@@ -120,9 +120,9 @@
                                       th:text="${typeLabels[account.type.name()]}">Asset</span>
                             </td>
                             <td data-col="parent" class="cell-secondary" th:text="${parentLabels[account.id] != null ? parentLabels[account.id] : '—'}">—</td>
-                            <td data-col="opening" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(account.openingBalance != null ? account.openingBalance : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td data-col="opening" class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(account.openingBalance != null ? account.openingBalance : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                             <td data-col="balance" class="num font-semibold"
-                                th:text="${baseCurrency + ' ' + #numbers.formatDecimal(balances[account.id] != null ? balances[account.id] : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                                th:text="${baseCurrency + ' ' + #numbers.formatDecimal(balances[account.id] != null ? balances[account.id] : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                             <td class="actions-cell">
                                 <div class="row-actions dropdown">
                                     <button class="row-actions-btn" type="button" data-dropdown-toggle><svg class="ebook-icon"><use href="#icon-more-horizontal"/></svg></button>

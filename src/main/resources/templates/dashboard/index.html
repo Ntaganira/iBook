@@ -44,7 +44,7 @@
                 <span class="kpi-label" th:text="#{dash.totalRevenue}">Total Revenue</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-trending-up"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.revenue.value, 1, 0, 'COMMA')}">RWF 48,250,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.revenue.value, 1, 'COMMA', 0, 'POINT')}">RWF 48,250,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.revenue})}"></span>
                 <span class="kpi-compare" th:text="#{dash.vsLastMonth}">vs last month</span>
@@ -57,7 +57,7 @@
                 <span class="kpi-label" th:text="#{dash.totalExpenses}">Total Expenses</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-trending-down"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.expenses.value, 1, 0, 'COMMA')}">RWF 31,840,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.expenses.value, 1, 'COMMA', 0, 'POINT')}">RWF 31,840,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.expenses})}"></span>
                 <span class="kpi-compare" th:text="#{dash.vsLastMonth}">vs last month</span>
@@ -70,10 +70,10 @@
                 <span class="kpi-label" th:text="#{dash.netProfit}">Net Profit</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-pie-chart"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.profit.value, 1, 0, 'COMMA')}">RWF 16,410,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.profit.value, 1, 'COMMA', 0, 'POINT')}">RWF 16,410,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.profit})}"></span>
-                <span class="kpi-compare" th:text="#{dash.profitMargin(${#numbers.formatDecimal(dash.margin, 1, 1, 'COMMA') + '%'})}">profit margin 34%</span>
+                <span class="kpi-compare" th:text="#{dash.profitMargin(${#numbers.formatDecimal(dash.margin, 1, 'COMMA', 1, 'POINT') + '%'})}">profit margin 34%</span>
             </div>
             <div class="kpi-spark"><canvas id="sparkProfit" th:attr="data-spark=${dash.sparks.profit}"></canvas></div>
         </div>
@@ -83,7 +83,7 @@
                 <span class="kpi-label" th:text="#{dash.cashBalance}">Cash Balance</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-bank"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.cash.value, 1, 0, 'COMMA')}">RWF 22,780,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.cash.value, 1, 'COMMA', 0, 'POINT')}">RWF 22,780,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.cash})}"></span>
                 <span class="kpi-compare" th:text="#{dash.acrossAccounts(${dash.cashAccountCount})}">across 4 accounts</span>
@@ -99,33 +99,33 @@
                 <span class="kpi-label" th:text="#{dash.accountsReceivable}">Accounts Receivable</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-users"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.receivables.value, 1, 0, 'COMMA')}">RWF 25,400,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.receivables.value, 1, 'COMMA', 0, 'POINT')}">RWF 25,400,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.receivables})}"></span>
             </div>
             <div class="kpi-compare mt-1 text-muted" th:if="${dash.receivables.value.signum() == 0}" th:text="#{dash.noOutstanding}">No outstanding balances</div>
             <a class="kpi-compare mt-1 text-info" th:if="${dash.receivables.value.signum() > 0}" th:href="@{/sales/aging}"
-               th:text="#{dash.overdue(${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.receivables.value, 1, 0, 'COMMA')})}">Overdue</a>
+               th:text="#{dash.overdue(${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.receivables.value, 1, 'COMMA', 0, 'POINT')})}">Overdue</a>
         </div>
         <div class="kpi-card kpi-card--ap">
             <div class="kpi-top">
                 <span class="kpi-label" th:text="#{dash.accountsPayable}">Accounts Payable</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-truck"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.payables.value, 1, 0, 'COMMA')}">RWF 12,950,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.payables.value, 1, 'COMMA', 0, 'POINT')}">RWF 12,950,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.payables})}"></span>
             </div>
             <div class="kpi-compare mt-1 text-muted" th:if="${dash.payables.value.signum() == 0}" th:text="#{dash.noUnpaid}">No unpaid bills</div>
             <a class="kpi-compare mt-1 text-info" th:if="${dash.payables.value.signum() > 0}" th:href="@{/purchases/aging}"
-               th:text="#{dash.dueSoon(${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.payables.value, 1, 0, 'COMMA')})}">Due soon</a>
+               th:text="#{dash.dueSoon(${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.payables.value, 1, 'COMMA', 0, 'POINT')})}">Due soon</a>
         </div>
         <div class="kpi-card kpi-card--inventory">
             <div class="kpi-top">
                 <span class="kpi-label" th:text="#{dash.inventoryValue}">Inventory Value</span>
                 <span class="kpi-icon"><svg class="ebook-icon"><use href="#icon-box"/></svg></span>
             </div>
-            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.inventory.value, 1, 0, 'COMMA')}">RWF 9,640,000</div>
+            <div class="kpi-value" th:text="${dash.baseCurrency + ' ' + #numbers.formatDecimal(dash.inventory.value, 1, 'COMMA', 0, 'POINT')}">RWF 9,640,000</div>
             <div class="d-flex align-items-center gap-2">
                 <span th:replace="~{layout/common :: kpiDelta(${dash.inventory})}"></span>
             </div>
@@ -241,7 +241,7 @@
                             <td><span class="cell-primary" th:text="${row.memo != null ? row.memo : row.entryNo}">Invoice INV-2026-00450</span></td>
                             <td class="cell-secondary" th:text="${row.accountName != null ? row.accountName : '—'}">2010 Accounts Receivable</td>
                             <td class="num money" th:classappend="${row.inflow} ? 'money-positive' : 'money-negative'"
-                                th:text="|${row.inflow ? '+' : '-'} ${dash.baseCurrency} ${#numbers.formatDecimal(row.amount, 1, 0, 'COMMA')}|">+RWF 860,000</td>
+                                th:text="|${row.inflow ? '+' : '-'} ${dash.baseCurrency} ${#numbers.formatDecimal(row.amount, 1, 'COMMA', 0, 'POINT')}|">+RWF 860,000</td>
                             <td class="num">
                                 <span class="badge badge-success" th:if="${row.status == 'POSTED'}" th:text="#{common.status.posted}">Posted</span>
                                 <span class="badge badge-muted" th:unless="${row.status == 'POSTED'}" th:text="#{common.status.draft}">Draft</span>

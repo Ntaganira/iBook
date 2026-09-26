@@ -41,8 +41,8 @@
         <div class="alert-body">
             <div class="alert-title" th:text="#{tax.vat.notReconciled}">Documents and ledger disagree</div>
             <div th:text="#{tax.vat.varianceHint(
-                ${baseCurrency + ' ' + #numbers.formatDecimal(report.outputVariance, 1, 2, 'COMMA')},
-                ${baseCurrency + ' ' + #numbers.formatDecimal(report.inputVariance, 1, 2, 'COMMA')})}"></div>
+                ${baseCurrency + ' ' + #numbers.formatDecimal(report.outputVariance, 1, 'COMMA', 2, 'POINT')},
+                ${baseCurrency + ' ' + #numbers.formatDecimal(report.inputVariance, 1, 'COMMA', 2, 'POINT')})}"></div>
         </div>
     </div>
 
@@ -50,18 +50,18 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.vat.outputVat}">Output VAT (sales)</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.outputVat, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.outputVat, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.vat.inputVat}">Input VAT (purchases)</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.inputVat, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.inputVat, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:if="${report.payable()}" th:text="#{tax.vat.netPayable}">VAT payable</div>
             <div class="stat-tile-label" th:unless="${report.payable()}" th:text="#{tax.vat.netCredit}">VAT credit</div>
             <div class="stat-tile-value money" th:classappend="${report.payable()} ? 'text-error' : 'text-positive'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netVat.abs(), 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netVat.abs(), 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{tax.vat.rate}">Standard rate</div>
@@ -76,35 +76,35 @@
                 <tbody>
                     <tr>
                         <td th:text="#{tax.vat.taxableSales}">Taxable sales (excl. VAT)</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(report.taxableSales, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(report.taxableSales, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${report.zeroRatedSales.signum() > 0}">
                         <td class="cell-secondary" th:text="#{tax.vat.zeroRatedSales}">Zero-rated sales</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(report.zeroRatedSales, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(report.zeroRatedSales, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${report.exemptSales.signum() > 0}">
                         <td class="cell-secondary" th:text="#{tax.vat.exemptSales}">Exempt sales</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(report.exemptSales, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(report.exemptSales, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr>
                         <td class="font-semibold" th:text="#{tax.vat.outputVat}">Output VAT</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.outputVat, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.outputVat, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr>
                         <td class="pt-4" th:text="#{tax.vat.taxablePurchases}">Taxable purchases (excl. VAT)</td>
-                        <td class="num money pt-4" th:text="${#numbers.formatDecimal(report.taxablePurchases, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money pt-4" th:text="${#numbers.formatDecimal(report.taxablePurchases, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${report.zeroRatedPurchases.signum() > 0}">
                         <td class="cell-secondary" th:text="#{tax.vat.zeroRatedPurchases}">Zero-rated purchases</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(report.zeroRatedPurchases, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(report.zeroRatedPurchases, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${report.exemptPurchases.signum() > 0}">
                         <td class="cell-secondary" th:text="#{tax.vat.exemptPurchases}">Exempt purchases</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(report.exemptPurchases, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(report.exemptPurchases, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr>
                         <td class="font-semibold" th:text="#{tax.vat.inputVat}">Input VAT</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.inputVat, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.inputVat, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                 </tbody>
                 <tfoot>
@@ -112,7 +112,7 @@
                         <td class="font-bold" th:if="${report.payable()}" th:text="#{tax.vat.netPayable}">VAT payable</td>
                         <td class="font-bold" th:unless="${report.payable()}" th:text="#{tax.vat.netCredit}">VAT credit carried forward</td>
                         <td class="num money font-bold"
-                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netVat.abs(), 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netVat.abs(), 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                 </tfoot>
             </table>
@@ -141,9 +141,9 @@
                         <td><a class="cell-link" th:href="@{/invoices/{id}(id=${d.id})}" th:text="${d.documentNo}">INV-0001</a></td>
                         <td class="cell-secondary" th:text="${#temporals.format(d.date, 'dd MMM yyyy')}">01 Jan 2026</td>
                         <td class="cell-secondary" th:text="${d.partyName}">Customer</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(d.taxableAmount, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(d.vatAmount, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(d.total, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.taxableAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.vatAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.total, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(report.sales)}">
                         <td class="table-empty" colspan="6">
@@ -174,9 +174,9 @@
                         <td><a class="cell-link" th:href="@{/bills/{id}(id=${d.id})}" th:text="${d.documentNo}">BILL-0001</a></td>
                         <td class="cell-secondary" th:text="${#temporals.format(d.date, 'dd MMM yyyy')}">01 Jan 2026</td>
                         <td class="cell-secondary" th:text="${d.partyName}">Vendor</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(d.taxableAmount, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(d.vatAmount, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(d.total, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.taxableAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.vatAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(d.total, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(report.purchases)}">
                         <td class="table-empty" colspan="6">

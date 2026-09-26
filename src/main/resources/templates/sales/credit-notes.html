@@ -55,17 +55,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.totalCredited}">Total credited</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalCredited, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.totalCredited, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.creditedThisMonth}">Credited this month</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.creditedThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.creditedThisMonth, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.unapplied}">Unapplied credit</div>
             <div class="stat-tile-value money" th:classappend="${summary.unapplied.signum() > 0} ? 'text-warning'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.unapplied, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.unapplied, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{cn.status.draft}">Draft</div>
@@ -140,9 +140,9 @@
                             <span class="cell-secondary" th:if="${note.invoiceId == null}" th:text="#{cn.noInvoice}">Unallocated</span>
                         </td>
                         <td class="num money"
-                            th:text="${note.currencyCode + ' ' + #numbers.formatDecimal(note.total, 1, 0, 'COMMA')}">RWF 0</td>
+                            th:text="${note.currencyCode + ' ' + #numbers.formatDecimal(note.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td class="num money"
-                            th:text="${note.currencyCode + ' ' + #numbers.formatDecimal(note.unappliedAmount, 1, 0, 'COMMA')}">RWF 0</td>
+                            th:text="${note.currencyCode + ' ' + #numbers.formatDecimal(note.unappliedAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td th:with="st=${note.status.name()}">
                             <span class="badge" th:classappend="${st == 'APPLIED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
                                 <span class="badge-dot"></span>

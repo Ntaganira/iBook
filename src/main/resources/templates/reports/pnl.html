@@ -36,18 +36,18 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.totalIncome}">Total income</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalIncome, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalIncome, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.totalExpenses}">Total expenses</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalExpense, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalExpense, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.netProfit}">Net profit</div>
             <div class="stat-tile-value money"
                  th:classappend="${report.netProfit.signum() < 0} ? 'text-error' : 'text-positive'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netProfit, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netProfit, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.margin}">Net margin</div>
@@ -74,7 +74,7 @@
                             <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId}, from=${from}, to=${to})}"
                                th:text="${l.accountCode} + ' — ' + ${l.accountName}">4001 Consulting</a>
                         </td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(report.income)}">
                         <td class="cell-secondary" th:text="#{rpt.noActivity}">No activity in this period.</td>
@@ -83,7 +83,7 @@
                     <tr>
                         <td class="text-right font-semibold" th:text="#{rpt.totalIncome}">Total income</td>
                         <td class="num money font-semibold"
-                            th:text="${#numbers.formatDecimal(report.totalIncome, 1, 2, 'COMMA')}">0.00</td>
+                            th:text="${#numbers.formatDecimal(report.totalIncome, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
 
                     <tr>
@@ -94,7 +94,7 @@
                             <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId}, from=${from}, to=${to})}"
                                th:text="${l.accountCode} + ' — ' + ${l.accountName}">5001 Rent</a>
                         </td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(report.expenses)}">
                         <td class="cell-secondary" th:text="#{rpt.noActivity}">No activity in this period.</td>
@@ -103,7 +103,7 @@
                     <tr>
                         <td class="text-right font-semibold" th:text="#{rpt.totalExpenses}">Total expenses</td>
                         <td class="num money font-semibold"
-                            th:text="${#numbers.formatDecimal(report.totalExpense, 1, 2, 'COMMA')}">0.00</td>
+                            th:text="${#numbers.formatDecimal(report.totalExpense, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                 </tbody>
                 <tfoot>
@@ -111,7 +111,7 @@
                         <td class="text-right font-bold" th:text="#{rpt.netProfit}">Net profit</td>
                         <td class="num money font-bold"
                             th:classappend="${report.netProfit.signum() < 0} ? 'text-error' : 'text-positive'"
-                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netProfit, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.netProfit, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                 </tfoot>
             </table>

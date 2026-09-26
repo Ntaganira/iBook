@@ -30,7 +30,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.val.stockValue}">Stock value</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.stockValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.stockValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.prod.belowReorder}">Below reorder level</div>
@@ -88,8 +88,8 @@
                                   th:text="${#numbers.formatDecimal(qty, 1, 2)} + ' ' + ${p.unit}">0.00</span>
                             <span th:unless="${p.trackStock}" class="cell-secondary" th:text="#{inv.prod.notTracked}">Not tracked</span>
                         </td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(p.costPrice, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(p.sellingPrice, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.costPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(p.sellingPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td>
                             <span class="badge badge-active" th:if="${p.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
                             <span class="badge badge-muted" th:unless="${p.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>

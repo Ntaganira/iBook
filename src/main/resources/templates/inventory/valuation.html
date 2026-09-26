@@ -31,17 +31,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.val.stockValue}">Stock value at cost</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.val.retailValue}">Value at selling price</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalRetail, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalRetail, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.val.potentialMargin}">Potential margin</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalRetail.subtract(report.totalValue), 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalRetail.subtract(report.totalValue), 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.prod.belowReorder}">Below reorder level</div>
@@ -74,8 +74,8 @@
                         <td class="cell-secondary" th:text="${r.categoryName != null ? r.categoryName : '—'}">—</td>
                         <td class="num" th:classappend="${r.belowReorder} ? 'text-error'"
                             th:text="${#numbers.formatDecimal(r.quantity, 1, 2)} + ' ' + ${r.unit}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(r.unitCost, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(r.value, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.unitCost, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(r.value, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                     </tr>
                     <tr th:if="${report.empty}">
                         <td class="table-empty" colspan="6">
@@ -90,7 +90,7 @@
                     <tr>
                         <td colspan="5" class="text-right font-bold" th:text="#{inv.val.stockValue}">Stock value at cost</td>
                         <td class="num money font-bold"
-                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalValue, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalValue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                     </tr>
                 </tfoot>
             </table>

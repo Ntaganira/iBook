@@ -55,12 +55,12 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.openValue}">Open value</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.openValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.openValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.acceptedValue}">Accepted value</div>
             <div class="stat-tile-value money text-positive"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.acceptedValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.acceptedValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{est.status.expired}">Expired</div>
@@ -139,7 +139,7 @@
                             <span th:if="${e.expiryDate == null}">—</span>
                         </td>
                         <td class="num money"
-                            th:text="${e.currencyCode + ' ' + #numbers.formatDecimal(e.total, 1, 0, 'COMMA')}">RWF 0</td>
+                            th:text="${e.currencyCode + ' ' + #numbers.formatDecimal(e.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td th:with="ds=${e.displayStatus.name()}">
                             <span class="badge" th:classappend="${ds == 'ACCEPTED' or ds == 'CONVERTED' ? 'badge-active' : (ds == 'DECLINED' or ds == 'EXPIRED' ? 'badge-error' : (ds == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
                                 <span class="badge-dot"></span>

@@ -34,7 +34,7 @@
         <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
         <div class="alert-body">
             <div class="alert-title" th:text="#{rpt.outOfBalance}">Balance sheet does not balance</div>
-            <div th:text="#{rpt.outOfBalanceHint(${baseCurrency + ' ' + #numbers.formatDecimal(report.difference, 1, 2, 'COMMA')})}"></div>
+            <div th:text="#{rpt.outOfBalanceHint(${baseCurrency + ' ' + #numbers.formatDecimal(report.difference, 1, 'COMMA', 2, 'POINT')})}"></div>
         </div>
     </div>
 
@@ -42,23 +42,23 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.totalAssets}">Total assets</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalAssets, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalAssets, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.totalLiabilities}">Total liabilities</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalLiabilities, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalLiabilities, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.totalEquity}">Total equity</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.equityWithEarnings, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.equityWithEarnings, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{rpt.currentEarnings}">Current year earnings</div>
             <div class="stat-tile-value money"
                  th:classappend="${report.currentEarnings.signum() < 0} ? 'text-error' : 'text-positive'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.currentEarnings, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.currentEarnings, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -74,7 +74,7 @@
                                     <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId})}"
                                        th:text="${l.accountCode} + ' — ' + ${l.accountName}">1101 Bank</a>
                                 </td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(report.assets)}">
                                 <td class="cell-secondary" colspan="2" th:text="#{rpt.noBalances}">No balances to show.</td>
@@ -84,7 +84,7 @@
                             <tr>
                                 <td class="text-right font-bold" th:text="#{rpt.totalAssets}">Total assets</td>
                                 <td class="num money font-bold"
-                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalAssets, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalAssets, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -104,7 +104,7 @@
                                     <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId})}"
                                        th:text="${l.accountCode} + ' — ' + ${l.accountName}">2001 Payables</a>
                                 </td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(report.liabilities)}">
                                 <td class="cell-secondary" colspan="2" th:text="#{rpt.noBalances}">No balances to show.</td>
@@ -112,7 +112,7 @@
                             <tr>
                                 <td class="text-right font-semibold" th:text="#{rpt.totalLiabilities}">Total liabilities</td>
                                 <td class="num money font-semibold"
-                                    th:text="${#numbers.formatDecimal(report.totalLiabilities, 1, 2, 'COMMA')}">0.00</td>
+                                    th:text="${#numbers.formatDecimal(report.totalLiabilities, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
 
                             <tr><td colspan="2" class="font-bold pt-4" th:text="#{rpt.equity}">Equity</td></tr>
@@ -121,28 +121,28 @@
                                     <a class="cell-link" th:href="@{/reports/general-ledger(account=${l.accountId})}"
                                        th:text="${l.accountCode} + ' — ' + ${l.accountName}">3001 Capital</a>
                                 </td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr>
                                 <td class="cell-secondary" th:text="#{rpt.currentEarnings}">Current year earnings</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(report.currentEarnings, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(report.currentEarnings, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr>
                                 <td class="text-right font-semibold" th:text="#{rpt.totalEquity}">Total equity</td>
                                 <td class="num money font-semibold"
-                                    th:text="${#numbers.formatDecimal(report.equityWithEarnings, 1, 2, 'COMMA')}">0.00</td>
+                                    th:text="${#numbers.formatDecimal(report.equityWithEarnings, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td class="text-right font-bold" th:text="#{rpt.totalLiabilitiesEquity}">Total liabilities &amp; equity</td>
                                 <td class="num money font-bold"
-                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalLiabilitiesAndEquity, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totalLiabilitiesAndEquity, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                             <tr th:unless="${report.balanced()}">
                                 <td class="text-right font-semibold text-error" th:text="#{rpt.difference}">Difference</td>
                                 <td class="num money font-semibold text-error"
-                                    th:text="${#numbers.formatDecimal(report.difference, 1, 2, 'COMMA')}">0.00</td>
+                                    th:text="${#numbers.formatDecimal(report.difference, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                         </tfoot>
                     </table>

@@ -555,7 +555,7 @@ publicly reachable host for any callback.
       reconciliation has no fiscal-period check on its statement date, and reopening a completed one
       releases its matched lines with nothing recording that the agreement was withdrawn beyond the
       audit log.
-- [ ] **Five families of CSS utility class are used across the app but defined nowhere.**
+- [x] **Five families of CSS utility class are used across the app but defined nowhere.**
       `ebook.css` is the only stylesheet, and it contains no `.mono`, `.justify-between`, `.w-full`,
       `.form-control--sm` or `.table-total`. The real names are `.font-mono`,
       `.justify-content-between` and `.w-100`; there is no small form-control variant and no
@@ -616,7 +616,7 @@ publicly reachable host for any callback.
       needs an account deleted out from under a running schedule, which the chart of accounts does
       not readily allow. The nightly sweep itself was not observed firing; generation was driven
       through the manual **Raise the next one now** action, which runs the same code.
-- [ ] **`text-positive` does not exist in the stylesheet.** `budgets/vs-actual.html` styles a
+- [x] **`text-positive` does not exist in the stylesheet.** `budgets/vs-actual.html` styles a
       favourable variance with `text-positive`, which `ebook.css` never defines, so favourable
       figures render unstyled while adverse ones correctly pick up `text-error`. Pre-existing; the
       project pages added since use `text-success`, which does exist.
@@ -707,7 +707,11 @@ publicly reachable host for any callback.
       (`/taxes/withholding`, Tier 3). Contractors are also linked to spend only through an optional
       supplier record, so an unlinked contractor shows no history, and a supplier shared by two
       contractors would show the same bills under both.
-- [ ] **Every money figure in the app is missing its thousands separators.** Thymeleaf's four-argument
+- [x] **Every money figure in the app is missing its thousands separators.** FIXED: 396 calls
+      across 57 templates converted from the 4-argument form to the 5-argument one. Two
+      exchange-rate calls were deliberately left on the 4-argument form: they pass 'POINT'
+      as the decimal separator, so they already render correctly and adding grouping would
+      be a preference, not a fix. Thymeleaf's four-argument
       `#numbers.formatDecimal(x, 1, 2, 'COMMA')` reads as *(value, minIntegerDigits, decimalDigits,
       **decimalPointType**)* — so `'COMMA'` sets the **decimal point** to a comma and asks for no
       grouping at all. `RWF 1510000.00` renders as `RWF 1510000,00`, and the `, 1, 0, 'COMMA')`
@@ -877,9 +881,15 @@ publicly reachable host for any callback.
       Estimates then fall back to a random number like `EST-2026-11501` instead of `EST-0001`.
       Add the row at `/settings/numbering` — same class of drift as the missing 1402 and 5200
       accounts.
-- [ ] **Six message keys missing in all three bundles** (pre-existing, render as `??key??`):
-      `page.title`, `set.showing`, `set.rates.addHint`, `set.role.count`, `set.workflows.steps`,
-      `set.fiscalYear.periodLabel`
+- [x] **Five message keys missing in all three bundles** — FIXED. `set.showing`,
+      `set.rates.addHint`, `set.role.count`, `set.workflows.steps` and
+      `set.fiscalYear.periodLabel` are now defined in English, French and Kinyarwanda.
+      `page.title` was deliberately **not** added: it appears only inside a usage comment in
+      `layout/base.html` and is never rendered, so a key for it would be dead weight in three
+      bundles. All five take MessageFormat arguments, so every apostrophe in the French and
+      Kinyarwanda text is doubled — verified rendering as `s'applique`, `jusqu'à` and
+      `cy'itangazo` rather than mangled. Also cleaned a garbled placeholder on the
+      exchange-rates template that read `Newest rates for __0__%s are applied first".replace(...)`.
 - [ ] **Cash flow uses a simplified classification**, not the IFRS indirect method. Each entry is
       bucketed by its largest non-cash account.
 - [ ] **Zero-rated vs exempt on old lines.** Lines saved before `TaxRate` existed default to

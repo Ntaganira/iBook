@@ -68,9 +68,9 @@
                     <div class="stat-tile" style="border:1px solid var(--border);padding:var(--sp-4);margin-bottom:var(--sp-4)">
                         <div class="stat-tile-label" th:text="#{fisc.netIncomeHint}">Revenues − expenses for the year</div>
                         <div class="stat-tile-value money text-success" th:if="${netIncome.doubleValue() >= 0}"
-                             th:text="${baseCurrency + ' ' + #numbers.formatDecimal(netIncome, 1, 0, 'COMMA')}">RWF 0</div>
+                             th:text="${baseCurrency + ' ' + #numbers.formatDecimal(netIncome, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
                         <div class="stat-tile-value money" th:unless="${netIncome.doubleValue() >= 0}"
-                             th:text="${baseCurrency + ' ' + #numbers.formatDecimal(netIncome, 1, 0, 'COMMA')}">RWF 0</div>
+                             th:text="${baseCurrency + ' ' + #numbers.formatDecimal(netIncome, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
                     </div>
                     <div class="alert alert--warning">
                         <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>

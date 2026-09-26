@@ -52,17 +52,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.thisMonth}">Spent this month</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.thisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.thisMonth, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.thisYear}">Spent this year</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.thisYear, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.thisYear, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.taxThisMonth}">Input VAT this month</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.taxThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.taxThisMonth, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.status.draft}">Draft</div>
@@ -137,7 +137,7 @@
                         <td class="cell-secondary"
                             th:text="${e.paymentAccountCode != null ? e.paymentAccountCode + ' — ' + e.paymentAccountName : '—'}">1001</td>
                         <td class="num money"
-                            th:text="${e.currencyCode + ' ' + #numbers.formatDecimal(e.total, 1, 0, 'COMMA')}">RWF 0</td>
+                            th:text="${e.currencyCode + ' ' + #numbers.formatDecimal(e.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td th:with="st=${e.status.name()}">
                             <span class="badge" th:classappend="${st == 'POSTED' ? 'badge-active' : (st == 'VOID' ? 'badge-error' : 'badge-muted')}">
                                 <span class="badge-dot"></span>

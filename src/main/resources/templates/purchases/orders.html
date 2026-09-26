@@ -55,12 +55,12 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{po.openValue}">Open order value</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.openValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.openValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{po.billedValue}">Billed value</div>
             <div class="stat-tile-value money text-positive"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.billedValue, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.billedValue, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{po.late}">Overdue delivery</div>
@@ -141,7 +141,7 @@
                                   th:text="#{po.daysLate(${o.daysLate})}">3 days late</span>
                         </td>
                         <td class="num money"
-                            th:text="${o.currencyCode + ' ' + #numbers.formatDecimal(o.total, 1, 0, 'COMMA')}">RWF 0</td>
+                            th:text="${o.currencyCode + ' ' + #numbers.formatDecimal(o.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         <td th:with="st=${o.status.name()}">
                             <span class="badge" th:classappend="${st == 'BILLED' ? 'badge-active' : (st == 'CANCELLED' ? 'badge-error' : (st == 'DRAFT' ? 'badge-muted' : 'badge-warning'))}">
                                 <span class="badge-dot"></span>

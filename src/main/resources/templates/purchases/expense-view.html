@@ -51,17 +51,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.subtotal}">Subtotal</div>
             <div class="stat-tile-value money"
-                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.subtotal, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.subtotal, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.tax}">Input VAT</div>
             <div class="stat-tile-value money"
-                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.taxAmount, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.taxAmount, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.total}">Expense total</div>
             <div class="stat-tile-value money"
-                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{exp.paidFrom}">Paid from</div>
@@ -95,9 +95,9 @@
                                 <td th:text="${l.description}">Item</td>
                                 <td class="cell-secondary"
                                     th:text="${l.expenseAccountCode != null ? l.expenseAccountCode + ' — ' + l.expenseAccountName : '—'}">—</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                                 <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(expense.lines)}">
                                 <td class="table-empty" colspan="5">
@@ -109,7 +109,7 @@
                             <tr>
                                 <td colspan="4" class="text-right font-bold" th:text="#{exp.total}">Expense total</td>
                                 <td class="num money font-bold"
-                                    th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${expense.currencyCode + ' ' + #numbers.formatDecimal(expense.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -147,8 +147,8 @@
                                         <span th:text="${l.accountCode}">5000</span>
                                         <span class="cell-secondary" th:text="${l.accountName}">Operating expenses</span>
                                     </td>
-                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 2, 'COMMA')}">0.00</td>
-                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 2, 'COMMA')}">0.00</td>
+                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                                 </tr>
                             </tbody>
                         </table>

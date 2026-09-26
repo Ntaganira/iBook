@@ -34,23 +34,23 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ar.aging.totalDue}">Total outstanding</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ar.aging.current}">Not yet due</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.current, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.current, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ar.aging.overdue}">Overdue</div>
             <div class="stat-tile-value money text-error"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total.subtract(report.totals.current), 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total.subtract(report.totals.current), 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ar.aging.d90plus}">90+ days</div>
             <div class="stat-tile-value money"
                  th:classappend="${report.totals.d90plus.signum() > 0} ? 'text-error'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.d90plus, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.d90plus, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -77,13 +77,13 @@
                                th:text="${r.customerName}">Customer</a>
                             <span class="cell-secondary" th:text="#{ar.aging.invoiceCount(${r.invoiceCount})}">0 invoices</span>
                         </td>
-                        <td class="num money" th:text="${r.current.signum() == 0 ? '—' : #numbers.formatDecimal(r.current, 1, 2, 'COMMA')}">—</td>
-                        <td class="num money" th:text="${r.d1to30.signum() == 0 ? '—' : #numbers.formatDecimal(r.d1to30, 1, 2, 'COMMA')}">—</td>
-                        <td class="num money" th:text="${r.d31to60.signum() == 0 ? '—' : #numbers.formatDecimal(r.d31to60, 1, 2, 'COMMA')}">—</td>
-                        <td class="num money" th:text="${r.d61to90.signum() == 0 ? '—' : #numbers.formatDecimal(r.d61to90, 1, 2, 'COMMA')}">—</td>
+                        <td class="num money" th:text="${r.current.signum() == 0 ? '—' : #numbers.formatDecimal(r.current, 1, 'COMMA', 2, 'POINT')}">—</td>
+                        <td class="num money" th:text="${r.d1to30.signum() == 0 ? '—' : #numbers.formatDecimal(r.d1to30, 1, 'COMMA', 2, 'POINT')}">—</td>
+                        <td class="num money" th:text="${r.d31to60.signum() == 0 ? '—' : #numbers.formatDecimal(r.d31to60, 1, 'COMMA', 2, 'POINT')}">—</td>
+                        <td class="num money" th:text="${r.d61to90.signum() == 0 ? '—' : #numbers.formatDecimal(r.d61to90, 1, 'COMMA', 2, 'POINT')}">—</td>
                         <td class="num money" th:classappend="${r.d90plus.signum() > 0} ? 'text-error'"
-                            th:text="${r.d90plus.signum() == 0 ? '—' : #numbers.formatDecimal(r.d90plus, 1, 2, 'COMMA')}">—</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(r.total, 1, 2, 'COMMA')}">0.00</td>
+                            th:text="${r.d90plus.signum() == 0 ? '—' : #numbers.formatDecimal(r.d90plus, 1, 'COMMA', 2, 'POINT')}">—</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(r.total, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num cell-secondary"
                             th:text="${r.oldestDays == 0 ? '—' : r.oldestDays + 'd'}">—</td>
                     </tr>
@@ -99,13 +99,13 @@
                 <tfoot th:unless="${report.empty}">
                     <tr>
                         <td class="font-bold" th:text="#{ar.aging.total}">Total</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.current, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d1to30, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d31to60, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d61to90, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d90plus, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.current, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d1to30, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d31to60, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d61to90, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(report.totals.d90plus, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num money font-bold"
-                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                            th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.totals.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                         <td></td>
                     </tr>
                 </tfoot>
@@ -138,8 +138,8 @@
                         <td><a class="cell-link" th:href="@{/invoices/{id}(id=${i.id})}" th:text="${i.invoiceNo}">INV-0001</a></td>
                         <td class="cell-secondary" th:text="${#temporals.format(i.issueDate, 'dd MMM yyyy')}">01 Jan 2026</td>
                         <td class="cell-secondary" th:text="${#temporals.format(i.dueDate, 'dd MMM yyyy')}">31 Jan 2026</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(i.total, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(i.balanceDue, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(i.total, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money font-semibold" th:text="${#numbers.formatDecimal(i.balanceDue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num" th:classappend="${i.daysOverdue > 0} ? 'text-error'"
                             th:text="${i.daysOverdue == 0 ? '—' : i.daysOverdue}">—</td>
                     </tr>

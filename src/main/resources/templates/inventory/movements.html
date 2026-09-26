@@ -69,8 +69,8 @@
                         <td class="cell-secondary" th:text="${m.warehouseName != null ? m.warehouseName : '—'}">—</td>
                         <td class="num" th:classappend="${m.movementType.inbound} ? 'text-positive' : 'text-error'"
                             th:text="${(m.movementType.inbound ? '+' : '−') + #numbers.formatDecimal(m.quantity, 1, 2)}">+0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(m.unitCost, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(m.value, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.unitCost, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.value, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="cell-secondary" th:text="${m.reference != null ? m.reference : '—'}">—</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(movements.content)}">

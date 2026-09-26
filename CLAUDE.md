@@ -25,9 +25,9 @@ Kinyarwanda). Never add to one without the others. Verify:
 for f in messages messages_fr messages_rw; do grep -c '=' src/main/resources/$f.properties; done
 ```
 
-Six keys are missing in all three and predate current work — leave them or fix all three together:
-`page.title`, `set.showing`, `set.rates.addHint`, `set.role.count`, `set.workflows.steps`,
-`set.fiscalYear.periodLabel`.
+Those six missing keys are resolved. Five were added to all three bundles;
+`page.title` was not, because it appears only inside a usage comment in
+`layout/base.html` and is never rendered. Bundles are at 5,147 keys each.
 
 **2. No code comments unless they explain *why*.** No comment restating what the line does.
 

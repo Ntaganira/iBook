@@ -56,7 +56,7 @@
     <div class="grid grid-3 mb-5">
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{led.opening}">Opening balance</div>
-            <div class="stat-tile-value text-md money" th:text="${selected == null ? '—' : baseCurrency + ' ' + #numbers.formatDecimal(opening, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-value text-md money" th:text="${selected == null ? '—' : baseCurrency + ' ' + #numbers.formatDecimal(opening, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub">
                 <span th:if="${selected != null}" th:text="${selected.code + ' ' + selected.name}">1101 BK Bank</span>
                 <span th:unless="${selected != null}" th:text="#{led.allAccounts}">All accounts</span>
@@ -64,12 +64,12 @@
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{led.totalDebits}">Total debits</div>
-            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalDebits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalDebits, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:text="#{led.periodActivity}">Period activity</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{led.totalCredits}">Total credits</div>
-            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalCredits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalCredits, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:text="#{led.periodActivity}">Period activity</div>
         </div>
     </div>
@@ -94,10 +94,10 @@
                         <td class="font-mono text-xs" th:text="${row.entryNo}">JE-2026-00001</td>
                         <td class="cell-secondary" th:text="${row.reference}">—</td>
                         <td class="cell-secondary" th:text="${row.memo != null ? row.memo : '—'}">—</td>
-                        <td class="num" th:text="${row.debit != null and row.debit.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.debit, 1, 0, 'COMMA') : '—'}">—</td>
-                        <td class="num" th:text="${row.credit != null and row.credit.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.credit, 1, 0, 'COMMA') : '—'}">—</td>
+                        <td class="num" th:text="${row.debit != null and row.debit.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.debit, 1, 'COMMA', 0, 'POINT') : '—'}">—</td>
+                        <td class="num" th:text="${row.credit != null and row.credit.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.credit, 1, 'COMMA', 0, 'POINT') : '—'}">—</td>
                         <td class="num font-semibold" th:if="${selected != null}"
-                            th:text="${row.running != null ? baseCurrency + ' ' + #numbers.formatDecimal(row.running, 1, 0, 'COMMA') : '—'}">—</td>
+                            th:text="${row.running != null ? baseCurrency + ' ' + #numbers.formatDecimal(row.running, 1, 'COMMA', 0, 'POINT') : '—'}">—</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(rows)}">
                         <td class="table-empty" colspan="7">

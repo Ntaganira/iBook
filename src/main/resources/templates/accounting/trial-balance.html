@@ -27,12 +27,12 @@
     <div class="grid grid-3 mb-5">
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{trial.totalDebits}">Total debits</div>
-            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandDebits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandDebits, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:text="#{trial.debitsHint}">Posted debit activity</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{trial.totalCredits}">Total credits</div>
-            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandCredits, 1, 0, 'COMMA')}">RWF 0</div>
+            <div class="stat-tile-value text-md money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandCredits, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub" th:text="#{trial.creditsHint}">Posted credit activity</div>
         </div>
         <div class="stat-tile">
@@ -68,27 +68,27 @@
                             <td>
                                 <span class="cell-primary" th:text="${row.name}">BK Bank</span>
                             </td>
-                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(row.opening, 1, 0, 'COMMA')}">RWF 0</td>
-                            <td class="num" th:text="${row.debits != null and row.debits.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.debits, 1, 0, 'COMMA') : '—'}">—</td>
-                            <td class="num" th:text="${row.credits != null and row.credits.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.credits, 1, 0, 'COMMA') : '—'}">—</td>
-                            <td class="num font-semibold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(row.balance, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(row.opening, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                            <td class="num" th:text="${row.debits != null and row.debits.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.debits, 1, 'COMMA', 0, 'POINT') : '—'}">—</td>
+                            <td class="num" th:text="${row.credits != null and row.credits.signum() != 0 ? baseCurrency + ' ' + #numbers.formatDecimal(row.credits, 1, 'COMMA', 0, 'POINT') : '—'}">—</td>
+                            <td class="num font-semibold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(row.balance, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         </tr>
                         <tr class="coa-type-total">
                             <td colspan="2" th:text="#{trial.subtotal}">Subtotal</td>
-                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.opening, 1, 0, 'COMMA')}">RWF 0</td>
-                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.debits, 1, 0, 'COMMA')}">RWF 0</td>
-                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.credits, 1, 0, 'COMMA')}">RWF 0</td>
-                            <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.balance, 1, 0, 'COMMA')}">RWF 0</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.opening, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.debits, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                            <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.credits, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                            <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(section.balance, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                         </tr>
                     </th:block>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="2" class="text-right font-bold" th:text="#{trial.grandTotals}">Grand totals</td>
-                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandOpening, 1, 0, 'COMMA')}">RWF 0</td>
-                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandDebits, 1, 0, 'COMMA')}">RWF 0</td>
-                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandCredits, 1, 0, 'COMMA')}">RWF 0</td>
-                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandOpening.add(grandDebits).subtract(grandCredits), 1, 0, 'COMMA')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandOpening, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandDebits, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandCredits, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                        <td class="num font-bold" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(grandOpening.add(grandDebits).subtract(grandCredits), 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                     </tr>
                 </tfoot>
             </table>

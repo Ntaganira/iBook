@@ -49,17 +49,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.view.invoiceTotal}">Invoice total</div>
             <div class="stat-tile-value money"
-                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.total, 1, 2, 'COMMA')}">RWF 0.00</div>
+                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.view.paidToDate}">Paid to date</div>
             <div class="stat-tile-value money"
-                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.amountPaid, 1, 2, 'COMMA')}">RWF 0.00</div>
+                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.amountPaid, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{inv.balanceDue}">Balance due</div>
             <div class="stat-tile-value money" th:classappend="${invoice.daysOverdue > 0} ? 'text-error'"
-                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.balanceDue, 1, 2, 'COMMA')}">RWF 0.00</div>
+                 th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.balanceDue, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</div>
             <div class="stat-tile-sub" th:if="${invoice.daysOverdue > 0}">
                 <span class="badge badge-error"><span class="badge-dot"></span><span th:text="#{inv.view.daysOverdue(${invoice.daysOverdue})}">0 days overdue</span></span>
             </div>
@@ -114,28 +114,28 @@
                                 <td th:text="${l.description}">Item</td>
                                 <td class="cell-secondary" th:text="${l.revenueAccountCode != null ? l.revenueAccountCode + ' — ' + l.revenueAccountName : '—'}">4002</td>
                                 <td class="num" th:text="${#numbers.formatDecimal(l.quantity, 1, 2)}">1.00</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.unitPrice, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                                 <td class="num" th:text="${#numbers.formatDecimal(l.taxRate, 1, 0)} + '%'">18%</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(l.lineTotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="5" class="text-right" th:text="#{inv.view.subtotal}">Subtotal</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${invoice.discountAmount != null and invoice.discountAmount.signum() > 0}">
                                 <td colspan="5" class="text-right" th:text="#{inv.view.discount}">Discount</td>
-                                <td class="num money" th:text="'-' + ${#numbers.formatDecimal(invoice.discountAmount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="'-' + ${#numbers.formatDecimal(invoice.discountAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right" th:text="#{inv.view.vat}">VAT</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(invoice.taxAmount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(invoice.taxAmount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right font-bold" th:text="#{inv.view.total}">Total</td>
                                 <td class="num money font-bold"
-                                    th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${invoice.currencyCode + ' ' + #numbers.formatDecimal(invoice.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -164,7 +164,7 @@
                                 <td th:text="${paymentMethods.get(p.method.name())}">Bank transfer</td>
                                 <td class="cell-secondary" th:text="${p.depositAccountCode + ' — ' + p.depositAccountName}">1101</td>
                                 <td class="cell-secondary" th:text="${p.reference != null ? p.reference : '—'}">—</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(p.amount, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(p.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(payments)}">
                                 <td class="table-empty" colspan="5">
@@ -188,7 +188,7 @@
                             <input class="form-control amount-control" id="payAmount" name="amount" type="number"
                                    step="0.01" min="0.01" th:max="${invoice.balanceDue}"
                                    th:value="${invoice.balanceDue}" required>
-                            <div class="form-hint" th:text="#{inv.pay.outstanding} + ': ' + ${invoice.currencyCode} + ' ' + ${#numbers.formatDecimal(invoice.balanceDue, 1, 2, 'COMMA')}"></div>
+                            <div class="form-hint" th:text="#{inv.pay.outstanding} + ': ' + ${invoice.currencyCode} + ' ' + ${#numbers.formatDecimal(invoice.balanceDue, 1, 'COMMA', 2, 'POINT')}"></div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="payDate" th:text="#{inv.pay.paymentDate}">Payment date</label>
@@ -244,8 +244,8 @@
                                         <span th:text="${l.accountCode}">1201</span>
                                         <span class="cell-secondary" th:text="${l.accountName}">Accounts receivable</span>
                                     </td>
-                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 2, 'COMMA')}">0.00</td>
-                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 2, 'COMMA')}">0.00</td>
+                                    <td class="num money" th:text="${l.debitValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.debitValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                                    <td class="num money" th:text="${l.creditValue.signum() == 0 ? '—' : #numbers.formatDecimal(l.creditValue, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                                 </tr>
                             </tbody>
                         </table>

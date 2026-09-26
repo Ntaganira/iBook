@@ -37,7 +37,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{pay.totalCollected}">Total collected</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.total, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.total, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{pay.count}">Payments</div>
@@ -46,7 +46,7 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{pay.average}">Average payment</div>
             <div class="stat-tile-value money"
-                 th:text="${report.count() == 0} ? '—' : ${baseCurrency + ' ' + #numbers.formatDecimal(report.total / report.count(), 1, 0, 'COMMA')}">—</div>
+                 th:text="${report.count() == 0} ? '—' : ${baseCurrency + ' ' + #numbers.formatDecimal(report.total / report.count(), 1, 'COMMA', 0, 'POINT')}">—</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{pay.methodsUsed}">Methods used</div>
@@ -92,7 +92,7 @@
                                     th:text="${p.accountCode != null} ? ${p.accountCode + ' — ' + p.accountName} : '—'">1101 Bank</td>
                                 <td class="cell-secondary" th:text="${p.reference != null ? p.reference : '—'}">—</td>
                                 <td class="num money font-semibold"
-                                    th:text="${(p.currencyCode != null ? p.currencyCode : baseCurrency) + ' ' + #numbers.formatDecimal(p.amount, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${(p.currencyCode != null ? p.currencyCode : baseCurrency) + ' ' + #numbers.formatDecimal(p.amount, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                             <tr th:if="${report.empty}">
                                 <td class="table-empty" colspan="7">
@@ -107,7 +107,7 @@
                             <tr>
                                 <td colspan="6" class="text-right font-bold" th:text="#{pay.totalCollected}">Total collected</td>
                                 <td class="num money font-bold"
-                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.total, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                    th:text="${baseCurrency + ' ' + #numbers.formatDecimal(report.total, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -123,7 +123,7 @@
                         <tbody>
                             <tr th:each="m : ${report.byMethod}">
                                 <td th:text="${methodLabels.containsKey(m.key)} ? ${methodLabels.get(m.key)} : ${m.key}">Bank transfer</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(m.value, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(m.value, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${report.empty}">
                                 <td class="cell-secondary" colspan="2" th:text="#{pay.noBreakdown}">Nothing to break down.</td>
@@ -140,7 +140,7 @@
                         <tbody>
                             <tr th:each="a : ${report.byAccount}">
                                 <td th:text="${a.key}">1101 — Bank</td>
-                                <td class="num money" th:text="${#numbers.formatDecimal(a.value, 1, 2, 'COMMA')}">0.00</td>
+                                <td class="num money" th:text="${#numbers.formatDecimal(a.value, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             </tr>
                             <tr th:if="${report.empty}">
                                 <td class="cell-secondary" colspan="2" th:text="#{pay.noBreakdown}">Nothing to break down.</td>

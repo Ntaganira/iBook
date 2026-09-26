@@ -37,17 +37,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{bank.accounts.totalBalance}">Total balance</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalBalance, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(totalBalance, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{bank.accounts.bank}">Bank &amp; mobile money</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bankBalance, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(bankBalance, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{bank.accounts.cash}">Cash on hand</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashBalance, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(cashBalance, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{bank.accounts.count}">Accounts</div>
@@ -79,12 +79,12 @@
                         <td>
                             <span class="badge badge-muted"><span th:text="${a.kind}">BANK</span></span>
                         </td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(a.openingBalance, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(a.debits, 1, 2, 'COMMA')}">0.00</td>
-                        <td class="num money" th:text="${#numbers.formatDecimal(a.credits, 1, 2, 'COMMA')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(a.openingBalance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(a.debits, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(a.credits, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td class="num money font-semibold"
                             th:classappend="${a.balance.signum() < 0} ? 'text-error'"
-                            th:text="${#numbers.formatDecimal(a.balance, 1, 2, 'COMMA')}">0.00</td>
+                            th:text="${#numbers.formatDecimal(a.balance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         <td>
                             <span class="badge badge-active" th:if="${a.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
                             <span class="badge badge-muted" th:unless="${a.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>

@@ -49,23 +49,23 @@
             <div class="stat-tile">
                 <div class="stat-tile-label" th:text="#{stmt.opening}">Balance brought forward</div>
                 <div class="stat-tile-value money"
-                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.openingBalance, 1, 0, 'COMMA')}">RWF 0</div>
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.openingBalance, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </div>
             <div class="stat-tile">
                 <div class="stat-tile-label" th:text="#{stmt.chargesAp}">Invoiced in period</div>
                 <div class="stat-tile-value money"
-                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.totalCharges, 1, 0, 'COMMA')}">RWF 0</div>
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.totalCharges, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </div>
             <div class="stat-tile">
                 <div class="stat-tile-label" th:text="#{stmt.paymentsAp}">Paid in period</div>
                 <div class="stat-tile-value money"
-                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.totalPayments, 1, 0, 'COMMA')}">RWF 0</div>
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.totalPayments, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </div>
             <div class="stat-tile">
                 <div class="stat-tile-label" th:text="#{stmt.closing}">Balance due</div>
                 <div class="stat-tile-value money"
                      th:classappend="${statement.closingBalance.signum() > 0} ? 'text-error' : 'text-positive'"
-                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.closingBalance, 1, 0, 'COMMA')}">RWF 0</div>
+                     th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.closingBalance, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </div>
         </div>
 
@@ -98,7 +98,7 @@
                             <td class="num money">—</td>
                             <td class="num money">—</td>
                             <td class="num money font-semibold"
-                                th:text="${#numbers.formatDecimal(statement.openingBalance, 1, 2, 'COMMA')}">0.00</td>
+                                th:text="${#numbers.formatDecimal(statement.openingBalance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         </tr>
                         <tr th:each="l : ${statement.lines}">
                             <td class="cell-secondary" th:text="${#temporals.format(l.date, 'dd MMM yyyy')}">01 Jan 2026</td>
@@ -108,9 +108,9 @@
                                 <span th:unless="${l.documentId != null}" th:text="#{stmt.paymentMade}">Payment received</span>
                             </td>
                             <td class="cell-secondary" th:text="${l.reference != null ? l.reference : '—'}">—</td>
-                            <td class="num money" th:text="${l.charge.signum() == 0 ? '—' : #numbers.formatDecimal(l.charge, 1, 2, 'COMMA')}">—</td>
-                            <td class="num money" th:text="${l.payment.signum() == 0 ? '—' : #numbers.formatDecimal(l.payment, 1, 2, 'COMMA')}">—</td>
-                            <td class="num money" th:text="${#numbers.formatDecimal(l.balance, 1, 2, 'COMMA')}">0.00</td>
+                            <td class="num money" th:text="${l.charge.signum() == 0 ? '—' : #numbers.formatDecimal(l.charge, 1, 'COMMA', 2, 'POINT')}">—</td>
+                            <td class="num money" th:text="${l.payment.signum() == 0 ? '—' : #numbers.formatDecimal(l.payment, 1, 'COMMA', 2, 'POINT')}">—</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(l.balance, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                         </tr>
                         <tr th:if="${statement.empty}">
                             <td class="table-empty" colspan="6">
@@ -121,10 +121,10 @@
                     <tfoot>
                         <tr>
                             <td colspan="3" class="text-right font-bold" th:text="#{stmt.closing}">Balance due</td>
-                            <td class="num money font-semibold" th:text="${#numbers.formatDecimal(statement.totalCharges, 1, 2, 'COMMA')}">0.00</td>
-                            <td class="num money font-semibold" th:text="${#numbers.formatDecimal(statement.totalPayments, 1, 2, 'COMMA')}">0.00</td>
+                            <td class="num money font-semibold" th:text="${#numbers.formatDecimal(statement.totalCharges, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                            <td class="num money font-semibold" th:text="${#numbers.formatDecimal(statement.totalPayments, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             <td class="num money font-bold"
-                                th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.closingBalance, 1, 2, 'COMMA')}">RWF 0.00</td>
+                                th:text="${baseCurrency + ' ' + #numbers.formatDecimal(statement.closingBalance, 1, 'COMMA', 2, 'POINT')}">RWF 0.00</td>
                         </tr>
                     </tfoot>
                 </table>

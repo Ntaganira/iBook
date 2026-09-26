@@ -44,19 +44,19 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.outstanding}">Outstanding balance</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.outstanding, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             <div class="stat-tile-sub text-info" th:if="${summary.overdue.signum() > 0}"
-                 th:text="#{dash.overdue(${baseCurrency + ' ' + #numbers.formatDecimal(summary.overdue, 1, 0, 'COMMA')})}">overdue</div>
+                 th:text="#{dash.overdue(${baseCurrency + ' ' + #numbers.formatDecimal(summary.overdue, 1, 'COMMA', 0, 'POINT')})}">overdue</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.billedMonth}">Invoiced this month</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.billedThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.billedThisMonth, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{ven.paymentsMade}">Payments received</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.paidThisMonth, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(summary.paidThisMonth, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
     </div>
 
@@ -156,7 +156,7 @@
                         <td data-col="email" class="cell-secondary" th:text="${v.email != null ? v.email : '—'}">info@abcconstruction.rw</td>
                         <td data-col="city" class="cell-secondary" th:text="${v.city != null ? v.city : '—'}">Kigali</td>
                         <td data-col="balance" class="num money"
-                            th:text="${v.openingBalance != null and v.openingBalance.signum() < 0 ? '(RWF ' + #numbers.formatDecimal(v.openingBalance.abs(), 1, 0, 'COMMA') + ')' : 'RWF ' + #numbers.formatDecimal(v.openingBalance != null ? v.openingBalance : 0, 1, 0, 'COMMA')}">RWF 4,850,000</td>
+                            th:text="${v.openingBalance != null and v.openingBalance.signum() < 0 ? '(RWF ' + #numbers.formatDecimal(v.openingBalance.abs(), 1, 'COMMA', 0, 'POINT') + ')' : 'RWF ' + #numbers.formatDecimal(v.openingBalance != null ? v.openingBalance : 0, 1, 'COMMA', 0, 'POINT')}">RWF 4,850,000</td>
                         <td data-col="status">
                             <span class="badge badge-active" th:if="${v.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
                             <span class="badge badge-muted" th:unless="${v.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>

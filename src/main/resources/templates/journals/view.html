@@ -52,16 +52,16 @@
                                     <div class="cell-primary" th:text="${line.accountCode + ' ' + line.accountName}">5001 Rent expense</div>
                                 </td>
                                 <td class="cell-secondary" th:text="${line.memo != null ? line.memo : '—'}">—</td>
-                                <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(line.getDebitValue(), 1, 0, 'COMMA')}">RWF 0</td>
-                                <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(line.getCreditValue(), 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(line.getDebitValue(), 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                                <td class="num" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(line.getCreditValue(), 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="2"></td>
                                 <td class="text-right font-semibold" th:text="#{je.totals}">Totals</td>
-                                <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(entry.totalDebits != null ? entry.totalDebits : 0, 1, 0, 'COMMA')}">RWF 0</td>
-                                <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(entry.totalCredits != null ? entry.totalCredits : 0, 1, 0, 'COMMA')}">RWF 0</td>
+                                <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(entry.totalDebits != null ? entry.totalDebits : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
+                                <td class="num font-bold money" th:text="${baseCurrency + ' ' + #numbers.formatDecimal(entry.totalCredits != null ? entry.totalCredits : 0, 1, 'COMMA', 0, 'POINT')}">RWF 0</td>
                             </tr>
                         </tfoot>
                     </table>

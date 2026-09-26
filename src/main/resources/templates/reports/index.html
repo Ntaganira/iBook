@@ -47,7 +47,7 @@
                 <svg class="ebook-icon report-icon" style="color:var(--chart-1)"><use href="#icon-trending-up"/></svg>
                 <div class="report-name" th:text="#{rpt.pnl}">Profit and Loss</div>
                 <div class="report-desc" th:text="#{rpt.pnlDesc}">Income minus expenses</div>
-                <div class="report-meta" th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(pnl.netProfit, 1, 0, 'COMMA')}">RWF 0</div>
+                <div class="report-meta" th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(pnl.netProfit, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </a>
             <a class="report-card" th:href="@{/reports/balance-sheet(asOf=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-2)"><use href="#icon-scale"/></svg>
@@ -65,7 +65,7 @@
                 <svg class="ebook-icon report-icon" style="color:var(--chart-4)"><use href="#icon-refresh"/></svg>
                 <div class="report-name" th:text="#{rpt.cashFlow}">Cash Flow Statement</div>
                 <div class="report-desc" th:text="#{rpt.cashFlowDesc}">Operating, investing, financing</div>
-                <div class="report-meta" th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(cashFlow.netChange, 1, 0, 'COMMA')}">RWF 0</div>
+                <div class="report-meta" th:text="${baseCurrency} + ' ' + ${#numbers.formatDecimal(cashFlow.netChange, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
             </a>
             <a class="report-card" th:href="@{/reports/general-ledger(from=${from}, to=${to})}">
                 <svg class="ebook-icon report-icon" style="color:var(--chart-5)"><use href="#icon-layers"/></svg>

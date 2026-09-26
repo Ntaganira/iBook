@@ -27,7 +27,7 @@
         <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
         <div class="alert-body">
             <div class="alert-title" th:text="#{coa.opening.outOfBalance}">Opening balances do not balance</div>
-            <div th:text="#{coa.opening.outOfBalanceHint(${baseCurrency + ' ' + #numbers.formatDecimal(check.difference, 1, 2, 'COMMA')})}"></div>
+            <div th:text="#{coa.opening.outOfBalanceHint(${baseCurrency + ' ' + #numbers.formatDecimal(check.difference, 1, 'COMMA', 2, 'POINT')})}"></div>
         </div>
     </div>
 
@@ -40,17 +40,17 @@
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coa.opening.debitTotal}">Debit side (assets, expenses)</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(check.debitTotal, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(check.debitTotal, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coa.opening.creditTotal}">Credit side (liabilities, equity, income)</div>
             <div class="stat-tile-value money"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(check.creditTotal, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(check.creditTotal, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coa.opening.difference}">Difference</div>
             <div class="stat-tile-value money" th:classappend="${check.balanced()} ? 'text-positive' : 'text-error'"
-                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(check.difference, 1, 0, 'COMMA')}">RWF 0</div>
+                 th:text="${baseCurrency + ' ' + #numbers.formatDecimal(check.difference, 1, 'COMMA', 0, 'POINT')}">RWF 0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-tile-label" th:text="#{coa.opening.accounts}">Accounts</div>
