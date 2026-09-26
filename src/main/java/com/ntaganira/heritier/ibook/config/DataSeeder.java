@@ -17,6 +17,7 @@ import com.ntaganira.heritier.ibook.enums.JournalEntryType;
 import com.ntaganira.heritier.ibook.enums.PeriodStatus;
 import com.ntaganira.heritier.ibook.enums.TaxTreatment;
 import com.ntaganira.heritier.ibook.repository.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 @Configuration
 public class DataSeeder {
 
@@ -89,6 +91,8 @@ SecuritySettingsRepository securitySettingsRepository,
             seedSecurity(securitySettingsRepository);
             seedAuditSamples(auditLogRepository);
             seedAccounts(accountRepository);
+            backfillRequiredAccounts(accountRepository);
+            backfillRequiredSequences(numberingSequenceRepository);
             seedJournalEntries(accountRepository, journalEntryRepository);
             seedCustomers(customerRepository);
             seedVendors(vendorRepository);
@@ -488,6 +492,101 @@ SecuritySettingsRepository securitySettingsRepository,
                 .action("IMPORT_CHART").target("chart#default").detail("Imported standard Rwandan chart of accounts").build());
         repository.save(AuditLog.builder().actor("admin@ebookonline.rw").module("settings").action("EMAIL_TEST")
                 .target("mail#smtp").detail("SMTP test message sent successfully").build());
+    }
+
+    /**
+     * Adds the handful of accounts the code posts to by name, where an existing database is missing
+     * them.
+     *
+     * <p>{@link #seedAccounts} stops as soon as the chart has anything in it, so every account added
+     * to the seed after the first install has never reached a live database. Six of the recorded
+     * issues were that, and it is not a cosmetic problem: {@code BillService} and {@code
+     * InvoiceService} fall back when 1402 or 5200 is absent, and a fallback posts VAT and cost of
+     * sales to the wrong account rather than failing, so the numbers come out wrong quietly.
+     *
+     * <p><strong>Only these accounts are backfilled, not the whole chart.</strong> Re-running the full
+     * seed against a live database would resurrect accounts somebody had deliberately deleted and
+     * rename ones they had renamed. The list here is exactly the codes the application reaches for by
+     * literal string; anything else is the bookkeeper's business, not the seeder's.
+     *
+     * <p><strong>Every backfilled account opens at zero</strong>, whatever the seed says. The seed
+     * gives 1301 an opening balance of 12,000,000 because a fresh demo needs stock to sell; adding
+     * that figure to a live chart would invent twelve million of inventory that no journal entry
+     * supports, and the balance sheet would be wrong by exactly that much.
+     */
+    private void backfillRequiredAccounts(AccountRepository repository) {
+        ensureAccount(repository, "1201", "Accounts receivable", AccountType.ASSET);
+        ensureAccount(repository, "1301", "Inventory — goods for resale", AccountType.ASSET);
+        ensureAccount(repository, "1402", "VAT receivable (input)", AccountType.ASSET);
+        ensureAccount(repository, "2001", "Accounts payable", AccountType.LIABILITY);
+        ensureAccount(repository, "2101", "VAT payable", AccountType.LIABILITY);
+        ensureAccount(repository, "2103", "Net pay payable", AccountType.LIABILITY);
+        ensureAccount(repository, "2104", "RSSB contributions payable", AccountType.LIABILITY);
+        ensureAccount(repository, "2105", "CBHI payable", AccountType.LIABILITY);
+        ensureAccount(repository, "2106", "Withholding tax payable", AccountType.LIABILITY);
+        ensureAccount(repository, "2107", "Excise duty payable", AccountType.LIABILITY);
+        ensureAccount(repository, "4004", "Gain on asset disposal", AccountType.REVENUE);
+        ensureAccount(repository, "5007", "Loss on asset disposal", AccountType.EXPENSE);
+        ensureAccount(repository, "5008", "Employer social contributions", AccountType.EXPENSE);
+        ensureAccount(repository, "5200", "Cost of goods sold", AccountType.EXPENSE);
+    }
+
+    /** Creates one account if nothing already holds that code. Always opens at zero. */
+    private void ensureAccount(AccountRepository repository, String code, String name, AccountType type) {
+        if (repository.findByCodeIgnoreCase(code).isPresent()) {
+            return;
+        }
+        repository.save(Account.builder().code(code).name(name).type(type).parentId(null)
+                .openingBalance(BigDecimal.ZERO).active(true).build());
+        log.info("Backfilled missing account {} {}", code, name);
+    }
+
+    /**
+     * Adds any numbering sequence an existing database is missing.
+     *
+     * <p>Same cause as the accounts, and the same five recorded issues: {@link #seedNumbering} stops
+     * once one sequence exists, so ESTIMATE, PROJECT, STOCK_COUNT, TRANSFER, ASSET_TRANSFER and
+     * PAYREQUEST never arrived. Every service falls back to a random number when its sequence is
+     * absent, which is why documents come out as {@code EST-2026-11501} instead of {@code EST-0001}.
+     *
+     * <p>Unlike the chart of accounts, backfilling all of these is safe. A missing sequence has no
+     * legitimate reason to be missing — nobody deletes one on purpose — and adding it changes only
+     * how the next document is numbered, never anything already recorded.
+     */
+    private void backfillRequiredSequences(NumberingSequenceRepository repository) {
+        ensureSeq(repository, "Invoices", "INVOICE", "INV-", 4, true);
+        ensureSeq(repository, "Estimates", "ESTIMATE", "EST-", 4, true);
+        ensureSeq(repository, "Sales Orders", "SALE_ORDER", "SO-", 4, true);
+        ensureSeq(repository, "Bills", "BILL", "BILL-", 4, true);
+        ensureSeq(repository, "Credit Notes", "CREDIT_NOTE", "CN-", 4, true);
+        ensureSeq(repository, "Projects", "PROJECT", "PRJ-", 4, false);
+        ensureSeq(repository, "Employees", "EMPLOYEE", "EMP-", 4, false);
+        ensureSeq(repository, "Payroll Runs", "PAYROLL", "PAY-", 4, false);
+        ensureSeq(repository, "Remittances", "REMITTANCE", "REM-", 4, false);
+        ensureSeq(repository, "Withholding Certificates", "WITHHOLDING", "WHT-", 4, false);
+        ensureSeq(repository, "Payment Requests", "PAYREQUEST", "PRQ-", 4, false);
+        ensureSeq(repository, "Stock Counts", "STOCK_COUNT", "SC-", 4, false);
+        ensureSeq(repository, "Stock Transfers", "TRANSFER", "TRF-", 4, false);
+        ensureSeq(repository, "Asset Transfers", "ASSET_TRANSFER", "ATR-", 4, false);
+    }
+
+    /**
+     * Creates one sequence if that document type has none.
+     *
+     * <p>It starts at 1 rather than guessing where the existing documents got to. Where a module has
+     * been issuing fallback numbers, the next document becomes {@code PRQ-0001} while older ones keep
+     * their random numbers — untidy, but every number stays unique and nothing already issued moves.
+     * Picking a higher start would mean parsing random fallbacks to find a maximum, which is guesswork
+     * that could collide.
+     */
+    private void ensureSeq(NumberingSequenceRepository repository, String name, String docType,
+                           String prefix, int padding, boolean resetYearly) {
+        if (repository.findByDocType(docType).isPresent()) {
+            return;
+        }
+        repository.save(NumberingSequence.builder().name(name).docType(docType).prefix(prefix)
+                .suffix(null).padding(padding).nextNumber(1).resetYearly(resetYearly).active(true).build());
+        log.info("Backfilled missing numbering sequence {} ({})", docType, prefix);
     }
 
     private void seedAccounts(AccountRepository repository) {

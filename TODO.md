@@ -416,6 +416,24 @@ publicly reachable host for any callback.
 ## Known issues
 
 
+- [ ] **RWF 90,000 of input VAT already sits in 2101 and needs reclassifying.** The seeder backfill
+      fixes postings from now on — verified live: a bill for 100,000 + 18% now posts Dr 100,000
+      expense, **Dr 18,000 to 1402**, Cr 118,000 to 2001. It does nothing to entries already written.
+      Measured on the current database: **2101 VAT payable carries 90,000 of debits** that are input
+      VAT from bills posted before the backfill, against 275,400 of credits, netting to 185,400.
+
+      The net VAT liability is arithmetically right, which is why this was invisible: 275,400 output
+      less 90,000 input is the same 185,400 either way. What is wrong is the presentation and the
+      edge case. The balance sheet shows one net liability where there should be a receivable and a
+      payable; a VAT return that reports input and output separately would be wrong on both lines;
+      and if input VAT ever exceeded output, 2101 would show a negative liability instead of the
+      asset it actually is.
+
+      The correction is one journal entry — **Dr 1402 90,000 / Cr 2101 90,000**, dated to the period
+      being corrected. It has not been posted, because reclassifying a tax account is an accounting
+      decision and the date it carries changes which VAT return it lands in. That is the owner's call,
+      not the seeder's.
+
 - [ ] **Nine routes are scaffolding and must not be read as working integrations.** The seven
       `/integrations/*` pages, `/sales/ebm` and `/sales/payment-links` record settings and report
       readiness. Nothing is transmitted, because there is no HTTP client, no polling and no callback
@@ -444,7 +462,7 @@ publicly reachable host for any callback.
       second version of an answer the ledger already holds, and the day the two disagreed the flag is
       the one somebody would believe.
 
-- [ ] **The payment request numbering falls back to a random number on existing databases.**
+- [x] **The payment request numbering falls back to a random number on existing databases.**
       `DataSeeder.seedSequences` returns early once any sequence exists, so the new `PAYREQUEST`
       sequence only appears on a fresh install. Existing databases produce `PRQ-2026-76047` instead
       of `PRQ-0001`. Same cause as the estimate numbering issue above, and the same fix: add the
@@ -491,7 +509,7 @@ publicly reachable host for any callback.
       identical to one payment and one duplicate. There is also no employer-side ledger check: the
       register is never reconciled against `2102`, `2104` or `2105`, so a liability account can
       drift from the payslips that created it the same way the asset register can drift from `1501`.
-- [ ] **New accounts and numbering sequences do not reach an existing database.** `DataSeeder` now
+- [x] **New accounts and numbering sequences do not reach an existing database.** `DataSeeder` now
       adds `2103 Net pay payable`, `2104 RSSB contributions payable`, `2105 CBHI payable` and
       `5008 Employer social contributions`, plus `EMPLOYEE`/`EMP-`, `PAYROLL`/`PAY-` and
       `REMITTANCE`/`REM-` sequences — but `seedAccounts` and `seedNumbering` both return early once
@@ -613,7 +631,7 @@ publicly reachable host for any callback.
       deliberate (nothing is assumed) but easy to post past. Two more limits: a customer with hours
       in several currencies is billed in one invoice without conversion, the same app-wide gap; and
       `Project.currencyCode` is recorded but never used, since the invoice takes the customer's.
-- [ ] **No `PROJECT` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now adds
+- [x] **No `PROJECT` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now adds
       `PRJ-`, but it returns early when any sequence exists — observed live: `PRJ-2026-67042`,
       `PRJ-2026-78353`, `PRJ-2026-92962`. Add the row at `/settings/numbering`, same class of drift
       as `ATR-`, `TRF-`, `SC-`, `FA-`, `DEP-` and `DIS-`.
@@ -730,7 +748,7 @@ publicly reachable host for any callback.
       hand and never checked against 1509 — the seeded chart already carries −110,000 on 1509 that
       belongs to no registered asset. A reconciliation screen comparing the register's totals to
       1501/1509 is worth building before the register is trusted for a balance sheet.
-- [ ] **`4004` and `5007` are missing on existing databases.** `DataSeeder` now adds
+- [x] **`4004` and `5007` are missing on existing databases.** `DataSeeder` now adds
       `4004 Gain on asset disposal` and `5007 Loss on asset disposal`, but `seedAccounts` returns
       early when any account exists, so a database that predates them has neither. `/assets/disposals`
       detects this and says so rather than falling back to something semantically wrong like
@@ -763,7 +781,7 @@ publicly reachable host for any callback.
       edits the register by hand. An accounts-only move shows an identical location pair on the list
       (`Huye branch → Huye branch`) with the account change on the line below it, which reads oddly
       but is accurate.
-- [ ] **No `ASSET_TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering`
+- [x] **No `ASSET_TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering`
       now adds `ATR-`, but it returns early when any sequence exists — observed live:
       `ATR-2026-10092`, `ATR-2026-22296`, `ATR-2026-30678`. Add the row at `/settings/numbering`,
       same class of drift as `TRF-`, `SC-`, `FA-`, `DEP-` and `DIS-`.
@@ -809,7 +827,7 @@ publicly reachable host for any callback.
       to stop trading during a count. A sheet also covers a single warehouse, so a company-wide count
       means one sheet per location, and stock that arrived without a location sits at the default
       warehouse (see below), which is where its variance will be posted.
-- [ ] **No `STOCK_COUNT` or `TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now
+- [x] **No `STOCK_COUNT` or `TRANSFER` numbering sequence on existing databases.** `DataSeeder.seedNumbering` now
       adds `TRF-`, `SC-` and `FA-`, but it returns early when any sequence exists, so databases
       predating them get random fallbacks — observed live: `TRF-2026-53659`, `SC-2026-29322` and
       `FA-2026-00948`. Add all three rows at `/settings/numbering` — same class of drift as the
@@ -840,20 +858,20 @@ publicly reachable host for any callback.
       Inventory (1301) instead of the line's expense account; posting an invoice credits Inventory
       and debits Cost of goods sold (5200) at the product's cost price. Non-stocked lines are
       unaffected. Verify this matches your intended treatment before entering real data.
-- [ ] **Account 5200 missing on existing databases.** `DataSeeder` adds `5200 Cost of goods sold`,
+- [x] **Account 5200 missing on existing databases.** `DataSeeder` adds `5200 Cost of goods sold`,
       but `seedAccounts` returns early when accounts exist. Without it, cost of sales falls back to
       `5000 Operating expenses`. Add it manually via Chart of Accounts.
 
 - [ ] **Balance sheet does not balance.** Seeded opening balances are out by **10,700,000** on the
       debit side. Fix at `/accounting/opening-balances` — the page shows the difference and turns
       green at zero.
-- [ ] **Input VAT account missing on existing databases — confirmed live.** `DataSeeder` adds
+- [x] **Input VAT account missing on existing databases — confirmed live.** `DataSeeder` adds
       `1402 VAT receivable (input)`, but `seedAccounts` returns early when accounts exist. Without
       it, `BillService` and `ExpenseService` both fall back to debiting `2101`, which nets VAT
       instead of separating input and output. Verified on the dev database: posting a test expense
       debited `2101 VAT payable` for the input VAT. Add `1402` manually via Chart of Accounts, then
       re-check. Nothing else needs changing — both services prefer `1402` when it exists.
-- [ ] **No `ESTIMATE` numbering sequence on existing databases.** `DataSeeder.seedNumbering` returns
+- [x] **No `ESTIMATE` numbering sequence on existing databases.** `DataSeeder.seedNumbering` returns
       early when any sequence exists, so databases predating it have `INVOICE`, `BILL`,
       `CREDIT_NOTE`, `SALE_ORDER`, `PURCHASE_ORDER`, `EXPENSE` and `JOURNAL` but no `ESTIMATE`.
       Estimates then fall back to a random number like `EST-2026-11501` instead of `EST-0001`.
