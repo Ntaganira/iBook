@@ -33,3 +33,6 @@ build/
 .vscode/
 # Uploaded documents live on disk; the database holds only their metadata.
 data/documents/
+
+# Local database backups — never commit these, they contain live data
+backups/
