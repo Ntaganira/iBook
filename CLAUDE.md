@@ -15,6 +15,26 @@ $env:JAVA_HOME = "C:\Program Files (x86)\Android\openjdk\jdk-17.0.14"   # PATH d
 Nothing is done until this passes. `spring-boot:run` serves from `target/classes`, so after editing
 anything under `src/main/resources` run `.\mvnw.cmd -q resources:resources` or the change won't show.
 
+
+## Schema belongs to Flyway, not to Hibernate
+
+`ddl-auto` is `validate`. Hibernate checks the schema and refuses to start if it disagrees with
+the entities; it no longer creates or alters anything. **A new entity, column or enum value needs a
+migration in `src/main/resources/db/migration`, or the app will not start.**
+
+- `V1__baseline.sql` is the schema as of 2026-09-26 and **never runs on an existing database** —
+  Flyway baselines those at version 1 and treats it as applied. Put nothing new in it.
+- New work starts at `V3__`.
+- Adding an enum value means adding it to the Java enum **and** shipping a migration that widens
+  the matching `<table>_<column>_check` constraint. There are 74 such constraints.
+- Adopting this on a fresh environment whose database already has an **empty**
+  `flyway_schema_history` table needs that table dropped once, or Flyway tries to apply V1 and
+  fails with `relation "accounting_periods" already exists`.
+
+Back up before schema work: `docker exec ibook-postgres pg_dump -U postgres -d ibook -Fc > backups/x.dump`
+(`backups/` is gitignored). Note Git Bash rewrites in-container `/tmp` paths, so redirect stdout
+rather than passing `--file`.
+
 ## Non-negotiable conventions
 
 **1. Message bundles must stay in parity.** Every `#{key}` needs an entry in all three of

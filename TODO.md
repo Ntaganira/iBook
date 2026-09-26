@@ -415,6 +415,22 @@ publicly reachable host for any callback.
 
 ## Known issues
 
+- [ ] **Adopting Flyway on another environment needs one manual step.** A database that already
+      has an **empty** `flyway_schema_history` table makes Flyway skip baselining and try to
+      *apply* `V1__baseline.sql`, which fails with `relation "accounting_periods" already exists`.
+      Drop it once, and only when it has zero rows:
+      `psql -d ibook -c "DROP TABLE flyway_schema_history;"`
+      Flyway then baselines at v1, skips V1 and applies V2 onward. Already done for the local
+      `ibook` database on 2026-09-26.
+
+- [ ] **`DataSeeder` still seeds demo data alongside reference data, and only reference data
+      should survive.** Schema is now Flyway's, but the 21 seed methods are not split. Roles,
+      permissions, chart of accounts, numbering sequences, currencies and tax rates are reference
+      data a real install needs. `seedCustomers` (ABC Construction), `seedVendors` (Akagera
+      Hardware), `seedAuditSamples`, `seedJournalEntries` and the hardcoded Sept-2026 exchange
+      rates are demo fixtures that should sit behind a `demo` profile, because a migration cannot
+      be opted out of. Note `seedJournalEntries` is the source of the balance sheet being out by
+      10,700,000 — demo data causing an accounting defect is the argument for separating them.
 
 - [ ] **RWF 90,000 of input VAT already sits in 2101 and needs reclassifying.** The seeder backfill
       fixes postings from now on — verified live: a bill for 100,000 + 18% now posts Dr 100,000
@@ -519,7 +535,7 @@ publicly reachable host for any callback.
       them rather than posting to something nearly right; the sequences have no such guard. Same
       class of drift as `ATR-`, `PRJ-`, `TRF-`, `SC-`, `FA-`, `DEP-`, `DIS-` and the missing 1402
       and 5200.
-- [ ] **A payroll run posts as `ADJUSTMENT`, not as a payroll type of its own.** Hibernate wrote a
+- [ ] **A payroll run posts as `ADJUSTMENT`, not as a payroll type of its own.** **Now unblocked: schema is Flyway's, so a `PAYROLL` type can be added by migration.** Hibernate wrote a
       check constraint on `journal_entries.type` when the table was created and `ddl-auto: update`
       never widens it, so a new enum value fails on every existing database — the same fault that
       forced credit notes to post as `ADJUSTMENT`. Payroll entries are identified by the run number
@@ -665,14 +681,22 @@ publicly reachable host for any callback.
       closing balance overstates the debt by the credit. Aging, collections, outstanding totals and
       the GL are all correct — only the statement is out. Fixing it means teaching
       `InvoiceService.statementFor` about `CreditNote`.
-- [ ] **Enum check constraints block new enum values on existing databases.** Hibernate wrote a
-      `journal_entries_type_check` (and the same for `stock_movements.movement_type`) when those
-      tables were created, and `ddl-auto: update` never widens it. Adding a `CREDIT_NOTE` journal
-      type failed with SQLState 23514 on the existing database, so credit notes post as
-      `ADJUSTMENT` and restocking writes `ADJUSTMENT_IN`, both identified by the credit note number
-      in the entry reference. Widening these needs a Flyway migration — note that
-      `baseline-on-migrate` baselines existing databases at version 1, so a first script must be
-      `V2__` or later to run at all.
+- [x] **Enum check constraints blocked new enum values — now unblocked.** Hibernate wrote a
+      `journal_entries_type_check` and the same for `stock_movements.movement_type`, and
+      `ddl-auto: update` never widened them, so adding a `CREDIT_NOTE` journal type failed with
+      SQLState 23514. The workaround was to abandon the value: credit notes post as `ADJUSTMENT`
+      and restocking writes `ADJUSTMENT_IN`, identified by the credit note number in the reference.
+
+      **Schema now belongs to Flyway, so those values can finally be added.** Worth being precise
+      about what was checked: all 74 enum-backed columns were compared against their Java enums and
+      every constraint currently permits exactly what its enum declares — *because* the blocked
+      values were never added, not because there was no blockage. The one exception ran the other
+      way, `stock_movements.movement_type` still permitting a `SALE_RETURN` that `MovementType` had
+      dropped, which `V2__align_enum_check_constraints.sql` tightened.
+
+      Adding `CREDIT_NOTE` and `PAYROLL` journal types, and `SALE_RETURN` back, is now an ordinary
+      migration paired with the enum change. Both `ADJUSTMENT` workarounds can then be undone, and
+      the entries they wrote historically will need reclassifying.
 - [ ] **Voiding a credit note does not reverse its stock movement.** The reversing journal entry is
       written and the credit is un-applied from the invoice, but the inbound stock movement stays.
       Same gap as voiding an invoice, which also leaves its outbound movement in place.
