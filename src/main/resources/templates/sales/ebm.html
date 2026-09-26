@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{ebm.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{ebm.title}">EBM readiness</h1>
+            <p class="page-subtitle" th:text="#{ebm.subtitle}">Which issued invoices carry everything EBM needs, and what the rest are missing.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/integrations/ebm}" th:text="#{ebm.toSettings}">EBM settings</a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ebm.notFiscalisedTitle}">No invoice here is fiscalised</div>
+            <span th:text="#{ebm.notFiscalisedHint}">An invoice is fiscalised when the RRA's signing device has signed it and returned a receipt. Nothing in this application sends an invoice anywhere, so no invoice has been signed and none carries a receipt. This page reports readiness only: whether an invoice holds the data EBM would require. Treating "ready" as "declared" is the one mistake that would matter here, because it would be a false statutory record shown to whoever later has to answer for the return.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ebm.whyUsefulTitle}">Why this is worth doing before certification</div>
+            <span th:text="#{ebm.whyUsefulHint}">EBM rejects an invoice for missing data one invoice at a time, after certification — by which point the invoices are issued and the gaps have to be chased back through customers who have moved on. The gaps are the same whichever way the integration is eventually built, so closing them now is work that is not wasted.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ebm.structuralTitle}">One gap cannot be fixed by editing invoices</div>
+            <span th:text="#{ebm.structuralHint}">EBM requires an RRA item classification code on every line, and there is no field for one anywhere on a product. A SKU is the business's own code and is not the same thing. That gap is not counted against individual invoices below, because no amount of editing them would close it — it needs a field on the product and the RRA's code list.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${review.hasSellerTin()}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{ebm.noSellerTinTitle}">The business has no TIN recorded</div>
+            <span th:text="#{ebm.noSellerTinHint}">Every invoice below is short of the seller's TIN for the same reason, so the count of incomplete invoices is really one problem repeated. Record it once under company settings and most of these will clear at a stroke.</span>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <form class="table-toolbar" method="get" th:action="@{/sales/ebm}">
+            <label class="form-label" for="eFrom" th:text="#{common.from}">From</label>
+            <input class="form-control" id="eFrom" type="date" name="from" th:value="${from}">
+            <label class="form-label" for="eTo" th:text="#{common.to}">To</label>
+            <input class="form-control" id="eTo" type="date" name="to" th:value="${to}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.apply}">Apply</button>
+        </form>
+    </div>
+
+    <div class="stat-grid mb-4">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ebm.kpiIssued}">Invoices issued</div>
+            <div class="stat-tile-value" th:text="${review.total()}">0</div>
+            <div class="stat-tile-sub" th:text="#{ebm.kpiIssuedHint}">Drafts are left out. A voided invoice is kept, because one that was issued still has to be accounted for.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ebm.kpiComplete}">Hold every required field</div>
+            <div class="stat-tile-value text-success" th:text="${review.dataComplete}">0</div>
+            <div class="stat-tile-sub" th:text="#{ebm.kpiCompleteHint}">Ready to be prepared — not fiscalised, and not declared.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ebm.kpiIncomplete}">Something missing</div>
+            <div class="stat-tile-value text-error" th:text="${review.incomplete()}">0</div>
+            <div class="stat-tile-sub" th:text="#{ebm.kpiIncompleteHint}">EBM would reject these as they stand.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{ebm.kpiFiscalised}">Carry a fiscal receipt</div>
+            <div class="stat-tile-value" th:text="${review.fiscalised()}">0</div>
+            <div class="stat-tile-sub" th:text="#{ebm.kpiFiscalisedHint}">Always none. The field exists on an invoice and nothing in this application ever writes to it.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="#{ebm.tableTitle}">Every issued invoice</h3>
+            <span class="text-sm text-muted" th:text="#{ebm.tableHint}">Most recent first.</span>
+        </div>
+        <div class="table-wrap" th:if="${review.hasAny()}">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{ebm.invoice}">Invoice</th>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{inv.customer}">Customer</th>
+                        <th class="num" th:text="#{inv.total}">Total</th>
+                        <th class="num" th:text="#{inv.tax}">VAT</th>
+                        <th th:text="#{common.status}">Status</th>
+                        <th th:text="#{ebm.readiness}">EBM readiness</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${review.rows}">
+                        <td>
+                            <a class="cell-link font-semibold" th:href="@{/invoices/{id}(id=${r.id})}"
+                               th:text="${r.invoiceNo}">INV-0001</a>
+                        </td>
+                        <td th:text="${#temporals.format(r.issueDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td th:text="${r.customerName}">Customer</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.total, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(r.taxAmount, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td><span class="badge badge-muted" th:text="${r.status}">POSTED</span></td>
+                        <td>
+                            <span class="badge badge-success" th:if="${r.dataComplete}" th:text="#{ebm.holdsEverything}">Holds every required field</span>
+                            <span class="badge badge-error" th:unless="${r.dataComplete}" th:text="#{ebm.wouldBeRejected}">Would be rejected</span>
+                            <div class="cell-secondary" th:unless="${r.dataComplete}">
+                                <span th:each="g,i : ${r.gaps}">
+                                    <span th:text="#{'ebm.gap.' + ${g}}">gap</span><span th:if="${!i.last}">, </span>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body" th:unless="${review.hasAny()}">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-file-text"/></svg></div>
+                <p class="text-secondary" th:text="#{ebm.none}">No invoice was issued in this period.</p>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

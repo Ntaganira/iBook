@@ -3,7 +3,8 @@
 Progress against the sidebar, which lists **115 routes**. A route counts as done when it has
 a controller mapping, a template, and reads real data.
 
-**100 / 115 mapped · 15 remaining**
+**115 / 115 mapped.** Nine of them are configuration and readiness pages that transmit nothing —
+see Tier 3. A route counting as "mapped" is not a claim that an integration works.
 
 How to check progress yourself:
 
@@ -367,23 +368,92 @@ Reads tables that already exist. All seven done.
 
 ---
 
-## Tier 3 — blocked on something outside the codebase
+## Tier 3 — was blocked on something outside the codebase
 
-Building these without the external piece produces a page that cannot work.
+Six of these turned out not to be blocked at all, and have been built properly:
 
-- [ ] `/sales/ebm` — RRA EBM 2.x certification
-- [ ] `/integrations/ebm` · `/integrations/mtn-momo` · `/integrations/airtel-money`
-- [ ] `/integrations/banks` · `/integrations/payments` · `/integrations/webhooks` · `/integrations/api`
-- [ ] `/sales/payment-links` — payment gateway account
-- [ ] `/banking/feeds` — feed import must come first
-- [ ] `/banking/uncategorized` — depends on feed import
-- [ ] `/taxes/withholding` — withholding fields on invoice/bill lines
-- [ ] `/taxes/excise` — excise fields on invoice/bill lines
+- [x] `/banking/feeds` — statement **file** import. Not a bank connection, and the page says so.
+- [x] `/banking/uncategorized` — the worklist over imported statement lines.
+- [x] `/taxes/withholding` · `/purchases/withholding` — WHT is not a cost: Dr AP / Cr WHT payable,
+      issued through `BillService.recordPayment` so the bill balance, aging and payables agree with
+      the ledger instead of diverging by the amount withheld.
+- [x] `/taxes/excise` — excise added to net **before** VAT, credited to a per-duty liability and
+      never to income. Behind the same confirmation gate as the PAYE bands.
+- [x] `/budgets/ai-forecasts` — rebuilt as **forecast accuracy**. There is no model; the page scores
+      committed forecasts against what the ledger then did. Sidebar relabelled accordingly.
 
+### The nine that genuinely cannot work — built as configuration and readiness pages
+
+These are **scaffolding, and the pages say so on every screen**. They record settings, report
+readiness and transmit nothing. Do not read any of them as evidence that an integration works.
+
+- [x] `/integrations/ebm` · `/integrations/mtn-momo` · `/integrations/airtel-money`
+      `/integrations/banks` · `/integrations/payments` · `/integrations/webhooks`
+      — one `Integration` registry behind all of them. There is **no HTTP client anywhere in this
+      codebase**, no polling and no callback handler, so nothing is ever sent or received.
+      **No secret is stored and there is no column to store one in**: what is recorded is the
+      *name* of the environment variable holding the key (`MOMO_API_KEY`), and a value that looks
+      like a key is rejected by validation rather than written to the database. Only the presence
+      of the variable is reported, never its value.
+- [x] `/integrations/api` — offers **no form at all**, because there is no API surface to configure.
+      A key would grant access to nothing, and a key that opens nothing is worse than no key.
+- [x] `/sales/ebm` — **EBM readiness**, not EBM invoicing. Lists every issued invoice and what
+      EBM 2.x would reject it for. No invoice is fiscalised and none ever will be from this page;
+      `Invoice.ebmReference` exists and nothing writes to it, which the page states rather than
+      hides. Sidebar relabelled from "EBM Invoicing" to "EBM Readiness".
+- [x] `/sales/payment-links` — **payment requests**, not links. No gateway, so no link is produced;
+      inventing a URL that looked like one would be the single most dangerous thing here, because
+      somebody would send it to a customer. Instead it composes the payment instructions, records
+      that they went out, and leaves the sending to a person. A request does not touch the ledger —
+      verified by a byte-identical trial balance across creating one. Sidebar relabelled from
+      "Payment Links" to "Payment Requests".
+
+Still outside the codebase, and unchanged by any of the above: RRA EBM 2.x certification, a
+registered SDU, MoMo/Airtel merchant accounts, a gateway account, bank feed agreements, and a
+publicly reachable host for any callback.
 ---
 
 ## Known issues
 
+
+- [ ] **Nine routes are scaffolding and must not be read as working integrations.** The seven
+      `/integrations/*` pages, `/sales/ebm` and `/sales/payment-links` record settings and report
+      readiness. Nothing is transmitted, because there is no HTTP client, no polling and no callback
+      handler anywhere in this codebase. Every one of those pages says so on screen, and the sidebar
+      labels for the two sales routes were changed ("EBM Invoicing" → "EBM Readiness", "Payment
+      Links" → "Payment Requests") because the old labels described things the pages do not do. If
+      an integration is ever built, the danger is not the missing client — it is somebody wiring one
+      up and leaving these pages claiming success they never verified.
+
+- [ ] **`Integration.secretEnvVar` deliberately cannot hold a secret, and that has a cost.** Only
+      the *name* of an environment variable is stored; the value is never read into a field, returned
+      from a method or put in a model. So the application cannot tell whether a key is correct, only
+      whether the variable is set. Do not "improve" this by adding a value column — the connection
+      string for this database is already committed to the repository, so a plaintext credential
+      column would be readable by anyone with the repo and a dump. Encrypting it only moves the
+      problem to wherever the encryption key then lives.
+
+- [ ] **The EBM readiness page cannot report the item classification gap per invoice.** EBM 2.x
+      requires an RRA item classification code on every line and there is **no field for one on a
+      product** — a SKU is the business's own code and is not the same thing. It is reported once as
+      a structural gap rather than counted against each invoice, because no amount of editing
+      invoices would close it. Closing it needs a field on `Product` and the RRA code list.
+
+- [ ] **`PaymentRequest` stores no settlement state, on purpose.** Whether a request has been paid is
+      read off the invoice every time the page is opened. Do not add a `PAID` flag: it would be a
+      second version of an answer the ledger already holds, and the day the two disagreed the flag is
+      the one somebody would believe.
+
+- [ ] **The payment request numbering falls back to a random number on existing databases.**
+      `DataSeeder.seedSequences` returns early once any sequence exists, so the new `PAYREQUEST`
+      sequence only appears on a fresh install. Existing databases produce `PRQ-2026-76047` instead
+      of `PRQ-0001`. Same cause as the estimate numbering issue above, and the same fix: add the
+      sequence through the numbering settings page.
+
+- [ ] **`/sales/payment-links` sums outstanding across currencies without converting.** Same defect
+      as payments, statements and aging. The page at least detects it: where more than one currency
+      is in the figure it replaces the explanatory line with a warning that the total is not real and
+      the invoices should be read individually. That is a label on the problem, not a fix.
 - [ ] **The seeded payroll rates are placeholders and are almost certainly wrong.** The figures a
       fresh installation starts with — pension 3/5, occupational hazards 2, maternity 0.3/0.3,
       medical 7.5/7.5, CBHI 0.5, and PAYE bands of 0/10/20/30 per cent at 60,000, 100,000 and

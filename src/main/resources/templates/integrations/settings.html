@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(${pageTitle}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${pageTitle}">Integration</h1>
+            <p class="page-subtitle" th:text="${pageSubtitle}">Settings a connection would need.</p>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{int.nothingTransmittedTitle}">Nothing is sent and nothing is received</div>
+            <span th:text="#{int.nothingTransmittedHint}">This application has no outbound connection of any kind: no client, no scheduled polling and no endpoint for a provider to call back. Filling this page in records the settings a connection would need. It does not create one, and nothing here will reach the provider.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{int.whatItWouldTakeTitle}">What is still missing</div>
+            <span th:text="${whatItWouldTake}">Credentials from the provider.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${provider.configurable}">
+        <svg class="ebook-icon"><use href="#icon-shield"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{int.secretsTitle}">No key is stored here</div>
+            <span th:text="#{int.secretsHint}">There is no field for a key and no column to keep one in. What is recorded is the name of the environment variable that holds it, such as MOMO_API_KEY. The name is not sensitive; the key itself never reaches this database, its backups or any page. That means somebody has to set the variable on the server, and this application cannot check whether they got it right, because it never reads the value.</span>
+        </div>
+    </div>
+
+    <!-- API: there is nothing to configure, so no form is offered. -->
+    <div class="card mb-4" th:unless="${provider.configurable}">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-code"/></svg></div>
+                <p class="text-secondary" th:text="#{int.noSurface}">There is nothing to configure here yet.</p>
+                <p class="form-hint mt-2" th:text="#{int.noSurfaceHint}">This application serves rendered pages and exposes no JSON endpoints, so an API key would grant access to nothing. A key that opens nothing is worse than no key, because somebody would believe they had given something access.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4" th:if="${provider.configurable and registry.hasAny()}">
+        <div class="card-header">
+            <h3 th:text="#{int.recordedTitle}">Recorded settings</h3>
+            <span class="text-sm text-muted" th:text="#{int.recordedHint}">What has been written down so far.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{int.label}">Name</th>
+                        <th th:text="${endpointLabel}">Endpoint</th>
+                        <th th:if="${provider.needsParticipantId}" th:text="${participantLabel}">Account</th>
+                        <th th:if="${provider.hasEnvironments}" th:text="#{int.environment}">Environment</th>
+                        <th th:text="#{int.secretEnvVar}">Key held in</th>
+                        <th th:text="#{int.status}">Status</th>
+                        <th class="text-right" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${registry.entries}">
+                        <td>
+                            <span class="font-semibold" th:text="${e.row.label}">Name</span>
+                            <div class="cell-secondary" th:if="${e.row.notes != null}" th:text="${e.row.notes}">Notes</div>
+                        </td>
+                        <td>
+                            <span class="font-mono text-sm" th:text="${e.row.endpoint != null} ? ${e.row.endpoint} : '—'">—</span>
+                            <div class="cell-secondary" th:if="${e.row.callbackUrl != null}">
+                                <span th:text="#{int.callback}">Callback</span>
+                                <span class="font-mono" th:text="${e.row.callbackUrl}">url</span>
+                            </div>
+                        </td>
+                        <td th:if="${provider.needsParticipantId}"
+                            th:text="${e.row.participantId != null} ? ${e.row.participantId} : '—'">—</td>
+                        <td th:if="${provider.hasEnvironments}">
+                            <span class="badge"
+                                  th:classappend="${e.row.environmentName == 'LIVE'} ? 'badge-warning' : 'badge-muted'"
+                                  th:text="${e.row.environmentName == 'LIVE'} ? #{int.envLive} : #{int.envSandbox}">Sandbox</span>
+                        </td>
+                        <td>
+                            <span class="font-mono text-sm" th:text="${e.row.secretEnvVar != null} ? ${e.row.secretEnvVar} : '—'">—</span>
+                            <div class="cell-secondary">
+                                <span class="text-success" th:if="${e.secretPresent}" th:text="#{int.secretSet}">variable is set on this server</span>
+                                <span class="text-error" th:unless="${e.secretPresent}" th:text="#{int.secretUnset}">variable is not set on this server</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-success" th:if="${e.ready}" th:text="#{int.statusRecorded}">Settings complete</span>
+                            <span class="badge badge-warning" th:if="${e.complete and !e.ready}" th:text="#{int.statusOff}">Complete but switched off</span>
+                            <span class="badge badge-error" th:unless="${e.complete}" th:text="#{int.statusIncomplete}">Incomplete</span>
+                            <div class="cell-secondary" th:unless="${e.complete}">
+                                <span th:text="#{int.missingTitle}">Missing</span>
+                                <span th:each="m,i : ${e.missing}">
+                                    <span th:text="#{'int.missing.' + ${m}}">field</span><span th:if="${!i.last}">, </span>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-right">
+                            <a class="btn btn-secondary btn-sm"
+                               th:href="@{/integrations/{slug}(slug=${slug},edit=${e.row.id})}"
+                               th:text="#{common.edit}">Edit</a>
+                            <form method="post"
+                                  th:action="@{/integrations/{slug}/{id}/delete(slug=${slug},id=${e.row.id})}"
+                                  th:data-confirm="#{int.deleteConfirm}">
+                                <button class="btn btn-danger btn-sm" type="submit" th:text="#{common.delete}">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body" th:if="${registry.canAdd()}">
+            <a class="btn btn-secondary btn-sm" th:href="@{/integrations/{slug}(slug=${slug},add=true)}"
+               th:text="#{int.add}">Add another destination</a>
+        </div>
+    </div>
+
+    <div class="card" th:if="${provider.configurable and form != null}">
+        <div class="card-header">
+            <h3 th:text="${editingId != null} ? #{int.editTitle} : #{int.newTitle}">Settings</h3>
+            <span class="text-sm text-muted" th:text="#{int.formHint}">Recorded for whoever builds the connection. Nothing here is used to connect.</span>
+        </div>
+        <form method="post" th:object="${form}" th:action="@{/integrations/{slug}/save(slug=${slug})}">
+            <input type="hidden" name="id" th:if="${editingId != null}" th:value="${editingId}">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="iLabel" th:text="#{int.label}">Name</label>
+                        <input class="form-control" id="iLabel" name="label" th:value="${form.label}" required>
+                        <div th:replace="~{layout/common :: fieldError('label')}"></div>
+                        <span class="form-hint" th:text="#{int.labelHint}">What this configuration is for. With more than one, it is the only way to tell them apart.</span>
+                    </div>
+
+                    <div class="form-group" th:if="${provider.hasEnvironments}">
+                        <label class="form-label" for="iEnv" th:text="#{int.environment}">Environment</label>
+                        <select class="form-control" id="iEnv" name="environmentName">
+                            <option value="SANDBOX" th:selected="${form.environmentName != 'LIVE'}" th:text="#{int.envSandbox}">Sandbox</option>
+                            <option value="LIVE" th:selected="${form.environmentName == 'LIVE'}" th:text="#{int.envLive}">Live</option>
+                        </select>
+                        <span class="form-hint" th:text="#{int.environmentHint}">Sandbox and live use different credentials and different endpoints. Recording which is which is what stops a test payment being attempted against real money.</span>
+                    </div>
+
+                    <div class="form-group col-span-2" th:if="${provider.needsEndpoint}">
+                        <label class="form-label" for="iEndpoint" th:text="${endpointLabel}">Endpoint</label>
+                        <input class="form-control" id="iEndpoint" name="endpoint" th:value="${form.endpoint}">
+                    </div>
+
+                    <div class="form-group" th:if="${provider.needsParticipantId}">
+                        <label class="form-label" for="iParticipant" th:text="${participantLabel}">Account</label>
+                        <input class="form-control" id="iParticipant" name="participantId" th:value="${form.participantId}">
+                    </div>
+
+                    <div class="form-group col-span-2" th:if="${provider.needsCallback}">
+                        <label class="form-label" for="iCallback" th:text="#{int.callback}">Callback URL</label>
+                        <input class="form-control" id="iCallback" name="callbackUrl" th:value="${form.callbackUrl}">
+                        <span class="form-hint" th:text="#{int.callbackHint}">Where the provider would confirm a payment. It has to be reachable from the internet, and there is no handler for it yet — so recording it here is a note for later, not a live address.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="iSecret" th:text="#{int.secretEnvVar}">Key held in</label>
+                        <input class="form-control font-mono" id="iSecret" name="secretEnvVar"
+                               th:value="${form.secretEnvVar}" placeholder="MOMO_API_KEY">
+                        <div th:replace="~{layout/common :: fieldError('secretEnvVar')}"></div>
+                        <span class="form-hint" th:text="#{int.envVarHint}">The name of the environment variable, not the key. A value pasted here is rejected rather than saved, because it would be a live credential in a plaintext column.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="iContact" th:text="#{int.contact}">Provider contact</label>
+                        <input class="form-control" id="iContact" name="contact" th:value="${form.contact}">
+                        <span class="form-hint" th:text="#{int.contactHint}">Who to chase at the provider. Worth having written down where the settings are.</span>
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label class="form-label" for="iNotes" th:text="#{int.notes}">Notes</label>
+                        <textarea class="form-control" id="iNotes" name="notes" rows="3" th:text="${form.notes}"></textarea>
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label class="switch">
+                            <input type="checkbox" name="enabled" value="true" th:checked="${form.enabled}">
+                            <span class="switch-track"></span>
+                            <span class="switch-label" th:text="#{int.enabled}">These settings are the ones to use</span>
+                        </label>
+                        <span class="form-hint" th:text="#{int.enabledHint}">Marks the settings as the ones in force. It does not switch a connection on, because there is no connection to switch on.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a class="btn btn-secondary" th:href="@{/integrations/{slug}(slug=${slug})}" th:text="#{common.cancel}">Cancel</a>
+                <button class="btn btn-primary" type="submit" th:text="#{common.save}">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card" th:if="${provider.configurable and form == null and !registry.hasAny()}">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-plug"/></svg></div>
+                <p class="text-secondary" th:text="#{int.none}">Nothing recorded yet.</p>
+                <a class="btn btn-primary btn-sm mt-3" th:href="@{/integrations/{slug}(slug=${slug},add=true)}"
+                   th:text="#{int.add}">Record the settings</a>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.querySelectorAll('form[data-confirm]').forEach(function (f) {
+            f.addEventListener('submit', function (e) {
+                if (!window.confirm(this.dataset.confirm)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+
+</main>
+</body>
+</html>

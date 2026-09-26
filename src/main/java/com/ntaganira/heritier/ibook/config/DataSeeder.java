@@ -392,6 +392,7 @@ SecuritySettingsRepository securitySettingsRepository,
         seq(repository, "Payroll Runs", "PAYROLL", "PAY-", null, 4, 1, false);
         seq(repository, "Remittances", "REMITTANCE", "REM-", null, 4, 1, false);
         seq(repository, "Withholding Certificates", "WITHHOLDING", "WHT-", null, 4, 1, false);
+        seq(repository, "Payment Requests", "PAYREQUEST", "PRQ-", null, 4, 1, false);
         seq(repository, "Journal Entries", "JOURNAL", "JE-2026-", null, 5, 8, true);
     }
 
