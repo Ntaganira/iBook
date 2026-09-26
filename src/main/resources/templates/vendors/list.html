@@ -150,13 +150,13 @@
                     <tr th:each="v : ${vendors.content}">
                         <td data-col="name">
                             <a class="cell-link" th:href="@{/vendors/{id}(id=${v.id})}" th:text="${v.name}">ABC Construction Ltd</a>
-                            <span class="cell-secondary" th:text="#{ven.since} + ' ' + ${#temporals.format(c.createdAt, 'MMM yyyy')}">Since Jan 2024</span>
+                            <span class="cell-secondary" th:text="#{ven.since} + ' ' + ${#temporals.format(v.createdAt, 'MMM yyyy')}">Since Jan 2024</span>
                         </td>
-                        <td data-col="phone" class="cell-secondary" th:text="${v.phone != null ? c.phone : '—'}">+250 788 401 220</td>
-                        <td data-col="email" class="cell-secondary" th:text="${v.email != null ? c.email : '—'}">info@abcconstruction.rw</td>
-                        <td data-col="city" class="cell-secondary" th:text="${v.city != null ? c.city : '—'}">Kigali</td>
+                        <td data-col="phone" class="cell-secondary" th:text="${v.phone != null ? v.phone : '—'}">+250 788 401 220</td>
+                        <td data-col="email" class="cell-secondary" th:text="${v.email != null ? v.email : '—'}">info@abcconstruction.rw</td>
+                        <td data-col="city" class="cell-secondary" th:text="${v.city != null ? v.city : '—'}">Kigali</td>
                         <td data-col="balance" class="num money"
-                            th:text="${v.openingBalance != null and c.openingBalance.signum() < 0 ? '(RWF ' + #numbers.formatDecimal(c.openingBalance.abs(), 1, 0, 'COMMA') + ')' : 'RWF ' + #numbers.formatDecimal(c.openingBalance != null ? c.openingBalance : 0, 1, 0, 'COMMA')}">RWF 4,850,000</td>
+                            th:text="${v.openingBalance != null and v.openingBalance.signum() < 0 ? '(RWF ' + #numbers.formatDecimal(v.openingBalance.abs(), 1, 0, 'COMMA') + ')' : 'RWF ' + #numbers.formatDecimal(v.openingBalance != null ? v.openingBalance : 0, 1, 0, 'COMMA')}">RWF 4,850,000</td>
                         <td data-col="status">
                             <span class="badge badge-active" th:if="${v.active}"><span class="badge-dot"></span><span th:text="#{common.status.active}">Active</span></span>
                             <span class="badge badge-muted" th:unless="${v.active}"><span class="badge-dot"></span><span th:text="#{common.status.inactive}">Inactive</span></span>
