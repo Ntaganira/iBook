@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{fca.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{fca.title}">Forecast Accuracy</h1>
+            <p class="page-subtitle" th:text="#{fca.subtitle}">How close each forecast turned out to be, and which method does better.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/budgets/revenue-forecast}" th:text="#{fca.toRevenue}">Revenue forecast</a>
+            <a class="btn btn-secondary" th:href="@{/budgets/expense-forecast}" th:text="#{fca.toExpense}">Expense forecast</a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:unless="${review.engineAvailable}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fca.noModelTitle}">Nothing here is modelled or learned</div>
+            <span th:text="${review.engineNote}">No forecasting model is configured.</span>
+            <div class="form-hint mt-2" th:text="#{fca.noModelHint}">The sidebar calls this page AI forecasts. It is not: calling arithmetic "AI" would be a claim about how the numbers were produced, and a wrong one. What the page really does is score the arithmetic, which is what would make a model worth adding later.</div>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fca.methodTitle}">How the scoring works</div>
+            <span th:text="#{fca.methodHint}">Only months that have finished are scored — a month still running has partial actuals, and comparing a whole month's forecast against half a month's ledger would report every forecast as wildly optimistic. Only committed forecasts are scored, because a draft was never relied on. Actuals are read through the same definition the profit and loss uses, so a forecast cannot be scored against a figure that disagrees with the reports.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fca.twoMeasuresTitle}">Why there are two measures</div>
+            <span th:text="#{fca.twoMeasuresHint}">Bias is the signed difference: it says whether a method runs high or low, which is what matters when planning. Absolute error ignores direction: it says how far out the figures were month by month. A method that is wildly wrong in both directions can have almost no bias while being useless, so reporting only bias would hide exactly that.</span>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <form class="table-toolbar" method="get" th:action="@{/budgets/ai-forecasts}">
+            <label class="form-label" for="aAsOf" th:text="#{fca.asOf}">Score as at</label>
+            <input class="form-control" id="aAsOf" type="date" name="asOf" th:value="${asOf}">
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{fca.rescore}">Score again</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{fca.scoredTo(${#temporals.format(review.scoredTo, 'dd MMM yyyy')})}">Scored to</span>
+        </form>
+    </div>
+
+    <div class="alert alert--info mb-4" th:if="${review.hasTooEarly()}">
+        <svg class="ebook-icon"><use href="#icon-clock"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fca.tooEarlyTitle}">Some forecasts are too new to score</div>
+            <span th:text="#{fca.tooEarlyHint}">Not one of their months has finished yet, so there is nothing honest to say about them.</span>
+            <div class="mt-2">
+                <span class="badge badge-muted" th:each="f : ${review.tooEarly}" th:text="${f.name}">Forecast</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-5" th:if="${review.hasAnything()}">
+        <div class="card-header">
+            <h3 th:text="#{fca.byMethodTitle}">How each method has done</h3>
+            <span class="text-sm text-muted" th:text="#{fca.byMethodHint}">Across every committed forecast that used it.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{fc.method}">Method</th>
+                        <th class="num" th:text="#{fca.forecastsScored}">Forecasts</th>
+                        <th class="num" th:text="#{fca.monthsScored}">Months</th>
+                        <th class="num" th:text="#{fca.forecast}">Forecast</th>
+                        <th class="num" th:text="#{fca.actual}">Actual</th>
+                        <th class="num" th:text="#{fca.bias}">Bias</th>
+                        <th class="num" th:text="#{fca.absError}">Absolute error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="m : ${review.byMethod}">
+                        <td>
+                            <span th:text="${methodLabels.get(m.method.name())}">Average</span>
+                            <span class="badge badge-success" th:if="${review.best() != null and review.best().method == m.method}"
+                                  th:text="#{fca.closest}">Closest so far</span>
+                        </td>
+                        <td class="num" th:text="${m.forecasts}">0</td>
+                        <td class="num" th:text="${m.monthsScored}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.forecastTotal, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(m.actualTotal, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money"
+                            th:classappend="${m.bias().signum() < 0} ? 'text-error' : 'text-success'">
+                            <span th:text="${#numbers.formatDecimal(m.bias(), 1, 'COMMA', 2, 'POINT')}">0</span>
+                            <span class="cell-secondary" th:if="${m.biasPercent() != null}"
+                                  th:text="${#numbers.formatDecimal(m.biasPercent(), 1, 'COMMA', 1, 'POINT')} + '%'">0%</span>
+                        </td>
+                        <td class="num money">
+                            <span th:text="${#numbers.formatDecimal(m.absoluteError, 1, 'COMMA', 2, 'POINT')}">0</span>
+                            <span class="cell-secondary" th:if="${m.absoluteErrorPercent() != null}"
+                                  th:text="${#numbers.formatDecimal(m.absoluteErrorPercent(), 1, 'COMMA', 1, 'POINT')} + '%'">0%</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <div class="form-hint" th:if="${review.best() == null}" th:text="#{fca.noWinnerHint}">Only one method has been scored, so there is nothing to compare it against. Nothing is named closest out of one.</div>
+            <div class="form-hint" th:unless="${review.best() == null}" th:text="#{fca.winnerHint}">Closest is the smallest absolute error as a share of what was forecast. It is a record of what has happened so far, on however many months that is — not a prediction that it will keep being closest.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 th:text="#{fca.perForecastTitle}">Each forecast, month by month</h3>
+            <span class="text-sm text-muted" th:text="#{fca.perForecastHint}">Only finished months appear.</span>
+        </div>
+        <div th:each="f : ${review.forecasts}" class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+                <span>
+                    <a class="cell-link font-semibold" th:href="@{/budgets/forecasts/{id}/edit(id=${f.id})}" th:text="${f.name}">Forecast</a>
+                    <span class="badge badge-muted" th:text="${methodLabels.get(f.method.name())}">Average</span>
+                    <span class="cell-secondary" th:text="#{fca.monthsCount(${f.monthsScored})}">months</span>
+                </span>
+                <span>
+                    <span class="money font-bold"
+                          th:classappend="${f.underForecast} ? 'text-error' : 'text-success'"
+                          th:text="${#numbers.formatDecimal(f.bias, 1, 'COMMA', 2, 'POINT')}">0</span>
+                    <span class="cell-secondary" th:if="${f.biasPercent != null}"
+                          th:text="${#numbers.formatDecimal(f.biasPercent, 1, 'COMMA', 1, 'POINT')} + '%'">0%</span>
+                </span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{fca.month}">Month</th>
+                            <th class="num" th:text="#{fca.forecast}">Forecast</th>
+                            <th class="num" th:text="#{fca.actual}">Actual</th>
+                            <th class="num" th:text="#{fca.difference}">Difference</th>
+                            <th class="num" th:text="#{rbd.variancePercent}">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="m : ${f.months}">
+                            <td th:text="${#temporals.format(m.month, 'MMM yyyy')}">Jan 2026</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(m.forecast, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money" th:text="${#numbers.formatDecimal(m.actual, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num money"
+                                th:classappend="${m.over} ? 'text-error' : 'text-success'"
+                                th:text="${#numbers.formatDecimal(m.difference, 1, 'COMMA', 2, 'POINT')}">0</td>
+                            <td class="num" th:text="${m.differencePercent == null} ? '—' : ${#numbers.formatDecimal(m.differencePercent, 1, 'COMMA', 1, 'POINT')} + '%'">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-body" th:unless="${review.hasAnything()}">
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-target"/></svg></div>
+                <p class="text-secondary" th:text="#{fca.none}">No forecast has a finished month to score yet.</p>
+                <p class="form-hint mt-2" th:text="#{fca.noneHint}">Publish a forecast, let a month pass, and it will be scored here against what the ledger actually did. Drafts are never scored, because nobody relied on them.</p>
+                <a class="btn btn-primary btn-sm mt-3" th:href="@{/budgets/revenue-forecast}" th:text="#{fca.toRevenue}">Revenue forecast</a>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
