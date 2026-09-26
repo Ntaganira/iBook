@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{fed.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="#{fed.title}">Bank Statements</h1>
+            <p class="page-subtitle" th:text="#{fed.subtitle}">Bringing a statement file in from the bank.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/banking/uncategorized}" th:text="#{fed.toWorklist}">Uncategorised</a>
+            <a class="btn btn-secondary" th:href="@{/banking/reconcile}" th:text="#{bnr.title}">Reconciliation</a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fed.notConnectedTitle}">This is a file import, not a bank connection</div>
+            <span th:text="#{fed.notConnectedHint}">Nothing here dials out to anybody. A live feed needs credentials and an agreement with the bank, and neither exists in this application — so no balance updates by itself and no transaction arrives without somebody bringing it. What does exist is the CSV every bank will export, and reading that is what makes categorising and reconciling possible.</span>
+        </div>
+    </div>
+
+    <div class="alert alert--info mb-4">
+        <svg class="ebook-icon"><use href="#icon-info"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fed.ledgerTitle}">Importing posts nothing</div>
+            <span th:text="#{fed.ledgerHint}">Lines arrive uncategorised and stay that way until somebody says what each one is, because a payment out could be rent, a loan repayment, a drawing or a theft and only a person knows which. Nothing is guessed: there is no rule engine and nothing learns from past decisions, because a wrong guess that posts silently is worse than a line that waits. A row that cannot be read is counted and reported rather than dropped, since a statement that quietly lost three rows would reconcile to the wrong figure with nothing to say why.</span>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fed.waiting}">Waiting to be told</div>
+            <div class="stat-tile-value" th:text="${summary.waiting}">0</div>
+            <div class="cell-secondary" th:text="#{fed.waitingHint}">Imported, nobody has said what they are.</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fed.waitingNet}">Net still unexplained</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(summary.waitingNet, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fed.status.posted}">In the books</div>
+            <div class="stat-tile-value" th:text="${summary.posted}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fed.imports}">Statements</div>
+            <div class="stat-tile-value" th:text="${summary.imports}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{fed.importTitle}">Bring a statement in</h3>
+            <span class="text-sm text-muted" th:text="#{fed.importHint}">A CSV exported from your bank.</span>
+        </div>
+        <form method="post" th:action="@{/banking/feeds}" enctype="multipart/form-data">
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="fAcc"><span th:text="#{common.account}">Account</span> <span class="required">*</span></label>
+                        <select class="form-control" id="fAcc" name="accountId" required>
+                            <option value="" th:text="#{bud.selectAccount}">Choose an account…</option>
+                            <option th:each="a : ${bankAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}">1101</option>
+                        </select>
+                        <div class="form-hint" th:text="#{fed.accountHint}">Cash and bank accounts only.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fFile"><span th:text="#{fed.file}">Statement file</span> <span class="required">*</span></label>
+                        <input class="form-control" id="fFile" name="file" type="file" accept=".csv,.txt" required>
+                        <div class="form-hint" th:text="#{fed.fileHint}">CSV or tab-separated. The header row is read to find the columns, so the order does not matter — no two banks export the same shape.</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit" th:disabled="${#lists.isEmpty(bankAccounts)}">
+                    <svg class="ebook-icon"><use href="#icon-cloud-upload"/></svg>
+                    <span th:text="#{fed.import}">Bring it in</span>
+                </button>
+                <div class="form-hint mt-3" th:text="#{fed.columnsHint}">What it looks for: a column whose name contains "date"; one containing description, narrative, details, particulars or memo; either a single amount column, or a pair naming credit and debit — or money in and money out, or deposit and withdrawal. A reference and a running balance are used if present. Thousands separators, currency symbols and brackets for negatives are all handled, and both 1,234.56 and 1.234,56 are understood.</div>
+                <div class="form-hint mt-2" th:text="#{fed.duplicateHint}">Bringing the same file in twice is warned about rather than refused — sometimes a statement genuinely is re-sent — but it would double every figure on it, so read the warning.</div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <form class="table-toolbar" method="get" th:action="@{/banking/feeds}">
+            <div class="toolbar-search">
+                <svg class="ebook-icon"><use href="#icon-search"/></svg>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{fed.searchPlaceholder}">
+            </div>
+            <select class="form-control" name="accountId">
+                <option value="" th:text="#{bnr.allAccounts}">Every account</option>
+                <option th:each="a : ${bankAccounts}" th:value="${a.id}" th:text="${a.code + ' — ' + a.name}"
+                        th:selected="${accountId != null and accountId == a.id}">1101</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" type="submit" th:text="#{common.filter}">Filter</button>
+            <div class="toolbar-spacer"></div>
+            <span class="text-sm text-muted"
+                  th:text="#{common.showing(${#lists.size(imports.content)}, ${imports.totalElements})}">Showing 0 of 0</span>
+        </form>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'reference', #{common.reference}, ${sort}, ${dir})}">Reference</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'accountCode', #{common.account}, ${sort}, ${dir})}">Account</th>
+                        <th th:text="#{fed.period}">Covers</th>
+                        <th class="num" th:replace="~{layout/common :: thSortNum(${basePath + filterQuery}, 'lineCount', #{fed.lines}, ${sort}, ${dir})}">Lines</th>
+                        <th class="num" th:text="#{bnr.moneyIn}">In</th>
+                        <th class="num" th:text="#{bnr.moneyOut}">Out</th>
+                        <th th:replace="~{layout/common :: thSort(${basePath + filterQuery}, 'importedAt', #{fed.imported}, ${sort}, ${dir})}">Brought in</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="i : ${imports.content}">
+                        <td>
+                            <a class="cell-link font-mono" th:href="@{/banking/feeds/{id}(id=${i.id})}" th:text="${i.reference}">STM-0001</a>
+                            <span class="cell-secondary" th:if="${i.fileName != null}" th:text="${i.fileName}"></span>
+                            <span class="badge badge-void" th:if="${i.discarded}" th:text="#{fed.discardedBadge}">Discarded</span>
+                        </td>
+                        <td>
+                            <span class="font-mono" th:text="${i.accountCode}">1101</span>
+                            <span class="cell-secondary" th:text="${i.accountName}">Bank</span>
+                        </td>
+                        <td class="cell-secondary" th:if="${i.firstLineDate != null}"
+                            th:text="${#temporals.format(i.firstLineDate, 'dd MMM')} + ' – ' + ${#temporals.format(i.lastLineDate, 'dd MMM yyyy')}">01 – 30 Sep</td>
+                        <td class="cell-secondary" th:if="${i.firstLineDate == null}">—</td>
+                        <td class="num">
+                            <span th:text="${i.lineCount}">0</span>
+                            <span class="cell-secondary text-warning" th:if="${i.skippedCount > 0}"
+                                  th:text="#{fed.skipped(${i.skippedCount})}">skipped</span>
+                        </td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(i.totalIn, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${#numbers.formatDecimal(i.totalOut, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td th:text="${#temporals.format(i.importedAt, 'dd MMM yyyy')}">01 Jan</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(imports.content)}">
+                        <td class="table-empty" colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><svg class="ebook-icon"><use href="#icon-wifi"/></svg></div>
+                                <p class="text-secondary" th:text="#{fed.none}">No statements have been brought in yet.</p>
+                                <p class="form-hint mt-2" th:text="#{fed.noneHint}">Export a CSV from your bank and bring it in above. Its lines then appear in the uncategorised worklist, and can be matched on the reconciliation page.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${imports.totalPages > 1}">
+            <span th:text="#{common.showing(${#lists.size(imports.content)}, ${imports.totalElements})}">Showing 0 of 0</span>
+            <div th:replace="~{layout/pagination :: pagination(${imports.number + 1}, ${imports.totalPages}, ${basePath + filterQuery + (#strings.contains(filterQuery, '?') ? '&amp;' : '?') + 'sort=' + sort + '&amp;dir=' + dir})}"></div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(#{fed.title}, ~{::content})}">
+<head></head>
+<body>
+<main th:fragment="content">
+    <div th:replace="~{layout/common :: flash}"></div>
+
+    <nav class="breadcrumb" th:aria-label="#{common.ariaBreadcrumb}">
+        <a th:href="@{/banking/feeds}" th:text="#{fed.title}">Bank statements</a>
+        <svg class="ebook-icon ebook-icon--sm sep"><use href="#icon-chevron-right"/></svg>
+        <span class="current" th:text="${feed.reference}">STM-0001</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${feed.accountCode + ' — ' + feed.accountName}">1101 — Bank</h1>
+            <p class="page-subtitle">
+                <span class="font-mono" th:text="${feed.reference}">STM-0001</span>
+                <span th:if="${feed.fileName != null}" th:text="' · ' + ${feed.fileName}"></span>
+                <span th:if="${feed.firstLineDate != null}"
+                      th:text="' · ' + ${#temporals.format(feed.firstLineDate, 'dd MMM')} + ' – ' + ${#temporals.format(feed.lastLineDate, 'dd MMM yyyy')}"></span>
+            </p>
+            <span class="badge badge-void" th:if="${feed.discarded}" th:text="#{fed.discardedBadge}">Discarded</span>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-secondary" th:href="@{/banking/uncategorized}" th:text="#{fed.toWorklist}">Uncategorised</a>
+            <a class="btn btn-secondary" th:href="@{/banking/reconcile}" th:text="#{bnr.title}">Reconciliation</a>
+        </div>
+    </div>
+
+    <div class="alert alert--warning mb-4" th:if="${feed.skippedCount > 0}">
+        <svg class="ebook-icon"><use href="#icon-alert-triangle"/></svg>
+        <div class="alert-body">
+            <div class="alert-title" th:text="#{fed.skippedTitle}">Some rows could not be read</div>
+            <span th:text="#{fed.skippedDetail(${feed.skippedCount})}">Rows were skipped.</span>
+            <div class="form-hint mt-2" th:text="#{fed.skippedFix}">They are counted rather than hidden, because a statement that quietly lost rows would reconcile to the wrong figure with nothing to say why. Check those rows in the file — usually a date in an unexpected shape, or an amount column that is empty on both sides.</div>
+        </div>
+    </div>
+
+    <div class="stat-grid mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fed.lines}">Lines</div>
+            <div class="stat-tile-value" th:text="${feed.lineCount}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bnr.moneyIn}">Money in</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(feed.totalIn, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{bnr.moneyOut}">Money out</div>
+            <div class="stat-tile-value money" th:text="${#numbers.formatDecimal(feed.totalOut, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label" th:text="#{fed.net}">Net</div>
+            <div class="stat-tile-value money"
+                 th:classappend="${feed.net.signum() >= 0} ? 'text-success' : 'text-error'"
+                 th:text="${#numbers.formatDecimal(feed.net, 1, 'COMMA', 2, 'POINT')}">0</div>
+        </div>
+    </div>
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3 th:text="#{fed.linesTitle}">What was brought in</h3>
+            <span class="text-sm text-muted" th:text="#{fed.linesViewHint}">Nothing here has posted unless it says so.</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th th:text="#{common.date}">Date</th>
+                        <th th:text="#{common.description}">Description</th>
+                        <th class="num" th:text="#{bnr.moneyIn}">In</th>
+                        <th class="num" th:text="#{bnr.moneyOut}">Out</th>
+                        <th th:text="#{common.status}">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${lines}">
+                        <td th:text="${#temporals.format(l.lineDate, 'dd MMM yyyy')}">01 Sep</td>
+                        <td>
+                            <span th:text="${l.description != null} ? ${l.description} : '—'">Description</span>
+                            <span class="cell-secondary font-mono" th:if="${l.reference != null}" th:text="${l.reference}"></span>
+                        </td>
+                        <td class="num money" th:text="${l.moneyInValue.signum() == 0} ? '—' : ${#numbers.formatDecimal(l.moneyInValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td class="num money" th:text="${l.moneyOutValue.signum() == 0} ? '—' : ${#numbers.formatDecimal(l.moneyOutValue, 1, 'COMMA', 2, 'POINT')}">0</td>
+                        <td th:with="st=${l.status.name()}">
+                            <span class="badge"
+                                  th:classappend="${st == 'POSTED' ? 'badge-success' : (st == 'IGNORED' ? 'badge-muted' : 'badge-warning')}">
+                                <span class="badge-dot"></span>
+                                <span th:text="${statusLabels.get(st)}">Waiting</span>
+                            </span>
+                            <a class="cell-secondary cell-link font-mono" th:if="${l.journalEntryNo != null}"
+                               th:href="@{/journals/{id}(id=${l.journalEntryId})}" th:text="${l.journalEntryNo}">JE-00001</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(lines)}">
+                        <td class="table-empty" colspan="5">
+                            <p class="text-secondary" th:text="#{fed.noLinesHere}">This statement has no lines.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:unless="${feed.discarded}">
+        <div class="card-header"><h3 th:text="#{common.actions}">Actions</h3></div>
+        <form method="post" th:action="@{/banking/feeds/{id}/discard(id=${feed.id})}">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="dReason" th:text="#{fed.discardReason}">Why</label>
+                    <input class="form-control" id="dReason" name="reason" type="text">
+                    <div class="form-hint" th:text="#{fed.discardHint}">Discarding takes the remaining lines out of the worklist. Lines already posted keep their entries — an entry in the ledger is a fact — so the statement is marked rather than removed, and it is clear what happened.</div>
+                </div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-archive"/></svg>
+                    <span th:text="#{fed.discard}">Discard it</span>
+                </button>
+            </div>
+        </form>
+        <form method="post" th:action="@{/banking/feeds/{id}/delete(id=${feed.id})}">
+            <div class="card-body">
+                <div class="form-hint mb-3" th:text="#{fed.deleteHint}">Deleting is possible only while nothing from this statement has been posted.</div>
+                <button class="btn btn-ghost" type="submit">
+                    <svg class="ebook-icon"><use href="#icon-trash"/></svg>
+                    <span th:text="#{common.delete}">Delete</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>
